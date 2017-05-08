@@ -1,4 +1,4 @@
-module AlgorithmParameters exposing (..)
+module AlgorithmParametersView exposing (..)
 
 import Material
 import Material.Textfield as Textfield
@@ -119,8 +119,8 @@ view index model =
                     model.mdl
                     [ Textfield.label "Value"
                     , Textfield.value i.value
-                    , Textfield.floatingLabel
                     , Options.onInput (Upd8 idx Value)
+                    , Textfield.floatingLabel
                     ]
                     []
                 , Button.render Mdl
@@ -158,7 +158,7 @@ main : Program Never Model Msg
 main =
     Html.program
         { init = ( init, Material.init Mdl )
-        , view = view [ 0 ] >> Material.Scheme.top
+        , view = view [] >> Material.Scheme.top
         , update = update
         , subscriptions =
             \model ->
