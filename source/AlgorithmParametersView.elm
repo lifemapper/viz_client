@@ -38,7 +38,7 @@ initFromDecoder (AlgorithmParameters params) =
 
 init : Model
 init =
-    { parameters = [ ( "Foo", "Bar" ), ( "Boo", "Baz" ) ]
+    { parameters = []
     , mdl = Material.model
     }
 

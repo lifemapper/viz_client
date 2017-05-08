@@ -1,4 +1,4 @@
-module AlgorithmViews exposing (..)
+module AlgorithmView exposing (..)
 
 import List
 import Decoder
@@ -38,7 +38,7 @@ initFromDecoder (Algorithm { code, parameters }) =
 
 init : Model
 init =
-    { code = "Example"
+    { code = ""
     , parameters = AlgorithmParametersView.init
     , mdl = Material.model
     }
