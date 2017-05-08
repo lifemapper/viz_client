@@ -22,33 +22,24 @@ type alias Index =
 
 
 type alias Model =
-    { algorithm : Algorithm
-    , algorithmParametersViewMdl : Material.Model
+    { code : String
+    , parameters : AlgorithmParametersView.Model
     , mdl : Material.Model
     }
 
 
-algorithmParametersModel : Model -> AlgorithmParametersView.Model
-algorithmParametersModel model =
-    let
-        (Algorithm algorithm) =
-            model.algorithm
-    in
-        { parameters = algorithm.parameters, mdl = model.algorithmParametersViewMdl }
+initFromDecoder : Algorithm -> Model
+initFromDecoder (Algorithm { code, parameters }) =
+    { code = code
+    , parameters = AlgorithmParametersView.initFromDecoder parameters
+    , mdl = Material.model
+    }
 
 
 init : Model
 init =
-    { algorithm =
-        Algorithm
-            { code = "Example"
-            , parameters =
-                AlgorithmParameters
-                    [ AlgorithmParametersItem { name = "Foo", value = "Bar" }
-                    , AlgorithmParametersItem { name = "Boo", value = "Baz" }
-                    ]
-            }
-    , algorithmParametersViewMdl = Material.model
+    { code = "Example"
+    , parameters = AlgorithmParametersView.init
     , mdl = Material.model
     }
 
@@ -59,38 +50,17 @@ type Msg
     | AlgorithmParametersMsg AlgorithmParametersView.Msg
 
 
-updateAlgorithmParameters : Model -> AlgorithmParametersView.Model -> Model
-updateAlgorithmParameters model submodel =
-    let
-        (Algorithm algorithm) =
-            model.algorithm
-    in
-        { model
-            | algorithm = (Algorithm { algorithm | parameters = submodel.parameters })
-            , algorithmParametersViewMdl = submodel.mdl
-        }
-
-
-updateCode : Model -> String -> Model
-updateCode model code =
-    let
-        (Algorithm algorithm) =
-            model.algorithm
-    in
-        { model | algorithm = Algorithm { algorithm | code = code } }
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case Debug.log "Message" msg of
         Mdl msg_ ->
             Material.update Mdl msg_ model
 
-        UpdateCode s ->
-            ( updateCode model s, Cmd.none )
+        UpdateCode code ->
+            ( { model | code = code }, Cmd.none )
 
-        AlgorithmParametersMsg m ->
-            lift algorithmParametersModel updateAlgorithmParameters AlgorithmParametersMsg AlgorithmParametersView.update m model
+        AlgorithmParametersMsg a ->
+            lift .parameters (\m x -> { m | parameters = x }) AlgorithmParametersMsg AlgorithmParametersView.update a model
 
 
 table : List (Html m) -> Grid.Cell m
@@ -108,25 +78,21 @@ table contents =
 
 view : Index -> Model -> Html Msg
 view index model =
-    let
-        (Algorithm algorithm) =
-            model.algorithm
-    in
-        Grid.grid []
-            [ table
-                [ Textfield.render Mdl
-                    (0 :: index)
-                    model.mdl
-                    [ Textfield.label "Code"
-                    , Textfield.value algorithm.code
-                    , Options.onInput UpdateCode
-                    , Textfield.floatingLabel
-                    ]
-                    []
-                , h4 [] [ text "Parameters" ]
-                , Html.map AlgorithmParametersMsg <| AlgorithmParametersView.view (1 :: index) <| algorithmParametersModel model
+    Grid.grid []
+        [ table
+            [ Textfield.render Mdl
+                (0 :: index)
+                model.mdl
+                [ Textfield.label "Code"
+                , Textfield.value model.code
+                , Options.onInput UpdateCode
+                , Textfield.floatingLabel
                 ]
+                []
+            , h4 [] [ text "Parameters" ]
+            , Html.map AlgorithmParametersMsg <| AlgorithmParametersView.view (1 :: index) <| model.parameters
             ]
+        ]
 
 
 main =

@@ -19,19 +19,26 @@ type alias Index =
     List Int
 
 
+type alias ParameterItem =
+    ( String, String )
+
+
 type alias Model =
-    { parameters : AlgorithmParameters
+    { parameters : List ParameterItem
     , mdl : Material.Model
+    }
+
+
+initFromDecoder : AlgorithmParameters -> Model
+initFromDecoder (AlgorithmParameters params) =
+    { parameters = List.map (\(AlgorithmParametersItem { name, value }) -> ( name, value )) params
+    , mdl = Material.model
     }
 
 
 init : Model
 init =
-    { parameters =
-        AlgorithmParameters
-            [ AlgorithmParametersItem { name = "Foo", value = "Bar" }
-            , AlgorithmParametersItem { name = "Boo", value = "Baz" }
-            ]
+    { parameters = [ ( "Foo", "Bar" ), ( "Boo", "Baz" ) ]
     , mdl = Material.model
     }
 
@@ -48,37 +55,36 @@ type Msg
     | Clear Int
 
 
-updateParameter : AlgorithmParameters -> Int -> NameOrValue -> String -> AlgorithmParameters
-updateParameter (AlgorithmParameters ps) i k s =
+updateParameter : List ParameterItem -> Int -> NameOrValue -> String -> List ParameterItem
+updateParameter ps i k s =
     let
-        perhapsUpdate j (AlgorithmParametersItem item) =
+        perhapsUpdate j ( name, value ) =
             if j /= i then
-                AlgorithmParametersItem item
+                ( name, value )
             else
-                AlgorithmParametersItem
-                    (case k of
-                        Name ->
-                            ({ item | name = s })
+                (case k of
+                    Name ->
+                        ( s, value )
 
-                        Value ->
-                            ({ item | value = s })
-                    )
+                    Value ->
+                        ( name, s )
+                )
     in
-        AlgorithmParameters (List.indexedMap perhapsUpdate ps)
+        List.indexedMap perhapsUpdate ps
 
 
-addParameter : AlgorithmParameters -> NameOrValue -> String -> AlgorithmParameters
-addParameter (AlgorithmParameters ps) k s =
+addParameter : List ParameterItem -> NameOrValue -> String -> List ParameterItem
+addParameter ps k s =
     let
         appended =
-            List.append ps [ AlgorithmParametersItem { name = "", value = "" } ]
+            List.append ps [ ( "", "" ) ]
     in
-        updateParameter (AlgorithmParameters appended) (List.length ps) k s
+        updateParameter appended (List.length ps) k s
 
 
-remParameter : AlgorithmParameters -> Int -> AlgorithmParameters
-remParameter (AlgorithmParameters ps) i =
-    AlgorithmParameters ((List.take i ps) ++ (List.drop (i + 1) ps))
+remParameter : List ParameterItem -> Int -> List ParameterItem
+remParameter ps i =
+    (List.take i ps) ++ (List.drop (i + 1) ps)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -100,16 +106,13 @@ update msg model =
 view : Index -> Model -> Html Msg
 view index model =
     let
-        (AlgorithmParameters algorithmParameters) =
-            model.parameters
-
-        parameterView idx (AlgorithmParametersItem i) =
+        parameterView idx ( name, value ) =
             p []
                 [ Textfield.render Mdl
                     (0 :: idx :: index)
                     model.mdl
                     [ Textfield.label "Name"
-                    , Textfield.value i.name
+                    , Textfield.value name
                     , Options.onInput (Upd8 idx Name)
                     , Textfield.floatingLabel
                     ]
@@ -118,7 +121,7 @@ view index model =
                     (1 :: idx :: index)
                     model.mdl
                     [ Textfield.label "Value"
-                    , Textfield.value i.value
+                    , Textfield.value value
                     , Options.onInput (Upd8 idx Value)
                     , Textfield.floatingLabel
                     ]
@@ -133,7 +136,7 @@ view index model =
                 ]
     in
         div []
-            (List.indexedMap parameterView algorithmParameters
+            (List.indexedMap parameterView model.parameters
                 ++ [ p []
                         [ Textfield.render Mdl
                             (0 :: -1 :: index)
