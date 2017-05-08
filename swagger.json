@@ -1,0 +1,1987 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Lifemapper API",
+    "description": "Lifemapper services",
+    "version": "2.0.0"
+  },
+  "host": "notyeti-191.lifemapper.org",
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "basePath": "/api/v2",
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/envlayer": {
+      "get": {
+        "summary": "Lifemapper environmental layers listing service",
+        "description": "The layers endpoint provides a service for querying Lifemapper \nenvironmental layers that match a set of query parameters.\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Offset"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          },
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/EnvCode"
+          },
+          {
+            "$ref": "#/parameters/GCM"
+          },
+          {
+            "$ref": "#/parameters/AltPredCode"
+          },
+          {
+            "$ref": "#/parameters/DateCode"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/ScenarioCode"
+          },
+          {
+            "$ref": "#/parameters/ScenarioId"
+          }
+        ],
+        "tags": [
+          "Environmental Layer"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of environmental layers that match the specified criteria",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Post a new environmental layer",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "epsgCode",
+            "in": "query",
+            "description": "The EPSG code for the layer",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "A short name for the layer",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "isCategorical",
+            "in": "query",
+            "description": "An indicator if this layer is categorical or not (1=yes, 0=no)",
+            "required": false,
+            "type": "integer",
+            "format": "int2",
+            "minimum": 0,
+            "maximum": 1,
+            "enum": [
+              0,
+              1
+            ]
+          },
+          {
+            "name": "envLayerTypeId",
+            "in": "query",
+            "description": "The type code id for this layer",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "metadata",
+            "in": "query",
+            "description": "Additional metadata to add to the layer",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "envLayerType",
+            "in": "query",
+            "description": "The type code for this layer",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "valUnits",
+            "in": "query",
+            "description": "The units for the values in each cell (such as degreesCelsius)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "gcmCode",
+            "in": "query",
+            "description": "GCM",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "alternatePredictionCode",
+            "in": "query",
+            "description": "Alternate prediction code",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "dateCode",
+            "in": "query",
+            "description": "Date code",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "The layer content as a file",
+            "required": true,
+            "type": "file"
+          }
+        ],
+        "tags": [
+          "Environmental Layer"
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful layer post",
+            "schema": {
+              "$ref": "#/definitions/Layer"
+            }
+          },
+          "400": {
+            "description": "Error status returned when there is a problem with the user inputs"
+          }
+        }
+      }
+    },
+    "/envlayer/count": {
+      "get": {
+        "summary": "Lifemapper environmental layers count services",
+        "description": "The environmental layers count service endpoint provides a service for\nreturning the number of environmental layers that match a set of query\nparameters.\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/EnvCode"
+          },
+          {
+            "$ref": "#/parameters/GCM"
+          },
+          {
+            "$ref": "#/parameters/AltPredCode"
+          },
+          {
+            "$ref": "#/parameters/DateCode"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/ScenarioCode"
+          },
+          {
+            "$ref": "#/parameters/ScenarioId"
+          }
+        ],
+        "tags": [
+          "Environmental Layer"
+        ],
+        "responses": {
+          "200": {
+            "description": "A count of environmental layers matching the criteria",
+            "schema": {
+              "$ref": "#/definitions/ObjectCount"
+            }
+          }
+        }
+      }
+    },
+    "/envlayer/{layerId}": {
+      "get": {
+        "summary": "Get an environmental layer",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathLayerId"
+          }
+        ],
+        "tags": [
+          "Environmental Layer"
+        ],
+        "produces": [
+          "application/json",
+          "image/tiff",
+          "application/vnd.google-earth.kml+xml",
+          "application/vnd.google-earth.kmz"
+        ],
+        "responses": {
+          "200": {
+            "description": "Layer object in specified format",
+            "schema": {
+              "$ref": "#/definitions/EnvLayer"
+            }
+          },
+          "403": {
+            "description": "Error status thrown when the user does not have permission to access an environmental layer"
+          },
+          "404": {
+            "description": "Error status thrown when the requested environmental layer was not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a layer that you own",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathLayerId"
+          }
+        ],
+        "tags": [
+          "Environmental Layer"
+        ],
+        "responses": {
+          "204": {
+            "description": "Returns an OK response that a layer is deleted"
+          },
+          "403": {
+            "description": "Error status thrown when the user does not have permission to delete an environmental layer"
+          },
+          "404": {
+            "description": "Error status thrown when the requested environmental layer was not found"
+          }
+        }
+      }
+    },
+    "/layer": {
+      "get": {
+        "summary": "Lifemapper layers listing services",
+        "description": "The layers endpoint provides a service for querying Lifemapper layers\nthat match a set of query parameters.\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Offset"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          },
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/Squid"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          }
+        ],
+        "tags": [
+          "Layer"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of layers that match the specified criteria",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Post a new layer",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "epsgCode",
+            "in": "query",
+            "description": "The EPSG code for the layer",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "A short name for the layer",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "isCategorical",
+            "in": "query",
+            "description": "An indicator if this layer is categorical or not (1=yes, 0=no)",
+            "required": false,
+            "type": "integer",
+            "format": "int2",
+            "minimum": 0,
+            "maximum": 1,
+            "enum": [
+              0,
+              1
+            ]
+          },
+          {
+            "name": "envLayerTypeId",
+            "in": "query",
+            "description": "The type code id for this layer",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "metadata",
+            "in": "query",
+            "description": "Additional metadata to add to the layer",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "envLayerType",
+            "in": "query",
+            "description": "The type code for this layer",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "valUnits",
+            "in": "query",
+            "description": "The units for the values in each cell (such as degreesCelsius)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "gcmCode",
+            "in": "query",
+            "description": "GCM",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "alternatePredictionCode",
+            "in": "query",
+            "description": "Alternate prediction code",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "dateCode",
+            "in": "query",
+            "description": "Date code",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "The layer content as a file",
+            "required": true,
+            "type": "file"
+          }
+        ],
+        "tags": [
+          "Layer"
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful layer post",
+            "schema": {
+              "$ref": "#/definitions/Layer"
+            }
+          },
+          "400": {
+            "description": "Error status thrown when there is a problem with user inputs"
+          }
+        }
+      }
+    },
+    "/layer/count": {
+      "get": {
+        "summary": "Lifemapper layers count service",
+        "description": "The layers endpoint provides a service counting how many Lifemapper \nlayers match a set of query parameters.\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/Squid"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          }
+        ],
+        "tags": [
+          "Layer"
+        ],
+        "responses": {
+          "200": {
+            "description": "The number of layers that match the specified criteria",
+            "schema": {
+              "$ref": "#/definitions/ObjectCount"
+            }
+          }
+        }
+      }
+    },
+    "/layer/{layerId}": {
+      "get": {
+        "summary": "Get a layer",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathLayerId"
+          }
+        ],
+        "tags": [
+          "Layer"
+        ],
+        "produces": [
+          "application/json",
+          "image/tiff",
+          "application/vnd.google-earth.kml+xml",
+          "application/vnd.google-earth.kmz"
+        ],
+        "responses": {
+          "200": {
+            "description": "Layer object in specified format",
+            "schema": {
+              "$ref": "#/definitions/Layer"
+            }
+          },
+          "403": {
+            "description": "Error status thrown when the user does not have permission to retrieve a layer"
+          },
+          "404": {
+            "description": "Error status thrown when the layer was not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a layer that you own",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathLayerId"
+          }
+        ],
+        "tags": [
+          "Layer"
+        ],
+        "responses": {
+          "204": {
+            "description": "Returns an OK response that a layer is deleted"
+          },
+          "403": {
+            "description": "Error status thrown when the user does not have permission to delete a layer"
+          },
+          "404": {
+            "description": "Error status thrown when the layer was not found"
+          }
+        }
+      }
+    },
+    "/occurrence": {
+      "get": {
+        "summary": "Get a list of occurrence sets that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Offset"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          },
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/MinimumNumberOfPoints"
+          },
+          {
+            "$ref": "#/parameters/DisplayName"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/Squid"
+          },
+          {
+            "$ref": "#/parameters/Status"
+          },
+          {
+            "$ref": "#/parameters/AfterStatus"
+          },
+          {
+            "$ref": "#/parameters/BeforeStatus"
+          }
+        ],
+        "tags": [
+          "Occurrence Layer"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of occurrence sets that match your criteria",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Post a new occurrence set",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "The occurrence set as a zipped shapefile",
+            "required": true,
+            "type": "file"
+          },
+          {
+            "$ref": "#/parameters/DisplayName"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/Metadata"
+          }
+        ],
+        "tags": [
+          "Occurrence Layer"
+        ],
+        "responses": {
+          "201": {
+            "description": "An occurrence set in the specified format",
+            "schema": {
+              "$ref": "#/definitions/OccurrenceSet"
+            }
+          },
+          "400": {
+            "description": "Error status returned when the user inputs are incorrect"
+          }
+        }
+      }
+    },
+    "/occurrence/count": {
+      "get": {
+        "summary": "Get a count of occurrence layers that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/MinimumNumberOfPoints"
+          },
+          {
+            "$ref": "#/parameters/DisplayName"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/Squid"
+          },
+          {
+            "$ref": "#/parameters/Status"
+          },
+          {
+            "$ref": "#/parameters/AfterStatus"
+          },
+          {
+            "$ref": "#/parameters/BeforeStatus"
+          }
+        ],
+        "tags": [
+          "Occurrence Layer"
+        ],
+        "responses": {
+          "200": {
+            "description": "A count of occurrence sets that match your criteria",
+            "schema": {
+              "$ref": "#/definitions/ObjectCount"
+            }
+          }
+        }
+      }
+    },
+    "/occurrence/{occurrenceSetId}": {
+      "get": {
+        "summary": "Get an occurrence set in the specified format",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathOccurrenceSetId"
+          }
+        ],
+        "tags": [
+          "Occurrence Layer"
+        ],
+        "produces": [
+          "application/json",
+          "application/x-gzip",
+          "application/vnd.google-earth.kml+xml",
+          "application/vnd.google-earth.kmz"
+        ],
+        "responses": {
+          "200": {
+            "description": "An occurrence set in the specified format",
+            "schema": {
+              "$ref": "#/definitions/OccurrenceSet"
+            }
+          },
+          "403": {
+            "description": "Error status thrown when the user does not have permission to access the occurrence layer"
+          },
+          "404": {
+            "description": "Error status thrown when the requested occurrence layer does not exist"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete an occurrence set you own",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathOccurrenceSetId"
+          }
+        ],
+        "tags": [
+          "Occurrence Layer"
+        ],
+        "responses": {
+          "204": {
+            "description": "OK message that an occurrence set was deleted"
+          },
+          "403": {
+            "description": "Error status thrown when the user does not have permission to delete the occurrence layer"
+          },
+          "404": {
+            "description": "Error status thrown when the requested occurrence layer does not exist"
+          }
+        }
+      }
+    },
+    "/sdmProject": {
+      "get": {
+        "summary": "Get a list of projections that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Offset"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          },
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/DisplayName"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/Status"
+          },
+          {
+            "$ref": "#/parameters/AfterStatus"
+          },
+          {
+            "$ref": "#/parameters/BeforeStatus"
+          },
+          {
+            "$ref": "#/parameters/OccurrenceSetId"
+          },
+          {
+            "$ref": "#/parameters/AlgorithmCode"
+          },
+          {
+            "$ref": "#/parameters/ModelScenarioCode"
+          },
+          {
+            "$ref": "#/parameters/ModelScenarioId"
+          },
+          {
+            "$ref": "#/parameters/ProjectScenarioCode"
+          },
+          {
+            "$ref": "#/parameters/ProjectScenarioId"
+          },
+          {
+            "$ref": "#/parameters/Squid"
+          }
+        ],
+        "tags": [
+          "SDM Projection"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of projections",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Post a group of projections",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "A projection(s) request post body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProjectionPOST"
+            }
+          }
+        ],
+        "tags": [
+          "SDM Projection"
+        ],
+        "responses": {
+          "202": {
+            "description": "A list of posted projection URLs",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          },
+          "400": {
+            "description": "Error status returned when there is a problem with user inputs"
+          }
+        }
+      }
+    },
+    "/sdmProject/count": {
+      "get": {
+        "summary": "Get a count of projections that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/DisplayName"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/Status"
+          },
+          {
+            "$ref": "#/parameters/AfterStatus"
+          },
+          {
+            "$ref": "#/parameters/BeforeStatus"
+          },
+          {
+            "$ref": "#/parameters/OccurrenceSetId"
+          },
+          {
+            "$ref": "#/parameters/AlgorithmCode"
+          },
+          {
+            "$ref": "#/parameters/ModelScenarioCode"
+          },
+          {
+            "$ref": "#/parameters/ModelScenarioId"
+          },
+          {
+            "$ref": "#/parameters/ProjectScenarioCode"
+          },
+          {
+            "$ref": "#/parameters/ProjectScenarioId"
+          },
+          {
+            "$ref": "#/parameters/Squid"
+          }
+        ],
+        "tags": [
+          "SDM Projection"
+        ],
+        "responses": {
+          "200": {
+            "description": "A count of items matching the criteria",
+            "schema": {
+              "$ref": "#/definitions/ObjectCount"
+            }
+          }
+        }
+      }
+    },
+    "/sdmProject/{projectionId}": {
+      "get": {
+        "summary": "Get a projection",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathProjectionId"
+          }
+        ],
+        "tags": [
+          "SDM Projection"
+        ],
+        "produces": [
+          "application/json",
+          "image/tiff",
+          "application/vnd.google-earth.kml+xml",
+          "application/vnd.google-earth.kmz"
+        ],
+        "responses": {
+          "200": {
+            "description": "Get a projection in the format you specify",
+            "schema": {
+              "$ref": "#/definitions/Projection"
+            }
+          },
+          "403": {
+            "description": "Error status raised when the user does not have permission to access a SDM projection object"
+          },
+          "404": {
+            "description": "Error status raised when the SDM projection object requested was not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a projection that you own",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathProjectionId"
+          }
+        ],
+        "tags": [
+          "SDM Projection"
+        ],
+        "responses": {
+          "204": {
+            "description": "OK Message that a projection was deleted"
+          },
+          "403": {
+            "description": "Error status raised when the user does not have permission to delete a SDM projection object"
+          },
+          "404": {
+            "description": "Error status raised when the SDM projection object requested was not found"
+          }
+        }
+      }
+    },
+    "/scenario": {
+      "get": {
+        "summary": "Get a list of scenarios that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Offset"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          },
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/GCM"
+          },
+          {
+            "$ref": "#/parameters/AltPredCode"
+          },
+          {
+            "$ref": "#/parameters/DateCode"
+          }
+        ],
+        "tags": [
+          "Scenario"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of scenarios matching the criteria",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Post a new climate scenario for SDM",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Scenario POST body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ScenarioPOST"
+            }
+          }
+        ],
+        "tags": [
+          "Scenario"
+        ],
+        "responses": {
+          "201": {
+            "description": "The posted scenario",
+            "schema": {
+              "$ref": "#/definitions/Scenario"
+            }
+          },
+          "400": {
+            "description": "Error status returned when there is a problem with user input"
+          }
+        }
+      }
+    },
+    "/scenario/count": {
+      "get": {
+        "summary": "Get the number of scenarios that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/GCM"
+          },
+          {
+            "$ref": "#/parameters/AltPredCode"
+          },
+          {
+            "$ref": "#/parameters/DateCode"
+          }
+        ],
+        "tags": [
+          "Scenario"
+        ],
+        "responses": {
+          "200": {
+            "description": "The number of scenarios matching the criteria",
+            "schema": {
+              "$ref": "#/definitions/ObjectCount"
+            }
+          }
+        }
+      }
+    },
+    "/scenario/{scenarioId}": {
+      "get": {
+        "summary": "Get a scenario",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathScenarioId"
+          }
+        ],
+        "tags": [
+          "Scenario"
+        ],
+        "responses": {
+          "200": {
+            "description": "The scenario in the specified format",
+            "schema": {
+              "$ref": "#/definitions/Scenario"
+            }
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to access a scenario"
+          },
+          "404": {
+            "description": "Error status returned when the requested scenario does not exist"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a scenario that you own",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathScenarioId"
+          }
+        ],
+        "tags": [
+          "Scenario"
+        ],
+        "responses": {
+          "204": {
+            "description": "An OK message that the scenario was deleted"
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to delete a scenario"
+          },
+          "404": {
+            "description": "Error status returned when the requested scenario does not exist"
+          }
+        }
+      }
+    },
+    "/tree": {
+      "get": {
+        "summary": "Get a list of trees that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Offset"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          },
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          }
+        ],
+        "tags": [
+          "Tree"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of trees matching the criteria",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Post a new phylogenetic tree",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Tree POST body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TreePOST"
+            }
+          }
+        ],
+        "tags": [
+          "Tree"
+        ],
+        "responses": {
+          "201": {
+            "description": "The posted tree",
+            "schema": {
+              "$ref": "#/definitions/Tree"
+            }
+          },
+          "400": {
+            "description": "Error status returned when there is a problem with user input"
+          }
+        }
+      }
+    },
+    "/tree/count": {
+      "get": {
+        "summary": "Get the number of trees that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          }
+        ],
+        "tags": [
+          "Tree"
+        ],
+        "responses": {
+          "200": {
+            "description": "The number of trees matching the criteria",
+            "schema": {
+              "$ref": "#/definitions/ObjectCount"
+            }
+          }
+        }
+      }
+    },
+    "/tree/{treeId}": {
+      "get": {
+        "summary": "Get a tree",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathTreeId"
+          }
+        ],
+        "tags": [
+          "Tree"
+        ],
+        "responses": {
+          "200": {
+            "description": "The tree in the specified format",
+            "schema": {
+              "$ref": "#/definitions/Tree"
+            }
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to access a tree"
+          },
+          "404": {
+            "description": "Error status returned when the requested tree does not exist"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a tree that you own",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathTreeId"
+          }
+        ],
+        "tags": [
+          "Tree"
+        ],
+        "responses": {
+          "204": {
+            "description": "An OK message that the tree was deleted"
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to delete a tree"
+          },
+          "404": {
+            "description": "Error status returned when the requested tree does not exist"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Algorithm": {
+      "type": "object",
+      "required": [
+        "code",
+        "parameters"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "required": [
+              "name",
+              "value"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "AtomList": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/AtomObject"
+      }
+    },
+    "AtomObject": {
+      "type": "object",
+      "required": [
+        "epsg",
+        "id",
+        "modificationTime",
+        "name",
+        "url"
+      ],
+      "properties": {
+        "epsg": {
+          "type": "integer",
+          "description": "The EPSG code of the object"
+        },
+        "id": {
+          "type": "integer",
+          "description": "The id of the object"
+        },
+        "modificationTime": {
+          "type": "string",
+          "description": "The date / time this object was last modified"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the object"
+        },
+        "url": {
+          "type": "string",
+          "description": "A URL for more information about this object"
+        }
+      }
+    },
+    "EnvLayer": {
+      "type": "object",
+      "properties": {
+        "objectType": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "statusModTime": {
+          "type": "string",
+          "description": "The date / time this object was last modified"
+        },
+        "etag": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "map": {
+          "$ref": "#/definitions/Map"
+        },
+        "spatialRaster": {
+          "$ref": "#/definitions/SpatialRaster"
+        },
+        "envCode": {
+          "type": "string"
+        },
+        "gcmCode": {
+          "type": "string"
+        },
+        "altPredCode": {
+          "type": "string"
+        },
+        "dateCode": {
+          "type": "string"
+        }
+      }
+    },
+    "Layer": {
+      "type": "object",
+      "properties": {
+        "objectType": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "statusModTime": {
+          "type": "string",
+          "description": "The date / time this object was last modified"
+        },
+        "etag": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "spatialRaster": {
+          "$ref": "#/definitions/SpatialRaster"
+        }
+      }
+    },
+    "Map": {
+      "type": "object",
+      "properties": {
+        "ogcEndpoint": {
+          "type": "string"
+        },
+        "mapName": {
+          "type": "string"
+        },
+        "layerNames": {
+          "type": "array",
+          "items": {
+            "properties": {
+              "metadataUrl": {
+                "type": "string"
+              },
+              "layerName": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "ObjectCount": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer"
+        }
+      }
+    },
+    "ObjectRef": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "metadataUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "OccurrenceSet": {
+      "type": "object",
+      "properties": {
+        "objectType": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "statusModTime": {
+          "type": "string",
+          "description": "The date / time this object was last modified"
+        },
+        "etag": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "map": {
+          "$ref": "#/definitions/Map"
+        },
+        "spatialVector": {
+          "$ref": "#/definitions/SpatialVector"
+        },
+        "speciesName": {
+          "type": "string"
+        },
+        "squid": {
+          "type": "string"
+        }
+      }
+    },
+    "Projection": {
+      "type": "object",
+      "properties": {
+        "objectType": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer"
+        },
+        "statusModTime": {
+          "type": "string",
+          "description": "The date / time this object was last modified"
+        },
+        "etag": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "map": {
+          "$ref": "#/definitions/Map"
+        },
+        "spatialRaster": {
+          "$ref": "#/definitions/SpatialRaster"
+        },
+        "algorithm": {
+          "$ref": "#/definitions/Algorithm"
+        },
+        "modelScenario": {
+          "$ref": "#/definitions/ScenarioRef"
+        },
+        "projectionScenario": {
+          "$ref": "#/definitions/ScenarioRef"
+        },
+        "speciesName": {
+          "type": "string"
+        },
+        "squid": {
+          "type": "string"
+        },
+        "occurrenceSet": {
+          "$ref": "#/definitions/ObjectRef"
+        }
+      }
+    },
+    "ProjectionPOST": {
+      "type": "object",
+      "description": "The projection POST object is flexible in that you can specify one or\nmore projections with a single request.  An SDM model is created, but not\nreturned, for every algorithm / occurrence set / model scenario\ncombination.  An SDM projection object is created for every algorithm /\noccurrence set / model scenario / projection scenario combination\n",
+      "required": [
+        "algorithms",
+        "occurrenceSets",
+        "modelScenario",
+        "projectionScenarios"
+      ],
+      "properties": {
+        "algorithms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Algorithm"
+          }
+        },
+        "occurrenceSets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "Choose one of the available properties for each item in the array",
+            "properties": {
+              "occurrenceSetId": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "modelScenario": {
+          "type": "object",
+          "description": "Pick one of the options. Only scenario d is enabled now",
+          "properties": {
+            "scenarioId": {
+              "type": "integer"
+            },
+            "scenarioCode": {
+              "type": "string"
+            }
+          }
+        },
+        "projectionScenarios": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "Use one or the other",
+            "properties": {
+              "scenarioId": {
+                "type": "integer"
+              },
+              "scenarioCode": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "Scenario": {
+      "type": "object",
+      "properties": {
+        "objectType": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "metadataUrl": {
+          "type": "string"
+        },
+        "etag": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "map": {
+          "$ref": "#/definitions/Map"
+        },
+        "spatial": {
+          "$ref": "#/definitions/Spatial"
+        },
+        "environmentalCode": {
+          "type": "string"
+        },
+        "gcmCode": {
+          "type": "string"
+        },
+        "alternatePrediction": {
+          "type": "string"
+        },
+        "dateCode": {
+          "type": "string"
+        },
+        "envTypeId": {
+          "type": "string"
+        }
+      }
+    },
+    "ScenarioPOST": {
+      "type": "object",
+      "properties": {
+        "scenarioCode": {
+          "type": "string",
+          "description": "The code to use for the scenario"
+        },
+        "epsgCode": {
+          "type": "string"
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "resolution": {
+          "type": "number"
+        },
+        "units": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "ScenarioRef": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "metadataUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "Spatial": {
+      "type": "object",
+      "properties": {
+        "epsg": {
+          "type": "string"
+        },
+        "bbox": {
+          "type": "string"
+        },
+        "mapUnits": {
+          "type": "string"
+        },
+        "resolution": {
+          "type": "number"
+        }
+      }
+    },
+    "SpatialRaster": {
+      "type": "object",
+      "properties": {
+        "epsg": {
+          "type": "string"
+        },
+        "bbox": {
+          "type": "string"
+        },
+        "mapUnits": {
+          "type": "string"
+        },
+        "resolution": {
+          "type": "number"
+        },
+        "dataUrl": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "gdalType": {
+          "type": "string"
+        },
+        "dataFormat": {
+          "type": "string"
+        },
+        "minVal": {
+          "type": "number"
+        },
+        "maxVal": {
+          "type": "number"
+        },
+        "valueUnits": {
+          "type": "string"
+        },
+        "dataType": {
+          "type": "string"
+        }
+      }
+    },
+    "SpatialVector": {
+      "type": "object",
+      "properties": {
+        "epsg": {
+          "type": "string"
+        },
+        "bbox": {
+          "type": "string"
+        },
+        "mapUnits": {
+          "type": "string"
+        },
+        "resolution": {
+          "type": "number"
+        },
+        "dataUrl": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "ogrType": {
+          "type": "string"
+        },
+        "dataFormat": {
+          "type": "string"
+        },
+        "numFeatures": {
+          "type": "integer"
+        }
+      }
+    },
+    "Tree": {
+      "type": "object"
+    },
+    "TreePOST": {
+      "type": "object"
+    }
+  },
+  "parameters": {
+    "PathLayerId": {
+      "name": "layerId",
+      "in": "path",
+      "description": "The id of the layer to use",
+      "required": true,
+      "type": "integer"
+    },
+    "PathOccurrenceSetId": {
+      "name": "occurrenceSetId",
+      "in": "path",
+      "description": "The id of the occurrence set to use",
+      "required": true,
+      "type": "integer"
+    },
+    "PathProjectionId": {
+      "name": "projectionId",
+      "in": "path",
+      "description": "The id of the projection",
+      "required": true,
+      "type": "integer"
+    },
+    "PathScenarioId": {
+      "name": "scenarioId",
+      "in": "path",
+      "description": "The id of the scenario",
+      "required": true,
+      "type": "integer"
+    },
+    "PathTreeId": {
+      "name": "treeId",
+      "in": "path",
+      "description": "The id of the tree",
+      "required": true,
+      "type": "integer"
+    },
+    "AfterStatus": {
+      "name": "afterStatus",
+      "in": "query",
+      "description": "Return items with a status greater than this value",
+      "required": false,
+      "type": "integer"
+    },
+    "AfterTime": {
+      "name": "afterTime",
+      "in": "query",
+      "description": "Return experiments modified after this time",
+      "required": false,
+      "type": "string"
+    },
+    "AlgorithmCode": {
+      "name": "algorithmCode",
+      "in": "query",
+      "description": "Return experiments that were built using this algorithm",
+      "required": false,
+      "type": "string"
+    },
+    "AltPredCode": {
+      "name": "altPredCode",
+      "in": "query",
+      "description": "Alternate prediction code",
+      "required": false,
+      "type": "string"
+    },
+    "BeforeStatus": {
+      "name": "beforeStatus",
+      "in": "query",
+      "description": "Return items with a status less than this value",
+      "required": false,
+      "type": "integer"
+    },
+    "BeforeTime": {
+      "name": "beforeTime",
+      "in": "query",
+      "description": "Return experiments modified before this time",
+      "required": false,
+      "type": "string"
+    },
+    "DateCode": {
+      "name": "dateCode",
+      "in": "query",
+      "description": "Date code",
+      "required": false,
+      "type": "string"
+    },
+    "DisplayName": {
+      "name": "displayName",
+      "in": "query",
+      "description": "Return experiments that have occurrence sets with a display name like this",
+      "required": false,
+      "type": "string"
+    },
+    "EnvCode": {
+      "name": "envCode",
+      "in": "query",
+      "description": "Return items with this env code",
+      "required": false,
+      "type": "string"
+    },
+    "EPSG": {
+      "name": "epsgCode",
+      "in": "query",
+      "description": "Return experiments built using this EPSG code",
+      "required": false,
+      "type": "integer",
+      "format": "integer"
+    },
+    "GCM": {
+      "name": "gcm",
+      "in": "query",
+      "description": "General Circulation Model",
+      "required": false,
+      "type": "string",
+      "format": "string"
+    },
+    "Limit": {
+      "name": "limit",
+      "in": "query",
+      "description": "The maximum number of records to return",
+      "required": false,
+      "type": "integer",
+      "format": "integer",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "Metadata": {
+      "name": "metadata",
+      "in": "query",
+      "description": "Additional metadata in JSON format",
+      "required": false,
+      "type": "string"
+    },
+    "ModelScenarioCode": {
+      "name": "mdlScenCode",
+      "in": "query",
+      "description": "Only return items built with this modeling scenario",
+      "required": false,
+      "type": "string"
+    },
+    "ModelScenarioId": {
+      "name": "mdlScenId",
+      "in": "query",
+      "description": "Only return items built with this modeling scenario",
+      "required": false,
+      "type": "integer"
+    },
+    "MinimumNumberOfPoints": {
+      "name": "minimumNumberOfPoints",
+      "in": "query",
+      "description": "Only return occurrence sets with at least this number of points",
+      "required": false,
+      "type": "integer",
+      "minimum": 0
+    },
+    "OccurrenceSetId": {
+      "name": "occurrenceSetId",
+      "in": "query",
+      "description": "Return experiments built using this occurrence set",
+      "required": false,
+      "type": "integer",
+      "format": "integer"
+    },
+    "Offset": {
+      "name": "offset",
+      "in": "query",
+      "description": "A number of records to skip before beginning return",
+      "required": false,
+      "type": "integer",
+      "format": "integer",
+      "minimum": 0
+    },
+    "ProjectScenarioCode": {
+      "name": "prjScenCode",
+      "in": "query",
+      "description": "Only return items built with this SDM projection scenario",
+      "required": false,
+      "type": "string"
+    },
+    "ProjectScenarioId": {
+      "name": "prjScenId",
+      "in": "query",
+      "description": "Only return items built with this SDM projection scenario",
+      "required": false,
+      "type": "integer"
+    },
+    "Public": {
+      "name": "public",
+      "in": "query",
+      "description": "If this is 1, return public objects, else return only private content if this is 0",
+      "required": false,
+      "type": "integer",
+      "format": "int2",
+      "minimum": 0,
+      "maximum": 1,
+      "enum": [
+        0,
+        1
+      ]
+    },
+    "ScenarioCode": {
+      "name": "scenarioCode",
+      "in": "query",
+      "description": "Return objects thatare in or used this scenario",
+      "required": false,
+      "type": "string"
+    },
+    "ScenarioId": {
+      "name": "scenarioId",
+      "in": "query",
+      "description": "Return objects thatare in or used this scenario",
+      "required": false,
+      "type": "integer",
+      "minimum": 0
+    },
+    "Squid": {
+      "name": "squid",
+      "in": "query",
+      "description": "Return items with this squid",
+      "required": false,
+      "type": "string"
+    },
+    "Status": {
+      "name": "status",
+      "in": "query",
+      "description": "If provided, only return items with the status indicated (see before and after status)",
+      "required": false,
+      "type": "integer",
+      "format": "integer"
+    }
+  }
+}
