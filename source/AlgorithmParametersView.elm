@@ -108,7 +108,7 @@ view : Index -> Model -> Html Msg
 view index model =
     let
         parameterView idx ( name, value ) =
-            li []
+            li [ Options.css "padding" "4px" ]
                 [ Button.render Mdl
                     (2 :: idx :: index)
                     model.mdl
@@ -144,22 +144,23 @@ view index model =
                     []
                 ]
     in
-        ul []
+        ul [ Options.css "padding" "0" ]
             (List.indexedMap parameterView model.parameters
-                ++ [ li []
-                        [ Options.span [ Options.css "width" "64px", Options.css "display" "inline-block" ] []
+                ++ [ li [ Options.css "padding" "4px" ]
+                        [ Options.span [] []
                         , Textfield.render Mdl
                             (0 :: (List.length model.parameters) :: index)
                             model.mdl
-                            [ Textfield.label "New Parameter Name"
+                            [ Textfield.label "Name"
                             , Options.onInput (AddParam Name)
                             , Options.css "margin-right" "8px"
+                            , Options.css "margin-left" "64px"
                             ]
                             []
                         , Textfield.render Mdl
                             (1 :: (List.length model.parameters) :: index)
                             model.mdl
-                            [ Textfield.label "New Parameter Value"
+                            [ Textfield.label "Value"
                             , Options.onInput (AddParam Value)
                             ]
                             []

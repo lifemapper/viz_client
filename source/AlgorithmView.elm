@@ -10,9 +10,9 @@ import Decoder
 import Html exposing (..)
 import Material
 import Material.Helpers exposing (lift)
-import Material.Options as Options exposing (css)
+import Material.Options as Options
 import Material.Textfield as Textfield
-import Material.Grid as Grid
+import Material.Card as Card
 import Material.Scheme
 import AlgorithmParametersView
 
@@ -63,24 +63,12 @@ update msg model =
             lift .parameters (\m x -> { m | parameters = x }) AlgorithmParametersMsg AlgorithmParametersView.update a model
 
 
-table : List (Html m) -> Grid.Cell m
-table contents =
-    Grid.cell
-        []
-        [ Options.div
-            [ css "display" "inline-flex"
-            , css "flex-direction" "column"
-            , css "width" "auto"
-            ]
-            contents
-        ]
-
-
 view : Index -> Model -> Html Msg
 view index model =
-    Grid.grid []
-        [ table
-            [ Textfield.render Mdl
+    Card.view [ Options.css "width" "400px" ]
+        [ Card.title []
+            [ Card.head [] [ text "Algorithm" ]
+            , Textfield.render Mdl
                 (0 :: index)
                 model.mdl
                 [ Textfield.label "Code"
@@ -89,7 +77,9 @@ view index model =
                 , Textfield.floatingLabel
                 ]
                 []
-            , h4 [] [ text "Parameters" ]
+            ]
+        , Card.text []
+            [ Card.head [] [ text "Parameters" ]
             , Html.map AlgorithmParametersMsg <| AlgorithmParametersView.view (1 :: index) <| model.parameters
             ]
         ]
