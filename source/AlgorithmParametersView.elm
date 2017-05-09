@@ -1,12 +1,13 @@
 module AlgorithmParametersView exposing (..)
 
+import Html exposing (Html)
 import Material
 import Material.Textfield as Textfield
 import Material.Button as Button
 import Material.Icon as Icon
-import Material.Scheme
 import Material.Options as Options
-import Html exposing (..)
+import Material.List exposing (ul, li)
+import Material.Scheme
 import Decoder
     exposing
         ( Algorithm(..)
@@ -107,14 +108,26 @@ view : Index -> Model -> Html Msg
 view index model =
     let
         parameterView idx ( name, value ) =
-            p []
-                [ Textfield.render Mdl
+            li []
+                [ Button.render Mdl
+                    (2 :: idx :: index)
+                    model.mdl
+                    [ Button.minifab
+                    , Options.onClick (Clear idx)
+                    , Options.css "width" "64px"
+                    ]
+                    [ Icon.i "clear" ]
+                , Textfield.render Mdl
                     (0 :: idx :: index)
                     model.mdl
                     [ Textfield.label "Name"
                     , Textfield.value name
                     , Options.onInput (Upd8 idx Name)
-                    , Textfield.floatingLabel
+                    , if idx == 0 then
+                        Textfield.floatingLabel
+                      else
+                        Options.nop
+                    , Options.css "margin-right" "8px"
                     ]
                     []
                 , Textfield.render Mdl
@@ -123,26 +136,24 @@ view index model =
                     [ Textfield.label "Value"
                     , Textfield.value value
                     , Options.onInput (Upd8 idx Value)
-                    , Textfield.floatingLabel
+                    , if idx == 0 then
+                        Textfield.floatingLabel
+                      else
+                        Options.nop
                     ]
                     []
-                , Button.render Mdl
-                    (2 :: idx :: index)
-                    model.mdl
-                    [ Button.minifab
-                    , Options.onClick (Clear idx)
-                    ]
-                    [ Icon.i "clear" ]
                 ]
     in
-        div []
+        ul []
             (List.indexedMap parameterView model.parameters
-                ++ [ p []
-                        [ Textfield.render Mdl
+                ++ [ li []
+                        [ Options.span [ Options.css "width" "64px", Options.css "display" "inline-block" ] []
+                        , Textfield.render Mdl
                             (0 :: (List.length model.parameters) :: index)
                             model.mdl
                             [ Textfield.label "New Parameter Name"
                             , Options.onInput (AddParam Name)
+                            , Options.css "margin-right" "8px"
                             ]
                             []
                         , Textfield.render Mdl
