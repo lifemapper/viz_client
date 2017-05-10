@@ -37,6 +37,12 @@ initFromDecoder (AlgorithmParameters params) =
     }
 
 
+toAlgorithmParameters : Model -> AlgorithmParameters
+toAlgorithmParameters { parameters } =
+    AlgorithmParameters <|
+        List.map (\( name, value ) -> AlgorithmParametersItem { name = name, value = value }) parameters
+
+
 init : Model
 init =
     { parameters = []

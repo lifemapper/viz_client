@@ -36,6 +36,14 @@ initFromDecoder (Algorithm { code, parameters }) =
     }
 
 
+toAlgorithm : Model -> Algorithm
+toAlgorithm { code, parameters } =
+    Algorithm
+        { code = code
+        , parameters = AlgorithmParametersView.toAlgorithmParameters parameters
+        }
+
+
 init : Model
 init =
     { code = ""
@@ -52,7 +60,7 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "Message" msg of
+    case msg of
         Mdl msg_ ->
             Material.update Mdl msg_ model
 
