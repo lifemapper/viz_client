@@ -8,12 +8,11 @@ import Decoder
         , AlgorithmParametersItem(..)
         )
 import Html exposing (Html)
+import Html.Attributes as Attributes
 import Material
 import Material.Helpers exposing (lift)
 import Material.Options as Options
-import Material.Textfield as Textfield
 import Material.Card as Card
-import Material.List as L
 import Material.Scheme
 import ParameterView
 import AlgorithmDefinition as D
@@ -91,7 +90,7 @@ view index model =
     Card.view [ Options.css "width" "400px" ]
         [ Card.title [] [ Card.head [] [ Html.text model.definition.name ] ]
         , Card.text []
-            [ L.ul [ Options.css "padding" "0" ] <|
+            [ Html.ul [ Attributes.style [ ( "padding", "0" ), ( "list-style", "none" ) ] ] <|
                 List.indexedMap (parameterView index) (Array.toList model.parameters)
             ]
         ]

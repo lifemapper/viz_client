@@ -1,17 +1,13 @@
 module ParameterView exposing (..)
 
 import Html exposing (Html)
+import Html.Attributes as Attributes
 import Material
 import Material.Textfield as Textfield
-import Material.Button as Button
-import Material.Icon as Icon
 import Material.Options as Options
 import Material.Tooltip as Tooltip
 import Material.Toggles as Toggles
-import Material.Typography as Typography
-import Material.List as L
 import Material.Scheme
-import Decoder exposing (AlgorithmParametersItem(..))
 import AlgorithmDefinition as D
 
 
@@ -100,58 +96,52 @@ view idx model =
 
 viewField : Index -> Model -> Html Msg
 viewField idx model =
-    L.li [ Options.css "padding" "4px" ]
-        [ L.content []
-            [ Textfield.render Mdl
-                (0 :: idx)
-                model.mdl
-                [ Textfield.label model.definition.displayName
-                , Textfield.value model.value
-                , Options.onInput Update
-                , Textfield.floatingLabel
-                , renderValidation model
-                , Tooltip.attach Mdl (1 :: idx)
-                ]
-                []
-            , Tooltip.render Mdl
-                (1 :: idx)
-                model.mdl
-                []
-                [ Html.text model.definition.doc ]
+    Html.li [ Attributes.style [ ( "padding", "4px" ) ] ]
+        [ Textfield.render Mdl
+            (0 :: idx)
+            model.mdl
+            [ Textfield.label model.definition.displayName
+            , Textfield.value model.value
+            , Options.onInput Update
+            , Textfield.floatingLabel
+            , renderValidation model
+            , Tooltip.attach Mdl (1 :: idx)
             ]
+            []
+        , Tooltip.render Mdl
+            (1 :: idx)
+            model.mdl
+            []
+            [ Html.text model.definition.doc ]
         ]
 
 
 viewOptions : Index -> Model -> Html Msg
 viewOptions idx model =
-    L.li [ Options.css "padding" "4px" ]
-        [ L.content []
-            [ Html.p [] [ Html.text model.definition.displayName ]
-            , L.ul [ Options.css "margin" "0", Options.css "padding" "0" ]
-                (List.indexedMap (optionView idx model) model.definition.options)
-            ]
+    Html.li [ Attributes.style [ ( "padding", "4px" ) ] ]
+        [ Html.p [] [ Html.text model.definition.displayName ]
+        , Html.ul [ Attributes.style [ ( "margin", "0" ), ( "padding", "0" ), ("list-style", "none") ] ]
+            (List.indexedMap (optionView idx model) model.definition.options)
         ]
 
 
 optionView : Index -> Model -> Int -> D.ParameterOption -> Html Msg
 optionView idx model i option =
-    L.li []
-        [ L.content []
-            [ Toggles.radio Mdl
-                (i :: idx)
-                model.mdl
-                [ Toggles.group (toString idx)
-                , Toggles.value (toString option.value == model.value)
-                , Options.onToggle (Update <| toString option.value)
-                ]
-                [ Html.text option.name ]
+    Html.li []
+        [ Toggles.radio Mdl
+            (i :: idx)
+            model.mdl
+            [ Toggles.group (toString idx)
+            , Toggles.value (toString option.value == model.value)
+            , Options.onToggle (Update <| toString option.value)
             ]
+            [ Html.text option.name ]
         ]
 
 
 exView : Model -> Html Msg
 exView model =
-    L.ul [ Options.css "padding" "0" ]
+    Html.ul [ Attributes.style [ ( "padding", "0" ) ] ]
         [ view [] model ]
 
 
