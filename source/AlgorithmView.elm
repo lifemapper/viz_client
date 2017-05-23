@@ -1,19 +1,22 @@
 module AlgorithmView exposing (..)
 
+import Array
 import Decoder
     exposing
         ( Algorithm(..)
         , AlgorithmParameters(..)
         , AlgorithmParametersItem(..)
         )
-import Html exposing (..)
+import Html exposing (Html)
 import Material
 import Material.Helpers exposing (lift)
 import Material.Options as Options
 import Material.Textfield as Textfield
 import Material.Card as Card
+import Material.List as L
 import Material.Scheme
-import AlgorithmParametersView
+import ParameterView
+import AlgorithmDefinition as D
 
 
 type alias Index =
@@ -21,40 +24,38 @@ type alias Index =
 
 
 type alias Model =
-    { code : String
-    , parameters : AlgorithmParametersView.Model
+    { definition : D.Algorithm
+    , parameters : Array.Array ParameterView.Model
     , mdl : Material.Model
     }
 
 
-initFromDecoder : Algorithm -> Model
-initFromDecoder (Algorithm { code, parameters }) =
-    { code = code
-    , parameters = AlgorithmParametersView.initFromDecoder parameters
-    , mdl = Material.model
-    }
+
+-- initFromDecoder : Algorithm -> Model
+-- initFromDecoder (Algorithm { code, parameters }) =
+--     { code = code
+--     , parameters = AlgorithmParametersView.initFromDecoder parameters
+--     , mdl = Material.model
+--     }
+-- toAlgorithm : Model -> Algorithm
+-- toAlgorithm { code, parameters } =
+--     Algorithm
+--         { code = code
+--         , parameters = AlgorithmParametersView.toAlgorithmParameters parameters
+--         }
 
 
-toAlgorithm : Model -> Algorithm
-toAlgorithm { code, parameters } =
-    Algorithm
-        { code = code
-        , parameters = AlgorithmParametersView.toAlgorithmParameters parameters
-        }
-
-
-init : Model
-init =
-    { code = ""
-    , parameters = AlgorithmParametersView.init
+init : D.Algorithm -> Model
+init def =
+    { definition = def
+    , parameters = Array.fromList <| List.map ParameterView.init def.parameters
     , mdl = Material.model
     }
 
 
 type Msg
     = Mdl (Material.Msg Msg)
-    | UpdateCode String
-    | AlgorithmParametersMsg AlgorithmParametersView.Msg
+    | ParameterMsg Int ParameterView.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -63,38 +64,52 @@ update msg model =
         Mdl msg_ ->
             Material.update Mdl msg_ model
 
-        UpdateCode code ->
-            ( { model | code = code }, Cmd.none )
+        ParameterMsg i a ->
+            lift
+                (\m ->
+                    case Array.get i m.parameters of
+                        Just m ->
+                            m
 
-        AlgorithmParametersMsg a ->
-            lift .parameters (\m x -> { m | parameters = x }) AlgorithmParametersMsg AlgorithmParametersView.update a model
+                        Nothing ->
+                            Debug.crash "what?"
+                )
+                (\m x -> { m | parameters = Array.set i x m.parameters })
+                (ParameterMsg i)
+                ParameterView.update
+                a
+                model
+
+
+parameterView : Index -> Int -> ParameterView.Model -> Html Msg
+parameterView index i model =
+    Html.map (ParameterMsg i) <| ParameterView.view (i :: index) <| model
 
 
 view : Index -> Model -> Html Msg
 view index model =
     Card.view [ Options.css "width" "400px" ]
-        [ Card.title []
-            [ Card.head [] [ text "Algorithm" ]
-            , Textfield.render Mdl
-                (0 :: index)
-                model.mdl
-                [ Textfield.label "Code"
-                , Textfield.value model.code
-                , Options.onInput UpdateCode
-                , Textfield.floatingLabel
-                ]
-                []
-            ]
+        [ Card.title [] [ Card.head [] [ Html.text model.definition.name ] ]
         , Card.text []
-            [ Card.head [] [ text "Parameters" ]
-            , Html.map AlgorithmParametersMsg <| AlgorithmParametersView.view (1 :: index) <| model.parameters
+            [ L.ul [ Options.css "padding" "0" ] <|
+                List.indexedMap (parameterView index) (Array.toList model.parameters)
             ]
         ]
 
 
+exampleAlgorithm : D.Algorithm
+exampleAlgorithm =
+    case List.head (List.drop 3 D.algorithms) of
+        Nothing ->
+            Debug.crash "No example algorithm def"
+
+        Just a ->
+            a
+
+
 main =
     Html.program
-        { init = ( init, Material.init Mdl )
+        { init = ( init exampleAlgorithm, Material.init Mdl )
         , view = view [] >> Material.Scheme.top
         , update = update
         , subscriptions =

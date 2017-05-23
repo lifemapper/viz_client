@@ -9,7 +9,7 @@ import Material.Options as Options
 import Material.Tooltip as Tooltip
 import Material.Toggles as Toggles
 import Material.Typography as Typography
-import Material.List exposing (ul, li)
+import Material.List as L
 import Material.Scheme
 import Decoder exposing (AlgorithmParametersItem(..))
 import AlgorithmDefinition as D
@@ -76,8 +76,8 @@ update msg model =
             ( { model | value = value, validationResult = validate model.definition value }, Cmd.none )
 
 
-renderValidation
-    : { a | validationResult : ValidationResult }
+renderValidation :
+    { a | validationResult : ValidationResult }
     -> Textfield.Property m
 renderValidation model =
     case model.validationResult of
@@ -93,57 +93,65 @@ view idx model =
     case model.definition.options of
         [] ->
             viewField idx model
+
         _ ->
             viewOptions idx model
 
+
 viewField : Index -> Model -> Html Msg
 viewField idx model =
-    li [ Options.css "padding" "4px" ]
-        [ Textfield.render Mdl
-            (0 :: idx)
-            model.mdl
-            [ Textfield.label model.definition.displayName
-            , Textfield.value model.value
-            , Options.onInput Update
-            , Textfield.floatingLabel
-            , renderValidation model
-            , Tooltip.attach Mdl (1 :: idx)
+    L.li [ Options.css "padding" "4px" ]
+        [ L.content []
+            [ Textfield.render Mdl
+                (0 :: idx)
+                model.mdl
+                [ Textfield.label model.definition.displayName
+                , Textfield.value model.value
+                , Options.onInput Update
+                , Textfield.floatingLabel
+                , renderValidation model
+                , Tooltip.attach Mdl (1 :: idx)
+                ]
+                []
+            , Tooltip.render Mdl
+                (1 :: idx)
+                model.mdl
+                []
+                [ Html.text model.definition.doc ]
             ]
-            []
-        , Tooltip.render Mdl
-            (1 :: idx)
-            model.mdl
-            []
-            [ Html.text model.definition.doc ]
         ]
 
 
 viewOptions : Index -> Model -> Html Msg
 viewOptions idx model =
-    li [ Options.css "padding" "4px" ]
-        [ Options.span [ Typography.headline ] [ Html.text model.definition.displayName ]
-        , ul [ Options.css "margin" "0", Options.css "padding" "0" ]
-            (List.indexedMap (optionView idx model) model.definition.options)
+    L.li [ Options.css "padding" "4px" ]
+        [ L.content []
+            [ Html.p [] [ Html.text model.definition.displayName ]
+            , L.ul [ Options.css "margin" "0", Options.css "padding" "0" ]
+                (List.indexedMap (optionView idx model) model.definition.options)
+            ]
         ]
 
 
 optionView : Index -> Model -> Int -> D.ParameterOption -> Html Msg
 optionView idx model i option =
-    li []
-        [ Toggles.radio Mdl
-            (i :: idx)
-            model.mdl
-            [ Toggles.group (toString idx)
-            , Toggles.value (toString option.value == model.value)
-            , Options.onToggle (Update <| toString option.value)
+    L.li []
+        [ L.content []
+            [ Toggles.radio Mdl
+                (i :: idx)
+                model.mdl
+                [ Toggles.group (toString idx)
+                , Toggles.value (toString option.value == model.value)
+                , Options.onToggle (Update <| toString option.value)
+                ]
+                [ Html.text option.name ]
             ]
-            [ Html.text option.name ]
         ]
 
 
 exView : Model -> Html Msg
 exView model =
-    ul [ Options.css "padding" "0" ]
+    L.ul [ Options.css "padding" "0" ]
         [ view [] model ]
 
 
