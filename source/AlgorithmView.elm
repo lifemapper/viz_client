@@ -89,7 +89,8 @@ view : Index -> Model -> Html Msg
 view index model =
     Card.view [ Options.css "width" "400px" ]
         [ Card.title [] [ Card.head [] [ Html.text model.definition.name ] ]
-        , Card.text []
+        , Card.text [] [ Html.text model.definition.description ]
+        , Card.actions []
             [ Html.ul [ Attributes.style [ ( "padding", "0" ), ( "list-style", "none" ) ] ] <|
                 List.indexedMap (parameterView index) (Array.toList model.parameters)
             ]
@@ -98,7 +99,7 @@ view index model =
 
 exampleAlgorithm : D.Algorithm
 exampleAlgorithm =
-    case List.head (List.drop 3 D.algorithms) of
+    case List.head (List.drop 4 D.algorithms) of
         Nothing ->
             Debug.crash "No example algorithm def"
 
