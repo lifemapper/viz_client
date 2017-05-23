@@ -7,6 +7,8 @@ import Material.Button as Button
 import Material.Icon as Icon
 import Material.Options as Options
 import Material.Tooltip as Tooltip
+import Material.Toggles as Toggles
+import Material.Typography as Typography
 import Material.List exposing (ul, li)
 import Material.Scheme
 import Decoder exposing (AlgorithmParametersItem(..))
@@ -30,10 +32,10 @@ type alias Model =
     }
 
 
-init : Model
-init =
-    { definition = exampleParameter
-    , value = ""
+init : D.Parameter -> Model
+init def =
+    { definition = def
+    , value = Maybe.withDefault "" def.default
     , validationResult = Valid
     , mdl = Material.model
     }
@@ -74,6 +76,9 @@ update msg model =
             ( { model | value = value, validationResult = validate model.definition value }, Cmd.none )
 
 
+renderValidation
+    : { a | validationResult : ValidationResult }
+    -> Textfield.Property m
 renderValidation model =
     case model.validationResult of
         Valid ->
@@ -85,6 +90,14 @@ renderValidation model =
 
 view : Index -> Model -> Html Msg
 view idx model =
+    case model.definition.options of
+        [] ->
+            viewField idx model
+        _ ->
+            viewOptions idx model
+
+viewField : Index -> Model -> Html Msg
+viewField idx model =
     li [ Options.css "padding" "4px" ]
         [ Textfield.render Mdl
             (0 :: idx)
@@ -102,6 +115,29 @@ view idx model =
             model.mdl
             []
             [ Html.text model.definition.doc ]
+        ]
+
+
+viewOptions : Index -> Model -> Html Msg
+viewOptions idx model =
+    li [ Options.css "padding" "4px" ]
+        [ Options.span [ Typography.headline ] [ Html.text model.definition.displayName ]
+        , ul [ Options.css "margin" "0", Options.css "padding" "0" ]
+            (List.indexedMap (optionView idx model) model.definition.options)
+        ]
+
+
+optionView : Index -> Model -> Int -> D.ParameterOption -> Html Msg
+optionView idx model i option =
+    li []
+        [ Toggles.radio Mdl
+            (i :: idx)
+            model.mdl
+            [ Toggles.group (toString idx)
+            , Toggles.value (toString option.value == model.value)
+            , Options.onToggle (Update <| toString option.value)
+            ]
+            [ Html.text option.name ]
         ]
 
 
@@ -123,7 +159,7 @@ exampleAlgorithm =
 
 exampleParameter : D.Parameter
 exampleParameter =
-    case List.head exampleAlgorithm.parameters of
+    case List.head (List.drop 3 exampleAlgorithm.parameters) of
         Nothing ->
             Debug.crash "Example algorithm has no params"
 
@@ -134,7 +170,7 @@ exampleParameter =
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( init, Material.init Mdl )
+        { init = ( init exampleParameter, Material.init Mdl )
         , view = exView >> Material.Scheme.top
         , update = update
         , subscriptions =
