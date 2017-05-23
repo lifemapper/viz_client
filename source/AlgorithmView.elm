@@ -1,6 +1,5 @@
 module AlgorithmView exposing (..)
 
-import List
 import Decoder
     exposing
         ( Algorithm(..)
