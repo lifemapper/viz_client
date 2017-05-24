@@ -15,26 +15,25 @@ type alias Index =
     List Int
 
 
-type ValidationResult
-    = Valid
-    | Invalid String
-
-
 type alias Model =
     { definition : D.Parameter
     , value : String
-    , validationResult : ValidationResult
+    , validationResult : Result String String
     , mdl : Material.Model
     }
 
 
 init : D.Parameter -> Model
 init def =
-    { definition = def
-    , value = Maybe.withDefault "" def.default
-    , validationResult = Valid
-    , mdl = Material.model
-    }
+    let
+        initValue =
+            Maybe.withDefault "" def.default
+    in
+        { definition = def
+        , value = initValue
+        , validationResult = validate def initValue
+        , mdl = Material.model
+        }
 
 
 type Msg
@@ -42,24 +41,60 @@ type Msg
     | Update String
 
 
-validate : D.Parameter -> String -> ValidationResult
+boundErrMsg : Order -> comparable -> String
+boundErrMsg reject bound =
+    (case reject of
+        LT ->
+            "Value must not be less than "
+
+        GT ->
+            "Value must not be greater than "
+
+        EQ ->
+            "Value must not equal "
+    )
+        ++ (toString bound)
+        ++ "."
+
+
+checkBound : Maybe comparable -> Order -> comparable -> Result String comparable
+checkBound bound reject value =
+    Maybe.withDefault (Ok value) <|
+        Maybe.map
+            (\b ->
+                if compare value b /= reject then
+                    Ok value
+                else
+                    Err (boundErrMsg reject b)
+            )
+            bound
+
+
+checkBounds :
+    (String -> Result String comparable)
+    -> Maybe String
+    -> Maybe String
+    -> String
+    -> Result String String
+checkBounds parse min max value =
+    let
+        maybeParse =
+            (parse >> Result.toMaybe) |> Maybe.andThen
+    in
+        parse value
+            |> Result.andThen (checkBound (maybeParse min) LT)
+            |> Result.andThen (checkBound (maybeParse max) GT)
+            |> Result.map (always value)
+
+
+validate : D.Parameter -> String -> Result String String
 validate definition value =
     case definition.dataType of
         D.IntegerParam ->
-            case String.toInt value of
-                Ok v ->
-                    Valid
-
-                Err err ->
-                    Invalid err
+            checkBounds String.toInt definition.min definition.max value
 
         D.FloatParam ->
-            case String.toFloat value of
-                Ok v ->
-                    Valid
-
-                Err err ->
-                    Invalid err
+            checkBounds String.toFloat definition.min definition.max value
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -72,15 +107,13 @@ update msg model =
             ( { model | value = value, validationResult = validate model.definition value }, Cmd.none )
 
 
-renderValidation :
-    { a | validationResult : ValidationResult }
-    -> Textfield.Property m
+renderValidation : Model -> Textfield.Property m
 renderValidation model =
     case model.validationResult of
-        Valid ->
+        Ok _ ->
             Options.nop
 
-        Invalid error ->
+        Err error ->
             Textfield.error error
 
 
@@ -120,7 +153,7 @@ viewOptions : Index -> Model -> Html Msg
 viewOptions idx model =
     Html.li [ Attributes.style [ ( "padding", "4px" ) ] ]
         [ Html.p [] [ Html.text model.definition.displayName ]
-        , Html.ul [ Attributes.style [ ( "margin", "0" ), ( "padding", "0" ), ("list-style", "none") ] ]
+        , Html.ul [ Attributes.style [ ( "margin", "0" ), ( "padding", "0" ), ( "list-style", "none" ) ] ]
             (List.indexedMap (optionView idx model) model.definition.options)
         ]
 
