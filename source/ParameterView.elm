@@ -1,5 +1,6 @@
 module ParameterView exposing (..)
 
+import Dict
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Material
@@ -123,8 +124,13 @@ view idx model =
         [] ->
             viewField idx model
 
-        _ ->
-            viewOptions idx model
+        options ->
+            case List.filter (\{ name } -> name /= "Yes" && name /= "No") options of
+                [] ->
+                    viewSwitch idx model
+
+                _ ->
+                    viewOptions idx model
 
 
 viewField : Index -> Model -> Html Msg
@@ -170,6 +176,35 @@ optionView idx model i option =
             ]
             [ Html.text option.name ]
         ]
+
+
+viewSwitch : Index -> Model -> Html Msg
+viewSwitch idx model =
+    let
+        options =
+            model.definition.options
+                |> List.map (\{ name, value } -> ( name, value ))
+                |> Dict.fromList
+
+        yes =
+            options |> Dict.get "Yes" |> Maybe.map toString |> Maybe.withDefault ""
+
+        no =
+            options |> Dict.get "No" |> Maybe.map toString |> Maybe.withDefault ""
+
+        toggle =
+            if model.value == yes then
+                Update no
+            else
+                Update yes
+    in
+        Html.li [ Attributes.style [ ( "padding", "4px" ) ] ]
+            [ Toggles.switch Mdl
+                idx
+                model.mdl
+                [ Options.onToggle toggle, Toggles.value (model.value == yes) ]
+                [ Html.text model.definition.displayName ]
+            ]
 
 
 exView : Model -> Html Msg
