@@ -18,10 +18,7 @@ import Material.Card as Card
 import Material.Scheme
 import ParameterView
 import AlgorithmDefinition as D
-
-
-type alias Index =
-    List Int
+import Helpers exposing (Index, unsafeGet)
 
 
 type alias Model =
@@ -77,20 +74,13 @@ update msg model =
         Mdl msg_ ->
             Material.update Mdl msg_ model
 
-        ParameterMsg i a ->
+        ParameterMsg i msg_ ->
             lift
-                (\m ->
-                    case Array.get i m.parameters of
-                        Just m ->
-                            m
-
-                        Nothing ->
-                            Debug.crash "what?"
-                )
+                (.parameters >> unsafeGet i)
                 (\m x -> { m | parameters = Array.set i x m.parameters })
                 (ParameterMsg i)
                 ParameterView.update
-                a
+                msg_
                 model
 
 
@@ -126,7 +116,7 @@ parametersView index model =
 
 view : Index -> Model -> Html Msg
 view index model =
-    Card.view [  Elevation.e2 ]
+    Card.view [ Elevation.e2 ]
         [ Card.title [] [ Card.head [] [ Html.text model.definition.name ] ]
         , Card.text []
             (descriptionView model :: parametersView index model)

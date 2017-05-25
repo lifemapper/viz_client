@@ -10,10 +10,7 @@ import Material.Tooltip as Tooltip
 import Material.Toggles as Toggles
 import Material.Scheme
 import AlgorithmDefinition as D
-
-
-type alias Index =
-    List Int
+import Helpers exposing (Index)
 
 
 type alias Model =

@@ -8,10 +8,7 @@ import Material.Grid as Grid exposing (Cell, Device(..), grid, cell)
 import Material.Helpers exposing (lift)
 import AlgorithmView
 import AlgorithmDefinition as D
-
-
-type alias Index =
-    List Int
+import Helpers exposing (Index, unsafeGet)
 
 
 type alias Model =
@@ -33,14 +30,7 @@ update msg model =
 
         AlgorithmMsg i msg_ ->
             lift
-                (\m ->
-                    case Array.get i m.algorithms of
-                        Just m ->
-                            m
-
-                        Nothing ->
-                            Debug.crash "what?"
-                )
+                (.algorithms >> unsafeGet i)
                 (\m x -> { m | algorithms = Array.set i x m.algorithms })
                 (AlgorithmMsg i)
                 AlgorithmView.update
