@@ -41,7 +41,7 @@ update msg model =
         AlgorithmMsg i msg_ ->
             case msg_ of
                 AlgorithmView.Remove ->
-                    ( { model | algorithms = removeElem i model.algorithms} , Cmd.none)
+                    ( { model | algorithms = removeElem i model.algorithms }, Cmd.none )
 
                 _ ->
                     lift
@@ -68,13 +68,20 @@ update msg model =
             ( { model | selectedAlg = Just def }, Cmd.none )
 
         AddAlg def ->
-            ( { model
-                | algorithms = Array.push (AlgorithmView.init def) model.algorithms
-                , selectedAlg = Nothing
-                , addAlgRaised = False
-              }
-            , Cmd.none
-            )
+            ( addAlgorithm def model, Cmd.none )
+
+
+addAlgorithm : D.Algorithm -> Model -> Model
+addAlgorithm def model =
+    let
+        alg =
+            AlgorithmView.init def
+    in
+        { model
+            | algorithms = Array.push { alg | mouseIn = True } model.algorithms
+            , selectedAlg = Nothing
+            , addAlgRaised = False
+        }
 
 
 viewAlgorithm : Index -> Int -> AlgorithmView.Model -> Cell Msg

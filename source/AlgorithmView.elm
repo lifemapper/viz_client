@@ -12,6 +12,7 @@ import Html.Attributes as Attributes
 import Material
 import Material.Elevation as Elevation
 import Material.Button as Button
+import Material.Icon as Icon
 import Material.Helpers exposing (lift)
 import Material.Options as Options
 import Material.Card as Card
@@ -132,15 +133,15 @@ view index model =
         , Options.onMouseLeave (MouseIn False)
         ]
         [ Card.title [] [ Card.head [] [ Html.text model.definition.name ] ]
-        , Card.text []
-            (descriptionView model :: parametersView index model)
-        , Card.actions [ Card.border ]
+        , Card.menu []
             [ Button.render Mdl
                 (-1 :: index)
                 model.mdl
-                [ Options.onClick Remove ]
-                [ Html.text "Remove" ]
+                [ Button.icon, Options.onClick Remove ]
+                [ Icon.i "delete" ]
             ]
+        , Card.text []
+            (descriptionView model :: parametersView index model)
         ]
 
 
