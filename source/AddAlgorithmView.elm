@@ -58,6 +58,7 @@ view model =
             Elevation.e2
         , Options.onMouseEnter (Raise True)
         , Options.onMouseLeave (Raise False)
+        , Options.css "width" "100%"
         ]
         [ Card.title []
             [ Card.head [] [ Html.text "Add Algorithm" ]

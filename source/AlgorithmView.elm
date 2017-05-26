@@ -136,6 +136,7 @@ view index model =
         , Elevation.e2 |> Options.when (not <| raised model)
         , Options.onMouseEnter (MouseIn True)
         , Options.onMouseLeave (MouseIn False)
+        , Options.css "width" "100%"
         ]
         [ Card.title [] [ Card.head [] [ Html.text model.definition.name ] ]
         , Card.menu []
