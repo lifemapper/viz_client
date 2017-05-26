@@ -13,7 +13,7 @@ import Material.List as L
 import Material.Helpers exposing (lift)
 import AlgorithmView
 import AlgorithmDefinition as D
-import Helpers exposing (Index, unsafeGet)
+import Helpers exposing (Index, unsafeGet, removeElem)
 
 
 type alias Model =
@@ -39,13 +39,18 @@ update msg model =
             Material.update Mdl msg_ model
 
         AlgorithmMsg i msg_ ->
-            lift
-                (.algorithms >> unsafeGet i)
-                (\m x -> { m | algorithms = Array.set i x m.algorithms })
-                (AlgorithmMsg i)
-                AlgorithmView.update
-                msg_
-                model
+            case msg_ of
+                AlgorithmView.Remove ->
+                    ( { model | algorithms = removeElem i model.algorithms} , Cmd.none)
+
+                _ ->
+                    lift
+                        (.algorithms >> unsafeGet i)
+                        (\m x -> { m | algorithms = Array.set i x m.algorithms })
+                        (AlgorithmMsg i)
+                        AlgorithmView.update
+                        msg_
+                        model
 
         RaiseAddAlg s ->
             ( { model
@@ -105,7 +110,7 @@ newAlgorithm index model =
                         Html.text "Select a new algorithm to add to the project."
                     ]
                 , Card.actions [ Card.border ]
-                    [case model.selectedAlg of
+                    [ case model.selectedAlg of
                         Just i ->
                             Button.render Mdl
                                 index

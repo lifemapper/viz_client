@@ -25,7 +25,7 @@ type alias Model =
     { definition : D.Algorithm
     , parameters : Array.Array ParameterView.Model
     , truncateDesc : Bool
-    , expandParams : Bool
+    , mouseIn : Bool
     , mdl : Material.Model
     }
 
@@ -50,7 +50,7 @@ init def =
     { definition = def
     , parameters = Array.fromList <| List.map ParameterView.init def.parameters
     , truncateDesc = True
-    , expandParams = False
+    , mouseIn = False
     , mdl = Material.model
     }
 
@@ -59,7 +59,8 @@ type Msg
     = Mdl (Material.Msg Msg)
     | ParameterMsg Int ParameterView.Msg
     | ToggleDesc
-    | ToggleParams
+    | MouseIn Bool
+    | Remove
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -68,8 +69,11 @@ update msg model =
         ToggleDesc ->
             ( { model | truncateDesc = not model.truncateDesc }, Cmd.none )
 
-        ToggleParams ->
-            ( { model | expandParams = not model.expandParams }, Cmd.none )
+        MouseIn mouseIn ->
+            ( { model | mouseIn = mouseIn }, Cmd.none )
+
+        Remove ->
+            ( model, Cmd.none )
 
         Mdl msg_ ->
             Material.update Mdl msg_ model
@@ -84,6 +88,11 @@ update msg model =
                 model
 
 
+raised : Model -> Bool
+raised model =
+    model.mouseIn || (model.parameters |> Array.filter (\p -> p.focused) |> Array.isEmpty |> not)
+
+
 descriptionView : Model -> Html Msg
 descriptionView model =
     let
@@ -92,7 +101,7 @@ descriptionView model =
     in
         Options.styled Html.p
             [ Options.onClick ToggleDesc ]
-            [ if model.truncateDesc && String.length desc > 100 then
+            [ if ((not <| raised model) || model.truncateDesc) && String.length desc > 100 then
                 Html.text <| (String.left 100 desc) ++ "..."
               else
                 Html.text desc
@@ -106,7 +115,7 @@ parameterView index i model =
 
 parametersView : Index -> Model -> List (Html Msg)
 parametersView index model =
-    if model.expandParams then
+    if raised model then
         [ List.indexedMap (parameterView index) (Array.toList model.parameters)
             |> Html.ul [ Attributes.style [ ( "padding", "0" ), ( "list-style", "none" ) ] ]
         ]
@@ -116,7 +125,12 @@ parametersView index model =
 
 view : Index -> Model -> Html Msg
 view index model =
-    Card.view [ Elevation.e2 ]
+    Card.view
+        [ Elevation.e8 |> Options.when (raised model)
+        , Elevation.e2 |> Options.when (not <| raised model)
+        , Options.onMouseEnter (MouseIn True)
+        , Options.onMouseLeave (MouseIn False)
+        ]
         [ Card.title [] [ Card.head [] [ Html.text model.definition.name ] ]
         , Card.text []
             (descriptionView model :: parametersView index model)
@@ -124,15 +138,8 @@ view index model =
             [ Button.render Mdl
                 (-1 :: index)
                 model.mdl
-                [ Options.onClick ToggleParams
-                ]
-                [ Html.text
-                    (if model.expandParams then
-                        "Hide Parameters"
-                     else
-                        "Show Parameters"
-                    )
-                ]
+                [ Options.onClick Remove ]
+                [ Html.text "Remove" ]
             ]
         ]
 

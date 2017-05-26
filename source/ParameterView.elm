@@ -17,6 +17,7 @@ type alias Model =
     { definition : D.Parameter
     , value : String
     , validationResult : Result String String
+    , focused : Bool
     , mdl : Material.Model
     }
 
@@ -30,6 +31,7 @@ init def =
         { definition = def
         , value = initValue
         , validationResult = validate def initValue
+        , focused = False
         , mdl = Material.model
         }
 
@@ -37,6 +39,7 @@ init def =
 type Msg
     = Mdl (Material.Msg Msg)
     | Update String
+    | Focused Bool
 
 
 boundErrMsg : Order -> comparable -> String
@@ -104,6 +107,9 @@ update msg model =
         Update value ->
             ( { model | value = value, validationResult = validate model.definition value }, Cmd.none )
 
+        Focused focused ->
+            ( { model | focused = focused }, Cmd.none )
+
 
 renderValidation : Model -> Textfield.Property m
 renderValidation model =
@@ -142,6 +148,8 @@ viewField idx model =
             , Textfield.floatingLabel
             , renderValidation model
             , Tooltip.attach Mdl (1 :: idx)
+            , Options.onFocus (Focused True)
+            , Options.onBlur (Focused False)
             ]
             []
         , Tooltip.render Mdl
@@ -170,6 +178,8 @@ optionView idx model i option =
             [ Toggles.group (toString idx)
             , Toggles.value (toString option.value == model.value)
             , Options.onToggle (Update <| toString option.value)
+            , Options.onFocus (Focused True)
+            , Options.onBlur (Focused False)
             ]
             [ Html.text option.name ]
         ]
@@ -199,7 +209,11 @@ viewSwitch idx model =
             [ Toggles.switch Mdl
                 idx
                 model.mdl
-                [ Options.onToggle toggle, Toggles.value (model.value == yes) ]
+                [ Options.onToggle toggle
+                , Toggles.value (model.value == yes)
+                , Options.onFocus (Focused True)
+                , Options.onBlur (Focused False)
+                ]
                 [ Html.text model.definition.displayName ]
             ]
 
