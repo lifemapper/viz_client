@@ -77,14 +77,16 @@ availableAlgorithms : Model -> List (Html Msg)
 availableAlgorithms model =
     let
         li i def =
-            L.li
+            Options.styled Html.li
                 [ Options.onMouseOver <| Expand (Just i)
                 , Color.text Color.accent |> Options.when (model.expanded == Just i)
                 , Options.onClick <| Add def
+                , Options.css "cursor" "pointer"
                 ]
-                [ L.content [] [ Html.text def.name ] ]
+                [ Html.text def.name ]
     in
-        [ L.ul [] <| List.indexedMap li D.algorithms
+        [ List.indexedMap li D.algorithms
+            |> Options.styled Html.ul [ Options.css "margin-top" "0", Options.css "padding-left" "20px" ]
         , Options.styled Html.p
             []
             [ model.expanded
