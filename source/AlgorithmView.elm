@@ -89,6 +89,11 @@ update msg model =
                 model
 
 
+setRaised : Bool -> Model -> Model
+setRaised raised model =
+    { model | mouseIn = raised }
+
+
 raised : Model -> Bool
 raised model =
     model.mouseIn || (model.parameters |> Array.filter (\p -> p.focused) |> Array.isEmpty |> not)
