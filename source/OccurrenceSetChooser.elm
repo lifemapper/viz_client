@@ -1,6 +1,7 @@
 module OccurrenceSetChooser exposing (..)
 
 import Decoder exposing (AtomObjectRecord, AtomList(..), decodeAtomList, AtomObject(..))
+import Char
 import Helpers exposing (Index)
 import Http
 import Html exposing (Html)
@@ -31,8 +32,17 @@ update msg model =
         Mdl msg_ ->
             Material.update Mdl msg_ model
 
-        UpdateSearchText s ->
-            ( { model | searchText = s }, getOccurrenceSets s )
+        UpdateSearchText text ->
+            case String.uncons text of
+                Just ( c, rest ) ->
+                    let
+                        text =
+                            String.cons (Char.toUpper c) rest
+                    in
+                        ( { model | searchText = text }, getOccurrenceSets text )
+
+                Nothing ->
+                    ( { model | searchText = text }, Cmd.none )
 
         GotOccurrenceSets (Ok (AtomList atoms)) ->
             let
@@ -47,19 +57,16 @@ update msg model =
 
 getOccurrenceSets : String -> Cmd Msg
 getOccurrenceSets searchText =
-    if searchText == "" then
-        Cmd.none
-    else
-        Http.request
-            { method = "GET"
-            , headers = [ Http.header "Accept" "application/json" ]
-            , url = searchUrl searchText
-            , body = Http.emptyBody
-            , expect = Http.expectJson decodeAtomList
-            , timeout = Nothing
-            , withCredentials = False
-            }
-            |> Http.send GotOccurrenceSets
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = searchUrl searchText
+        , body = Http.emptyBody
+        , expect = Http.expectJson decodeAtomList
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send GotOccurrenceSets
 
 
 searchUrl : String -> String
