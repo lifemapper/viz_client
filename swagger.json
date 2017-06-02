@@ -280,6 +280,280 @@
         }
       }
     },
+    "/gridset": {
+      "get": {
+        "summary": "Lifemapper grid sets listing service",
+        "description": "The gridset endpoint provides a service for querying Lifemapper \ngridsets that match a set of query parameters\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Offset"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          },
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/MetaString"
+          },
+          {
+            "$ref": "#/parameters/ShapegridId"
+          }
+        ],
+        "tags": [
+          "Grid Set"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a list of grid sets atoms",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          }
+        }
+      }
+    },
+    "/gridset/count": {
+      "get": {
+        "summary": "Lifemapper grid sets counting service",
+        "description": "The grid sets endpoint provides a service counting how many Lifemapper \ngrid sets match a set of query parameters.\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/MetaString"
+          },
+          {
+            "$ref": "#/parameters/ShapegridId"
+          }
+        ],
+        "tags": [
+          "Grid Set"
+        ],
+        "responses": {
+          "200": {
+            "description": "The number of grid sets that match the specified criteria",
+            "schema": {
+              "$ref": "#/definitions/ObjectCount"
+            }
+          }
+        }
+      }
+    },
+    "/gridset/{gridsetId}/": {
+      "get": {
+        "summary": "Lifemapper grid set service",
+        "description": "The grid set service endpoint returns a specific grid set\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          }
+        ],
+        "tags": [
+          "Grid Set"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a grid set object",
+            "schema": {
+              "$ref": "#/definitions/GridSet"
+            }
+          }
+        }
+      }
+    },
+    "/gridset/{gridsetId}/matrix": {
+      "get": {
+        "summary": "Lifemapper gridset matrix listing service",
+        "description": "The matrix endpoint for a grid set provides a servic for querying \nLifemapper matrices that match a set of query parameters\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          },
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/AltPredCode"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/DateCode"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/GCM"
+          },
+          {
+            "$ref": "#/parameters/Keyword"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          },
+          {
+            "$ref": "#/parameters/MatrixType"
+          },
+          {
+            "$ref": "#/parameters/Offset"
+          },
+          {
+            "$ref": "#/parameters/Status"
+          }
+        ],
+        "tags": [
+          "Matrix"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a list of matrix atoms",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          }
+        }
+      }
+    },
+    "/gridset/{gridsetId}/matrix/count": {
+      "get": {
+        "summary": "Lifemapper gridset matrix count service",
+        "description": "The matrix endpoint for a grid set provides a service for querying \nLifemapper matrices that match a set of query parameters\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          },
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/AltPredCode"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/DateCode"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/GCM"
+          },
+          {
+            "$ref": "#/parameters/Keyword"
+          },
+          {
+            "$ref": "#/parameters/MatrixType"
+          },
+          {
+            "$ref": "#/parameters/Status"
+          }
+        ],
+        "tags": [
+          "Matrix"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the number of matching matrices",
+            "schema": {
+              "$ref": "#/definitions/ObjectCount"
+            }
+          }
+        }
+      }
+    },
+    "/gridset/{gridsetId}/matrix/{matrixId}": {
+      "get": {
+        "summary": "Lifemapper gridset matrix service",
+        "description": "The matrix endpoint for a grid set provides a service for retrieving a  \nLifemapper matrix\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          },
+          {
+            "$ref": "#/parameters/PathMatrixId"
+          }
+        ],
+        "tags": [
+          "Matrix"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a matrix",
+            "schema": {
+              "$ref": "#/definitions/Matrix"
+            }
+          },
+          "403": {
+            "description": "Error status thrown when the user does not have permission to access a matrix"
+          },
+          "404": {
+            "description": "Error status thrown when the requested matrix was not found"
+          }
+        }
+      }
+    },
+    "/gridset/{gridsetId}/matrix/{matrixId}/column": {
+      "get": {
+        "summary": "Lifemapper gridset matrix column service",
+        "description": "The matrix endpoint for a grid set provides a service for listing \nmatrix columns\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          },
+          {
+            "$ref": "#/parameters/PathMatrixId"
+          }
+        ],
+        "tags": [
+          "Matrix Column"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns a matrix column atom list",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          },
+          "403": {
+            "description": "Error status thrown when the user does not have permission to access a matrix"
+          },
+          "404": {
+            "description": "Error status thrown when the requested matrix was not found"
+          }
+        }
+      }
+    },
     "/layer": {
       "get": {
         "summary": "Lifemapper layers listing services",
@@ -1086,6 +1360,133 @@
         }
       }
     },
+    "/shapegrid": {
+      "get": {
+        "summary": "Get a list of shapegrids that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Offset"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          },
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/CellSides"
+          },
+          {
+            "$ref": "#/parameters/CellSize"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          }
+        ],
+        "tags": [
+          "Shapegrid"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of shapegrids matching the criteria",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          }
+        }
+      }
+    },
+    "/shapegrid/count": {
+      "get": {
+        "summary": "Get the number of shapegrids that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Public"
+          },
+          {
+            "$ref": "#/parameters/CellSides"
+          },
+          {
+            "$ref": "#/parameters/CellSize"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          }
+        ],
+        "tags": [
+          "Shapegrid"
+        ],
+        "responses": {
+          "200": {
+            "description": "The number of shapegrids matching the criteria",
+            "schema": {
+              "$ref": "#/definitions/ObjectCount"
+            }
+          }
+        }
+      }
+    },
+    "/shapegrid/{shapegridId}": {
+      "get": {
+        "summary": "Get a shapegrid",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathShapegridId"
+          }
+        ],
+        "tags": [
+          "Shapegrid"
+        ],
+        "responses": {
+          "200": {
+            "description": "The shapegrid in the specified format",
+            "schema": {
+              "$ref": "#/definitions/Shapegrid"
+            }
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to access a shapegrid"
+          },
+          "404": {
+            "description": "Error status returned when the requested shapegrid does not exist"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a shapegrid that you own",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathShapegridId"
+          }
+        ],
+        "tags": [
+          "Shapegrid"
+        ],
+        "responses": {
+          "204": {
+            "description": "An OK message that the shapegrid was deleted"
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to delete a shapegrid"
+          },
+          "404": {
+            "description": "Error status returned when the requested shapegrid does not exist"
+          }
+        }
+      }
+    },
     "/tree": {
       "get": {
         "summary": "Get a list of trees that match your criteria",
@@ -1100,10 +1501,25 @@
             "$ref": "#/parameters/Public"
           },
           {
-            "$ref": "#/parameters/BeforeTime"
+            "$ref": "#/parameters/TreeName"
+          },
+          {
+            "$ref": "#/parameters/IsBinary"
+          },
+          {
+            "$ref": "#/parameters/IsUltrametric"
+          },
+          {
+            "$ref": "#/parameters/HasBranchLengths"
+          },
+          {
+            "$ref": "#/parameters/MetaString"
           },
           {
             "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
           }
         ],
         "tags": [
@@ -1155,10 +1571,25 @@
             "$ref": "#/parameters/Public"
           },
           {
-            "$ref": "#/parameters/BeforeTime"
+            "$ref": "#/parameters/TreeName"
+          },
+          {
+            "$ref": "#/parameters/IsBinary"
+          },
+          {
+            "$ref": "#/parameters/IsUltrametric"
+          },
+          {
+            "$ref": "#/parameters/HasBranchLengths"
+          },
+          {
+            "$ref": "#/parameters/MetaString"
           },
           {
             "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
           }
         ],
         "tags": [
@@ -1340,6 +1771,9 @@
         }
       }
     },
+    "GridSet": {
+      "type": "object"
+    },
     "Layer": {
       "type": "object",
       "properties": {
@@ -1397,6 +1831,10 @@
         }
       }
     },
+    "Matrix": {
+      "type": "object"
+    },
+    "MatrixColumn": "type",
     "ObjectCount": {
       "type": "object",
       "properties": {
@@ -1674,6 +2112,9 @@
         }
       }
     },
+    "Shapegrid": {
+      "type": "object"
+    },
     "SpatialRaster": {
       "type": "object",
       "properties": {
@@ -1755,10 +2196,31 @@
     }
   },
   "parameters": {
+    "PathGridsetId": {
+      "name": "gridsetId",
+      "in": "path",
+      "description": "The id of the grid set to use",
+      "required": true,
+      "type": "integer"
+    },
     "PathLayerId": {
       "name": "layerId",
       "in": "path",
       "description": "The id of the layer to use",
+      "required": true,
+      "type": "integer"
+    },
+    "PathMatrixId": {
+      "name": "matrixId",
+      "in": "path",
+      "description": "The id of the matrix to use",
+      "required": true,
+      "type": "integer"
+    },
+    "PathMatrixColumnId": {
+      "name": "matrixColumnId",
+      "in": "path",
+      "description": "The id of the matrix column to use",
       "required": true,
       "type": "integer"
     },
@@ -1780,6 +2242,13 @@
       "name": "scenarioId",
       "in": "path",
       "description": "The id of the scenario",
+      "required": true,
+      "type": "integer"
+    },
+    "PathShapegridId": {
+      "name": "shapegridId",
+      "in": "path",
+      "description": "The id of a shapegrid",
       "required": true,
       "type": "integer"
     },
@@ -1832,6 +2301,24 @@
       "required": false,
       "type": "string"
     },
+    "CellSides": {
+      "name": "cellSides",
+      "in": "query",
+      "description": "Count or list shapegrids that have this many sides per cell (4 - square, 6 - hexagon)",
+      "required": false,
+      "type": "int",
+      "enum": [
+        4,
+        6
+      ]
+    },
+    "CellSize": {
+      "name": "cellSize",
+      "in": "query",
+      "description": "Count or list shapegrids that have cells of this size (in units of shapegrid)",
+      "required": false,
+      "type": "number"
+    },
     "DateCode": {
       "name": "dateCode",
       "in": "query",
@@ -1869,6 +2356,55 @@
       "type": "string",
       "format": "string"
     },
+    "HasBranchLengths": {
+      "name": "hasBranchLengths",
+      "in": "query",
+      "description": "If this is 1, count or list trees with branch lengths",
+      "required": false,
+      "type": "integer",
+      "format": "int2",
+      "minimum": 0,
+      "maximum": 1,
+      "enum": [
+        0,
+        1
+      ]
+    },
+    "IsBinary": {
+      "name": "isBinary",
+      "in": "query",
+      "description": "If this is 1, count or list binary trees",
+      "required": false,
+      "type": "integer",
+      "format": "int2",
+      "minimum": 0,
+      "maximum": 1,
+      "enum": [
+        0,
+        1
+      ]
+    },
+    "IsUltrametric": {
+      "name": "isUltrametric",
+      "in": "query",
+      "description": "If this is 1, count or list ultrametric trees",
+      "required": false,
+      "type": "integer",
+      "format": "int2",
+      "minimum": 0,
+      "maximum": 1,
+      "enum": [
+        0,
+        1
+      ]
+    },
+    "Keyword": {
+      "name": "keyword",
+      "in": "query",
+      "description": "A comma-separated string of keywords",
+      "required": false,
+      "type": "string"
+    },
     "Limit": {
       "name": "limit",
       "in": "query",
@@ -1879,10 +2415,35 @@
       "minimum": 1,
       "maximum": 1000
     },
+    "MatrixType": {
+      "name": "matrixType",
+      "in": "query",
+      "description": "Integer code of the matrix type to list or count.  \nPAM - 1, GRIM - 2, BIOGEO - 3, Rolling PAM - 10,  Padded PAM - 101, \nMCPA Output - 201\n",
+      "required": false,
+      "type": "integer",
+      "format": "int",
+      "minimum": 0,
+      "maximum": 201,
+      "enum": [
+        1,
+        2,
+        3,
+        10,
+        101,
+        201
+      ]
+    },
     "Metadata": {
       "name": "metadata",
       "in": "query",
       "description": "Additional metadata in JSON format",
+      "required": false,
+      "type": "string"
+    },
+    "MetaString": {
+      "name": "metaString",
+      "in": "query",
+      "description": "If provided, list or count trees with this meta string",
       "required": false,
       "type": "string"
     },
@@ -1968,6 +2529,13 @@
       "type": "integer",
       "minimum": 0
     },
+    "ShapegridId": {
+      "name": "shapegridId",
+      "in": "query",
+      "description": "The id of a shapegrid to use for query",
+      "required": false,
+      "type": "integer"
+    },
     "Squid": {
       "name": "squid",
       "in": "query",
@@ -1982,6 +2550,13 @@
       "required": false,
       "type": "integer",
       "format": "integer"
+    },
+    "TreeName": {
+      "name": "treeName",
+      "in": "query",
+      "description": "If provided, return or count trees with this name",
+      "required": false,
+      "type": "string"
     }
   }
 }

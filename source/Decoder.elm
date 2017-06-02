@@ -160,6 +160,20 @@ decodeEnvLayerMetadata =
         |> map EnvLayerMetadata
 
 
+type alias GridSetRecord =
+    {}
+
+
+type GridSet
+    = GridSet GridSetRecord
+
+
+decodeGridSet : Decoder GridSet
+decodeGridSet =
+    decode GridSetRecord
+        |> map GridSet
+
+
 type alias LayerRecord =
     { spatialRaster : Maybe SpatialRaster
     , metadata : Maybe LayerMetadata
@@ -252,6 +266,34 @@ decodeMapLayerNamesItem =
         |> maybe "layerName" string
         |> maybe "metadataUrl" string
         |> map MapLayerNamesItem
+
+
+type alias MatrixRecord =
+    {}
+
+
+type Matrix
+    = Matrix MatrixRecord
+
+
+decodeMatrix : Decoder Matrix
+decodeMatrix =
+    decode MatrixRecord
+        |> map Matrix
+
+
+type alias MatrixColumnRecord =
+    {}
+
+
+type MatrixColumn
+    = MatrixColumn MatrixColumnRecord
+
+
+decodeMatrixColumn : Decoder MatrixColumn
+decodeMatrixColumn =
+    decode MatrixColumnRecord
+        |> map MatrixColumn
 
 
 type alias ObjectCountRecord =
@@ -650,6 +692,20 @@ decodeSpatial =
         |> maybe "bbox" string
         |> maybe "epsg" string
         |> map Spatial
+
+
+type alias ShapegridRecord =
+    {}
+
+
+type Shapegrid
+    = Shapegrid ShapegridRecord
+
+
+decodeShapegrid : Decoder Shapegrid
+decodeShapegrid =
+    decode ShapegridRecord
+        |> map Shapegrid
 
 
 type alias SpatialRasterRecord =
