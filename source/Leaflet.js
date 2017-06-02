@@ -1,29 +1,41 @@
 "use strict";
 
 var app = Elm.Main.fullscreen();
+var map = null;
+var mapState = null;
+var wmsLayer = null;
 
-var maps = {};
+var id = "leaflet-map";
 
-app.ports.drawMap.subscribe(function([id, view]) {
-    window.setTimeout(function() {
-        var map = L.map(id, {crs: L.CRS.EPSG4326}).setView([view.lat, view.lon], view.zoom);
-        maps[id] = map;
+window.setInterval(function() {
+    var div = document.getElementById(id);
+    if (div == null && map != null) {
+        map.remove();
+        map = null;
+    } else if (div != null && map == null && mapState != null) {
+        addMap();
+    }
+}, 100);
 
-        var wmsOptions = {
-            mapName: 'scen_AR5-CCSM4-RCP8.5-2070-10min',
+function updateMap() {
+    if (map != null) {
+        if (wmsLayer != null) map.removeLayer(wmsLayer);
+
+        wmsLayer = mapState == null ? null : L.tileLayer.wms(mapState.endPoint, {
+            mapName: mapState.mapName,
             format: 'image/png',
             version: '1.1.0',
-            layers: 'bio1-AR5-CCSM4-RCP8.5-2070-10min'
-        };
+            layers: mapState.layers.join(',')
+        }).addTo(map);
+    }
+}
 
-        var wmsLayer = L.tileLayer.wms('http://notyeti-191.lifemapper.org/api/v2/ogc?', wmsOptions).addTo(map);
-    }, 1000);
+app.ports.updateMapState.subscribe(function(state) {
+    mapState = (state.mapName == "" || state.endPoint == "") ? null : state;
+    updateMap();
 });
 
-app.ports.destroyMap.subscribe(function(id) {
-    maps[id].remove();
-});
-
-app.ports.setMap.subscribe(function([id, view]) {
-    maps[id].setView([view.lat, view.lon], view.zoom);
-});
+function addMap() {
+    map = L.map(id, {crs: L.CRS.EPSG4326}).setView([0, 0], 1);
+    updateMap();
+}

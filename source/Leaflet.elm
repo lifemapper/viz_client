@@ -1,50 +1,36 @@
 port module Leaflet exposing (Model, Msg(..), update, init)
 
-type alias View =
-    { lat : Float, lon : Float, zoom : Int }
+
+port updateMapState : Model -> Cmd msg
 
 
-port drawMap : (String, View) -> Cmd msg
-
-
-port destroyMap : String -> Cmd msg
-
-
-port setMap : (String, View) -> Cmd msg
-
-id : String
-id = "leaflet-map"
-
-type Model
-    = NoMap
-    | Map View
+type alias Model =
+    { mapName : String
+    , layers : List String
+    , endPoint : String
+    }
 
 
 init : Model
-init = NoMap
+init =
+    { mapName = "", layers = [], endPoint = "" }
 
 
 type Msg
-    = Destroy
-    | Draw View
+    = SetMap String String (List String)
+
+
+updateState : Msg -> Model -> Model
+updateState msg model =
+    case msg of
+        SetMap endPoint mapName layers ->
+            ({ model | endPoint = endPoint, mapName = mapName, layers = layers })
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case model of
-        NoMap ->
-            case msg of
-                Draw view ->
-                    ( Map view, drawMap (id, view) )
-
-                Destroy ->
-                    ( model, Cmd.none )
-
-        Map current ->
-            case msg of
-                Draw view ->
-                    ( Map view, setMap (id, view) )
-
-                Destroy ->
-                    ( NoMap, destroyMap id )
-
+    let
+        state =
+            updateState msg model
+    in
+        ( state, updateMapState state )

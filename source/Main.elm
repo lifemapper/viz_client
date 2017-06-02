@@ -72,9 +72,11 @@ update msg model =
                 MapMsg
                 Leaflet.update
                 (if tab == Scenario then
-                    Leaflet.Draw { lat = 0, lon = 0, zoom = 1 }
+                    Leaflet.SetMap "http://notyeti-191.lifemapper.org/api/v2/ogc"
+                        "scen_AR5-CCSM4-RCP8.5-2070-10min"
+                        [ "bio1-AR5-CCSM4-RCP8.5-2070-10min" ]
                  else
-                    Leaflet.Destroy
+                    Leaflet.SetMap "" "" []
                 )
                 ({ model | selectedTab = tab })
 
@@ -151,16 +153,7 @@ view model =
             [ Layout.title [] [ Html.text "Drawer" ]
             ]
         , tabs = ( List.map tabTitle tabs, [] )
-        , main =
-            [ Options.div
-                [ Options.id "leaflet-map"
-                , Options.css "width" "800px"
-                , Options.css "height" "600px"
-                -- , Options.css "display" "none" |> Options.when (model.selectedTab /= Scenario)
-                ]
-                []
-            , tabView model.selectedTab model
-            ]
+        , main = [ tabView model.selectedTab model ]
         }
 
 
