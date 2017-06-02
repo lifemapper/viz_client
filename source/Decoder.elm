@@ -559,7 +559,7 @@ type alias ScenarioRecord =
     , code : Maybe String
     , etag : Maybe String
     , metadataUrl : Maybe String
-    , id : Maybe String
+    , id : Int
     , objectType : Maybe String
     }
 
@@ -583,7 +583,7 @@ decodeScenario =
         |> maybe "code" string
         |> maybe "etag" string
         |> maybe "metadataUrl" string
-        |> maybe "id" string
+        |> required "id" int
         |> maybe "objectType" string
         |> map Scenario
 
@@ -675,8 +675,8 @@ decodeScenarioRef =
 type alias SpatialRecord =
     { resolution : Maybe Float
     , mapUnits : Maybe String
-    , bbox : Maybe String
-    , epsg : Maybe String
+    , bbox : Maybe SpatialBbox
+    , epsg : Maybe Int
     }
 
 
@@ -689,9 +689,19 @@ decodeSpatial =
     decode SpatialRecord
         |> maybe "resolution" float
         |> maybe "mapUnits" string
-        |> maybe "bbox" string
-        |> maybe "epsg" string
+        |> maybe "bbox" decodeSpatialBbox
+        |> maybe "epsg" int
         |> map Spatial
+
+
+type SpatialBbox
+    = SpatialBbox (List Float)
+
+
+decodeSpatialBbox : Decoder SpatialBbox
+decodeSpatialBbox =
+    list float
+        |> map SpatialBbox
 
 
 type alias ShapegridRecord =

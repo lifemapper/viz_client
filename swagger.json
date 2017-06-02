@@ -2009,12 +2009,15 @@
     },
     "Scenario": {
       "type": "object",
+      "required": [
+        "id"
+      ],
       "properties": {
         "objectType": {
           "type": "string"
         },
         "id": {
-          "type": "string"
+          "type": "integer"
         },
         "metadataUrl": {
           "type": "string"
@@ -2099,10 +2102,13 @@
       "type": "object",
       "properties": {
         "epsg": {
-          "type": "string"
+          "type": "integer"
         },
         "bbox": {
-          "type": "string"
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
         },
         "mapUnits": {
           "type": "string"
