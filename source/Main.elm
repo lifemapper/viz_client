@@ -8,7 +8,6 @@ import Material.Layout as Layout
 import Material.Options as Options
 import ScenariosView as Scns
 import AlgorithmsView as Algs
-import Leaflet
 
 
 -- MODEL
@@ -40,7 +39,6 @@ type alias Model =
     , selectedTab : Tab
     , scenarioModel : Scns.Model
     , algorithmsModel : Algs.Model
-    , mapModel : Leaflet.Model
     }
 
 
@@ -50,7 +48,6 @@ model =
     , selectedTab = Algorithms
     , scenarioModel = Scns.init
     , algorithmsModel = Algs.init
-    , mapModel = Leaflet.init
     }
 
 
@@ -59,26 +56,13 @@ type Msg
     | SelectTab Tab
     | ScnsMsg Scns.Msg
     | AlgsMsg Algs.Msg
-    | MapMsg Leaflet.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SelectTab tab ->
-            lift
-                .mapModel
-                (\m x -> { m | mapModel = x })
-                MapMsg
-                Leaflet.update
-                (if tab == Scenario then
-                    Leaflet.SetMap "http://notyeti-191.lifemapper.org/api/v2/ogc"
-                        "scen_AR5-CCSM4-RCP8.5-2070-10min"
-                        [ "bio1-AR5-CCSM4-RCP8.5-2070-10min" ]
-                 else
-                    Leaflet.SetMap "" "" []
-                )
-                ({ model | selectedTab = tab })
+            ( { model | selectedTab = tab }, Cmd.none )
 
         ScnsMsg msg_ ->
             lift
@@ -95,15 +79,6 @@ update msg model =
                 (\m x -> { m | algorithmsModel = x })
                 AlgsMsg
                 Algs.update
-                msg_
-                model
-
-        MapMsg msg_ ->
-            lift
-                .mapModel
-                (\m x -> { m | mapModel = x })
-                MapMsg
-                Leaflet.update
                 msg_
                 model
 
@@ -167,7 +142,7 @@ header model =
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( model, Material.init Mdl )
+        { init = ( model, Cmd.batch [ Material.init Mdl, Cmd.map ScnsMsg Scns.getScenarios ] )
         , view = view >> Material.Scheme.top
         , subscriptions = Material.subscriptions Mdl
         , update = update
