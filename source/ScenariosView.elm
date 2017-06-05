@@ -26,7 +26,7 @@ type alias Model =
     { mdl : Material.Model
     , scenarios : List AtomObjectRecord
     , selectedScenario : Maybe ScenarioRecord
-    , mapModel : Leaflet.Model
+    , leafletModel : Leaflet.Model
     }
 
 
@@ -35,7 +35,7 @@ type Msg
     | GotScenarioList (Result Http.Error AtomList)
     | Selected Int
     | GotScenario (Result Http.Error Scenario)
-    | MapMsg Leaflet.Msg
+    | LeafletMsg Leaflet.Msg
 
 
 getScenarios : Cmd Msg
@@ -87,11 +87,11 @@ update msg model =
         GotScenario (Err err) ->
             Debug.log (toString err) ( model, Cmd.none )
 
-        MapMsg msg_ ->
+        LeafletMsg msg_ ->
             lift
-                .mapModel
-                (\m x -> { m | mapModel = x })
-                MapMsg
+                .leafletModel
+                (\m x -> { m | leafletModel = x })
+                LeafletMsg
                 Leaflet.update
                 msg_
                 model
@@ -122,9 +122,9 @@ updateMap model =
 updateLeaflet : String -> String -> List String -> Model -> ( Model, Cmd Msg )
 updateLeaflet endpoint mapName layers model =
     lift
-        .mapModel
-        (\m x -> { m | mapModel = x })
-        MapMsg
+        .leafletModel
+        (\m x -> { m | leafletModel = x })
+        LeafletMsg
         Leaflet.update
         (Leaflet.SetMap endpoint mapName layers)
         model
@@ -144,7 +144,7 @@ init =
     { mdl = Material.model
     , scenarios = []
     , selectedScenario = Nothing
-    , mapModel = Leaflet.init
+    , leafletModel = Leaflet.init
     }
 
 
