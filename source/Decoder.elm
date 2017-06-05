@@ -221,9 +221,9 @@ decodeLayerMetadata =
 
 
 type alias MapRecord =
-    { layerNames : Maybe MapLayerNames
-    , mapName : Maybe String
-    , ogcEndpoint : Maybe String
+    { layers : MapLayers
+    , mapName : String
+    , endpoint : String
     }
 
 
@@ -234,38 +234,38 @@ type Map
 decodeMap : Decoder Map
 decodeMap =
     decode MapRecord
-        |> maybe "layerNames" decodeMapLayerNames
-        |> maybe "mapName" string
-        |> maybe "ogcEndpoint" string
+        |> required "layers" decodeMapLayers
+        |> required "mapName" string
+        |> required "endpoint" string
         |> map Map
 
 
-type MapLayerNames
-    = MapLayerNames (List MapLayerNamesItem)
+type MapLayers
+    = MapLayers (List MapLayersItem)
 
 
-decodeMapLayerNames : Decoder MapLayerNames
-decodeMapLayerNames =
-    list (lazy (\_ -> decodeMapLayerNamesItem))
-        |> map MapLayerNames
+decodeMapLayers : Decoder MapLayers
+decodeMapLayers =
+    list (lazy (\_ -> decodeMapLayersItem))
+        |> map MapLayers
 
 
-type alias MapLayerNamesItemRecord =
-    { layerName : Maybe String
-    , metadataUrl : Maybe String
+type alias MapLayersItemRecord =
+    { layerName : String
+    , metadataUrl : String
     }
 
 
-type MapLayerNamesItem
-    = MapLayerNamesItem MapLayerNamesItemRecord
+type MapLayersItem
+    = MapLayersItem MapLayersItemRecord
 
 
-decodeMapLayerNamesItem : Decoder MapLayerNamesItem
-decodeMapLayerNamesItem =
-    decode MapLayerNamesItemRecord
-        |> maybe "layerName" string
-        |> maybe "metadataUrl" string
-        |> map MapLayerNamesItem
+decodeMapLayersItem : Decoder MapLayersItem
+decodeMapLayersItem =
+    decode MapLayersItemRecord
+        |> required "layerName" string
+        |> required "metadataUrl" string
+        |> map MapLayersItem
 
 
 type alias MatrixRecord =
