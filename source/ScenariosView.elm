@@ -164,7 +164,14 @@ updateLeaflet endpoint mapName layers model =
 
 leafletDiv : Html Msg
 leafletDiv =
-    Options.div [ Options.id "leaflet-map", Options.css "width" "800px", Options.css "height" "600px" ] []
+    Options.div
+        [ Options.id "leaflet-map"
+        , Options.css "width" "800px"
+        , Options.css "height" "600px"
+        , Options.css "margin-left" "auto"
+        , Options.css "margin-right" "auto"
+        ]
+        []
 
 
 mapCard : Index -> Model -> Html Msg
@@ -189,8 +196,7 @@ mapCard index model =
     in
         Card.view
             [ Elevation.e2
-            , Options.css "width" "880px"
-            , Options.css "height" "660px"
+            , Options.css "width" "800px"
             , Options.css "margin" "20px"
             ]
             [ Card.title [ Card.border ]
@@ -208,7 +214,7 @@ mapCard index model =
                     [ Menu.bottomRight ]
                     (List.indexedMap menuItem layerNames)
                 ]
-            , Card.text [] [ leafletDiv ]
+            , Card.text [ Options.css "padding" "0", Options.css "width" "100%" ] [ leafletDiv ]
             ]
 
 
