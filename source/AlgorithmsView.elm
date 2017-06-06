@@ -4,12 +4,7 @@ import Array
 import Html exposing (Html)
 import Material
 import Material.Scheme
-import Material.Options as Options
 import Material.Grid as Grid exposing (Cell, Device(..), grid, cell)
-import Material.Button as Button
-import Material.Card as Card
-import Material.Elevation as Elevation
-import Material.List as L
 import Material.Helpers exposing (lift)
 import AlgorithmView
 import AddAlgorithmView
@@ -80,9 +75,15 @@ viewAlgorithm index i model =
 
 view : Index -> Model -> Html Msg
 view index model =
-    grid [] <|
-        List.append (List.indexedMap (viewAlgorithm index) (Array.toList model.algorithms))
-            [ cell [ Grid.size All 2 ] [ Html.map AddAlgorithmMsg <| AddAlgorithmView.view model.adder ] ]
+    let
+        alreadyAdded =
+            model.algorithms
+                |> Array.toList
+                |> List.map .definition
+    in
+        grid [] <|
+            List.append (List.indexedMap (viewAlgorithm index) (Array.toList model.algorithms))
+                [ cell [ Grid.size All 2 ] [ Html.map AddAlgorithmMsg <| AddAlgorithmView.view alreadyAdded model.adder ] ]
 
 
 init : Model
@@ -93,6 +94,7 @@ init =
     }
 
 
+main : Program Never Model Msg
 main =
     Html.program
         { init = ( init, Material.init Mdl )

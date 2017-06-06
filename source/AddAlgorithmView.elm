@@ -4,14 +4,10 @@ import Html exposing (Html)
 import Material
 import Material.Scheme
 import Material.Options as Options
-import Material.Grid as Grid exposing (Cell, Device(..), grid, cell)
-import Material.Button as Button
 import Material.Card as Card
 import Material.Elevation as Elevation
-import Material.List as L
 import Material.Color as Color
 import AlgorithmDefinition as D
-import Helpers exposing (Index, unsafeGet, removeElem)
 
 
 type alias Model =
@@ -49,8 +45,8 @@ setRaised raised model =
     { model | raised = raised }
 
 
-view : Model -> Html Msg
-view model =
+view : List D.Algorithm -> Model -> Html Msg
+view alreadyAdded model =
     Card.view
         [ if model.raised then
             Elevation.e8
@@ -66,21 +62,24 @@ view model =
             ]
         , Card.text []
             (if model.raised then
-                availableAlgorithms model
+                availableAlgorithms alreadyAdded model
              else
                 []
             )
         ]
 
 
-availableAlgorithms : Model -> List (Html Msg)
-availableAlgorithms model =
+availableAlgorithms : List D.Algorithm -> Model -> List (Html Msg)
+availableAlgorithms alreadyAdded model =
     let
+        clickable def =
+            not (List.member def alreadyAdded)
+
         li i def =
             Options.styled Html.li
-                [ Options.onMouseOver <| Expand (Just i)
+                [ Options.onMouseOver (Expand (Just i)) |> Options.when (clickable def)
                 , Color.text Color.accent |> Options.when (model.expanded == Just i)
-                , Options.onClick <| Add def
+                , Options.onClick (Add def) |> Options.when (clickable def)
                 , Options.css "cursor" "pointer"
                 ]
                 [ Html.text def.name ]
@@ -106,10 +105,11 @@ init =
     }
 
 
+main : Program Never Model Msg
 main =
     Html.program
         { init = ( init, Material.init Mdl )
-        , view = view >> Material.Scheme.top
+        , view = view [] >> Material.Scheme.top
         , update = update
         , subscriptions =
             \model ->
