@@ -1,5 +1,6 @@
 module ScenariosView exposing (..)
 
+import Set exposing (Set)
 import Decoder
     exposing
         ( AtomObjectRecord
@@ -31,7 +32,8 @@ import Leaflet
 type alias Model =
     { mdl : Material.Model
     , scenarios : List AtomObjectRecord
-    , selectedScenario : Maybe ScenarioRecord
+    , mapScenario : Maybe ScenarioRecord
+    , selectedScenarios : Set Int
     , leafletModel : Leaflet.Model
     }
 
@@ -39,8 +41,10 @@ type alias Model =
 type Msg
     = Mdl (Material.Msg Msg)
     | GotScenarioList (Result Http.Error AtomList)
-    | Selected Int
+    | MapScenario Int
     | GotScenario (Result Http.Error Scenario)
+    | SelectScenario Int
+    | UnselectScenario Int
     | LeafletMsg Leaflet.Msg
 
 
@@ -84,14 +88,24 @@ update msg model =
         GotScenarioList (Err err) ->
             Debug.log (toString err) ( model, Cmd.none )
 
-        Selected id ->
+        MapScenario id ->
             ( model, getMetadata id )
 
         GotScenario (Ok (Scenario s)) ->
-            updateMap ({ model | selectedScenario = Just s })
+            updateMap ({ model | mapScenario = Just s })
 
         GotScenario (Err err) ->
             Debug.log (toString err) ( model, Cmd.none )
+
+        SelectScenario id ->
+            ( { model | selectedScenarios = Set.insert id model.selectedScenarios }
+            , Cmd.none
+            )
+
+        UnselectScenario id ->
+            ( { model | selectedScenarios = Set.remove id model.selectedScenarios }
+            , Cmd.none
+            )
 
         LeafletMsg msg_ ->
             lift
@@ -105,7 +119,7 @@ update msg model =
 
 updateMap : Model -> ( Model, Cmd Msg )
 updateMap model =
-    case model.selectedScenario of
+    case model.mapScenario of
         Nothing ->
             updateLeaflet "" "" [] model
 
@@ -152,7 +166,7 @@ mapCard model =
         ]
         [ Card.title []
             [ Card.head []
-                [ model.selectedScenario
+                [ model.mapScenario
                     |> Maybe.andThen .code
                     |> Maybe.withDefault "Map"
                     |> Html.text
@@ -166,20 +180,37 @@ scenariosList : Index -> Model -> Html Msg
 scenariosList index model =
     Options.div [ Options.css "margin" "20px" ]
         [ Options.styled Html.p [ Typo.title ] [ Html.text "Choose Projection Scenarios" ]
-        , L.ul [] <| List.indexedMap (scenarioLI model.mdl index) model.scenarios
+        , L.ul [] <| List.indexedMap (scenarioLI model index) model.scenarios
         ]
 
 
-scenarioLI : Material.Model -> Index -> Int -> AtomObjectRecord -> Html Msg
-scenarioLI mdl index i s =
-    L.li []
-        [ L.content
-            [ Options.attribute <| Html.Events.onClick (Selected s.id) ]
-            [ Html.text s.name ]
-        , L.content2 []
-            [ Toggles.checkbox Mdl (i :: index) mdl [] []
+scenarioLI : Model -> Index -> Int -> AtomObjectRecord -> Html Msg
+scenarioLI model index i s =
+    let
+        icon =
+            if Just s.id == Maybe.map .id model.mapScenario then
+                L.icon "visibility" []
+            else
+                L.icon "visibility_off" []
+
+        selected =
+            Set.member s.id model.selectedScenarios
+    in
+        L.li []
+            [ L.content
+                [ Options.attribute <| Html.Events.onClick (MapScenario s.id) ]
+                [ icon, Html.text s.name ]
+            , L.content2 []
+                [ Toggles.checkbox Mdl
+                    (i :: index)
+                    model.mdl
+                    [ Toggles.value selected
+                    , Options.onToggle (SelectScenario s.id) |> Options.when (not selected)
+                    , Options.onToggle (UnselectScenario s.id) |> Options.when selected
+                    ]
+                    []
+                ]
             ]
-        ]
 
 
 view : Index -> Model -> Html Msg
@@ -194,7 +225,8 @@ init : Model
 init =
     { mdl = Material.model
     , scenarios = []
-    , selectedScenario = Nothing
+    , mapScenario = Nothing
+    , selectedScenarios = Set.empty
     , leafletModel = Leaflet.init
     }
 
