@@ -15,7 +15,9 @@ import Decoder
         )
 import Material
 import Material.Scheme
+import Material.Menu as Menu
 import Material.List as L
+import Material.Icon as Icon
 import Material.Options as Options
 import Material.Card as Card
 import Material.Elevation as Elevation
@@ -33,6 +35,7 @@ type alias Model =
     { mdl : Material.Model
     , scenarios : List AtomObjectRecord
     , mapScenario : Maybe ScenarioRecord
+    , mapLayer : Int
     , selectedScenarios : Set Int
     , leafletModel : Leaflet.Model
     }
@@ -42,6 +45,7 @@ type Msg
     = Mdl (Material.Msg Msg)
     | GotScenarioList (Result Http.Error AtomList)
     | MapScenario Int
+    | MapLayer Int
     | GotScenario (Result Http.Error Scenario)
     | SelectScenario Int
     | UnselectScenario Int
@@ -91,8 +95,11 @@ update msg model =
         MapScenario id ->
             ( model, getMetadata id )
 
+        MapLayer i ->
+            updateMap ({ model | mapLayer = i })
+
         GotScenario (Ok (Scenario s)) ->
-            updateMap ({ model | mapScenario = Just s })
+            updateMap ({ model | mapScenario = Just s, mapLayer = 0 })
 
         GotScenario (Err err) ->
             Debug.log (toString err) ( model, Cmd.none )
@@ -119,25 +126,29 @@ update msg model =
 
 updateMap : Model -> ( Model, Cmd Msg )
 updateMap model =
-    case model.mapScenario of
+    case mapInfo model of
         Nothing ->
             updateLeaflet "" "" [] model
 
-        Just { map } ->
-            case map of
-                Nothing ->
-                    updateLeaflet "" "" [] model
+        Just ( endpoint, mapName, layerNames ) ->
+            updateLeaflet endpoint mapName ("bmng" :: (List.take 1 <| List.drop model.mapLayer layerNames)) model
 
-                Just (Decoder.Map { endpoint, mapName, layers }) ->
-                    let
-                        (MapLayers ls) =
-                            layers
 
-                        layerNames =
-                            List.map (\(MapLayersItem l) -> l.layerName) ls
-                    in
-                        -- updateLeaflet endpoint mapName (List.take 1 layerNames) model
-                        updateLeaflet endpoint mapName ("bmng" :: List.take 1 layerNames) model
+mapInfo : Model -> Maybe ( String, String, List String )
+mapInfo model =
+    model.mapScenario
+        |> Maybe.andThen (\{ map } -> map)
+        |> Maybe.map
+            (\(Decoder.Map { endpoint, mapName, layers }) ->
+                let
+                    (MapLayers ls) =
+                        layers
+
+                    layerNames =
+                        List.map (\(MapLayersItem l) -> l.layerName) ls
+                in
+                    ( endpoint, mapName, layerNames )
+            )
 
 
 updateLeaflet : String -> String -> List String -> Model -> ( Model, Cmd Msg )
@@ -156,24 +167,49 @@ leafletDiv =
     Options.div [ Options.id "leaflet-map", Options.css "width" "800px", Options.css "height" "600px" ] []
 
 
-mapCard : Model -> Html Msg
-mapCard model =
-    Card.view
-        [ Elevation.e2
-        , Options.css "width" "880px"
-        , Options.css "height" "660px"
-        , Options.css "margin" "20px"
-        ]
-        [ Card.title []
-            [ Card.head []
-                [ model.mapScenario
-                    |> Maybe.andThen .code
-                    |> Maybe.withDefault "Map"
-                    |> Html.text
+mapCard : Index -> Model -> Html Msg
+mapCard index model =
+    let
+        layerNames =
+            mapInfo model
+                |> Maybe.map (\( _, _, ls ) -> ls)
+                |> Maybe.withDefault []
+
+        checkmark x =
+            if x then
+                Icon.view "check" [ Options.css "width" "40px" ]
+            else
+                Options.span [ Options.css "width" "40px" ] []
+
+        menuItem i layer =
+            Menu.item [ Menu.onSelect (MapLayer i) ]
+                [ checkmark (i == model.mapLayer)
+                , Html.text layer
                 ]
+    in
+        Card.view
+            [ Elevation.e2
+            , Options.css "width" "880px"
+            , Options.css "height" "660px"
+            , Options.css "margin" "20px"
             ]
-        , Card.text [] [ leafletDiv ]
-        ]
+            [ Card.title [ Card.border ]
+                [ Card.head []
+                    [ model.mapScenario
+                        |> Maybe.andThen .code
+                        |> Maybe.withDefault "Map"
+                        |> Html.text
+                    ]
+                ]
+            , Card.menu []
+                [ Menu.render Mdl
+                    (-1 :: index)
+                    model.mdl
+                    [ Menu.bottomRight ]
+                    (List.indexedMap menuItem layerNames)
+                ]
+            , Card.text [] [ leafletDiv ]
+            ]
 
 
 scenariosList : Index -> Model -> Html Msg
@@ -187,18 +223,21 @@ scenariosList index model =
 scenarioLI : Model -> Index -> Int -> AtomObjectRecord -> Html Msg
 scenarioLI model index i s =
     let
-        icon =
+        iconName =
             if Just s.id == Maybe.map .id model.mapScenario then
-                L.icon "visibility" []
+                "visibility"
             else
-                L.icon "visibility_off" []
+                "visibility_off"
+
+        icon =
+            L.icon iconName [ Options.attribute <| Html.Events.onClick (MapScenario s.id) ]
 
         selected =
             Set.member s.id model.selectedScenarios
     in
         L.li []
             [ L.content
-                [ Options.attribute <| Html.Events.onClick (MapScenario s.id) ]
+                []
                 [ icon, Html.text s.name ]
             , L.content2 []
                 [ Toggles.checkbox Mdl
@@ -217,7 +256,7 @@ view : Index -> Model -> Html Msg
 view index model =
     Options.div [ Options.css "display" "flex" ]
         [ scenariosList index model
-        , mapCard model
+        , mapCard index model
         ]
 
 
@@ -226,6 +265,7 @@ init =
     { mdl = Material.model
     , scenarios = []
     , mapScenario = Nothing
+    , mapLayer = 0
     , selectedScenarios = Set.empty
     , leafletModel = Leaflet.init
     }
