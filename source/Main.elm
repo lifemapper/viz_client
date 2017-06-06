@@ -16,12 +16,13 @@ import AlgorithmsView as Algs
 type Tab
     = Algorithms
     | OccurrenceSets
-    | Scenario
+    | ModelScenario
+    | ProjScenarios
 
 
 tabs : List Tab
 tabs =
-    [ Algorithms, OccurrenceSets, Scenario ]
+    [ Algorithms, OccurrenceSets, ModelScenario, ProjScenarios ]
 
 
 tabIndex : Tab -> Int
@@ -45,7 +46,7 @@ type alias Model =
 model : Model
 model =
     { mdl = Material.model
-    , selectedTab = Algorithms
+    , selectedTab = ProjScenarios
     , scenarioModel = Scns.init
     , algorithmsModel = Algs.init
     }
@@ -96,8 +97,11 @@ tabTitle tab =
             OccurrenceSets ->
                 "Occurrence Sets"
 
-            Scenario ->
-                "Scenario"
+            ModelScenario ->
+                "Model Scenario"
+
+            ProjScenarios ->
+                "Projection Scenarios"
 
 
 tabView : Tab -> Model -> Html Msg
@@ -109,7 +113,10 @@ tabView tab =
         OccurrenceSets ->
             (\m -> Options.div [] [])
 
-        Scenario ->
+        ModelScenario ->
+            (\m -> Options.div [] [])
+
+        ProjScenarios ->
             (.scenarioModel >> Scns.view [] >> Html.map ScnsMsg)
 
 

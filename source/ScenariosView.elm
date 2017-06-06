@@ -14,9 +14,15 @@ import Decoder
         )
 import Material
 import Material.Scheme
+import Material.List as L
 import Material.Options as Options
+import Material.Card as Card
+import Material.Elevation as Elevation
+import Material.Typography as Typo
+import Material.Toggles as Toggles
 import Material.Helpers exposing (lift)
 import Html exposing (Html)
+import Html.Events
 import Http
 import Helpers exposing (Index)
 import Leaflet
@@ -116,7 +122,8 @@ updateMap model =
                         layerNames =
                             List.map (\(MapLayersItem l) -> l.layerName) ls
                     in
-                        updateLeaflet endpoint mapName (List.take 1 layerNames) model
+                        -- updateLeaflet endpoint mapName (List.take 1 layerNames) model
+                        updateLeaflet endpoint mapName ("bmng" :: List.take 1 layerNames) model
 
 
 updateLeaflet : String -> String -> List String -> Model -> ( Model, Cmd Msg )
@@ -130,12 +137,56 @@ updateLeaflet endpoint mapName layers model =
         model
 
 
+leafletDiv : Html Msg
+leafletDiv =
+    Options.div [ Options.id "leaflet-map", Options.css "width" "800px", Options.css "height" "600px" ] []
+
+
+mapCard : Model -> Html Msg
+mapCard model =
+    Card.view
+        [ Elevation.e2
+        , Options.css "width" "880px"
+        , Options.css "height" "660px"
+        , Options.css "margin" "20px"
+        ]
+        [ Card.title []
+            [ Card.head []
+                [ model.selectedScenario
+                    |> Maybe.andThen .code
+                    |> Maybe.withDefault "Map"
+                    |> Html.text
+                ]
+            ]
+        , Card.text [] [ leafletDiv ]
+        ]
+
+
+scenariosList : Index -> Model -> Html Msg
+scenariosList index model =
+    Options.div [ Options.css "margin" "20px" ]
+        [ Options.styled Html.p [ Typo.title ] [ Html.text "Choose Projection Scenarios" ]
+        , L.ul [] <| List.indexedMap (scenarioLI model.mdl index) model.scenarios
+        ]
+
+
+scenarioLI : Material.Model -> Index -> Int -> AtomObjectRecord -> Html Msg
+scenarioLI mdl index i s =
+    L.li []
+        [ L.content
+            [ Options.attribute <| Html.Events.onClick (Selected s.id) ]
+            [ Html.text s.name ]
+        , L.content2 []
+            [ Toggles.checkbox Mdl (i :: index) mdl [] []
+            ]
+        ]
+
+
 view : Index -> Model -> Html Msg
 view index model =
-    Options.div []
-        [ Options.div [ Options.id "leaflet-map", Options.css "width" "800px", Options.css "height" "600px" ] []
-        , Options.styled Html.ul [] <|
-            List.map (\s -> Options.styled Html.li [ Options.onClick (Selected s.id) ] [ Html.text s.name ]) model.scenarios
+    Options.div [ Options.css "display" "flex" ]
+        [ scenariosList index model
+        , mapCard model
         ]
 
 
