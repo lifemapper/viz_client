@@ -38,7 +38,8 @@ tabIndex tab =
 type alias Model =
     { mdl : Material.Model
     , selectedTab : Tab
-    , scenarioModel : Scns.Model
+    , modelScenario : Scns.Model
+    , projectionScenarios : Scns.Model
     , algorithmsModel : Algs.Model
     }
 
@@ -47,7 +48,8 @@ model : Model
 model =
     { mdl = Material.model
     , selectedTab = ProjScenarios
-    , scenarioModel = Scns.init
+    , modelScenario = Scns.init Scns.ModelScenario
+    , projectionScenarios = Scns.init Scns.ProjectionScenarios
     , algorithmsModel = Algs.init
     }
 
@@ -55,7 +57,8 @@ model =
 type Msg
     = Mdl (Material.Msg Msg)
     | SelectTab Tab
-    | ScnsMsg Scns.Msg
+    | ProjScnsMsg Scns.Msg
+    | MdlScnMsg Scns.Msg
     | AlgsMsg Algs.Msg
 
 
@@ -65,11 +68,20 @@ update msg model =
         SelectTab tab ->
             ( { model | selectedTab = tab }, Cmd.none )
 
-        ScnsMsg msg_ ->
+        ProjScnsMsg msg_ ->
             lift
-                .scenarioModel
-                (\m x -> { m | scenarioModel = x })
-                ScnsMsg
+                .projectionScenarios
+                (\m x -> { m | projectionScenarios = x })
+                ProjScnsMsg
+                Scns.update
+                msg_
+                model
+
+        MdlScnMsg msg_ ->
+            lift
+                .modelScenario
+                (\m x -> { m | modelScenario = x })
+                MdlScnMsg
                 Scns.update
                 msg_
                 model
@@ -114,10 +126,10 @@ tabView tab =
             (\m -> Options.div [] [])
 
         ModelScenario ->
-            (\m -> Options.div [] [])
+            (.modelScenario >> Scns.view [0] >> Html.map MdlScnMsg)
 
         ProjScenarios ->
-            (.scenarioModel >> Scns.view [] >> Html.map ScnsMsg)
+            (.projectionScenarios >> Scns.view [0] >> Html.map ProjScnsMsg)
 
 
 view : Model -> Html Msg
@@ -149,7 +161,14 @@ header model =
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( model, Cmd.batch [ Material.init Mdl, Cmd.map ScnsMsg Scns.getScenarios ] )
+        { init =
+            ( model
+            , Cmd.batch
+                [ Material.init Mdl
+                , Cmd.map ProjScnsMsg Scns.getScenarios
+                , Cmd.map MdlScnMsg Scns.getScenarios
+                ]
+            )
         , view = view >> Material.Scheme.top
         , subscriptions = Material.subscriptions Mdl
         , update = update

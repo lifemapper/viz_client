@@ -31,8 +31,14 @@ import Helpers exposing (Index)
 import Leaflet
 
 
+type Mode
+    = ModelScenario
+    | ProjectionScenarios
+
+
 type alias Model =
     { mdl : Material.Model
+    , mode : Mode
     , scenarios : List AtomObjectRecord
     , mapScenario : Maybe ScenarioRecord
     , mapLayer : Int
@@ -105,9 +111,16 @@ update msg model =
             Debug.log (toString err) ( model, Cmd.none )
 
         SelectScenario id ->
-            ( { model | selectedScenarios = Set.insert id model.selectedScenarios }
-            , Cmd.none
-            )
+            case model.mode of
+                ProjectionScenarios ->
+                    ( { model | selectedScenarios = Set.insert id model.selectedScenarios }
+                    , Cmd.none
+                    )
+
+                ModelScenario ->
+                    ( { model | selectedScenarios = Set.singleton id }
+                    , Cmd.none
+                    )
 
         UnselectScenario id ->
             ( { model | selectedScenarios = Set.remove id model.selectedScenarios }
@@ -220,10 +233,19 @@ mapCard index model =
 
 scenariosList : Index -> Model -> Html Msg
 scenariosList index model =
-    Options.div [ Options.css "margin" "20px" ]
-        [ Options.styled Html.p [ Typo.title ] [ Html.text "Choose Projection Scenarios" ]
-        , L.ul [] <| List.indexedMap (scenarioLI model index) model.scenarios
-        ]
+    let
+        title =
+            case model.mode of
+                ModelScenario ->
+                    "Choose Model Scenario"
+
+                ProjectionScenarios ->
+                    "Choose Projection Scenarios"
+    in
+        Options.div [ Options.css "margin" "20px" ]
+            [ Options.styled Html.p [ Typo.title ] [ Html.text title ]
+            , L.ul [] <| List.indexedMap (scenarioLI model index) model.scenarios
+            ]
 
 
 scenarioLI : Model -> Index -> Int -> AtomObjectRecord -> Html Msg
@@ -240,18 +262,27 @@ scenarioLI model index i s =
 
         selected =
             Set.member s.id model.selectedScenarios
+
+        toggle =
+            case model.mode of
+                ModelScenario ->
+                    Toggles.radio
+
+                ProjectionScenarios ->
+                    Toggles.checkbox
     in
         L.li []
             [ L.content
                 []
                 [ icon, Html.text s.name ]
             , L.content2 []
-                [ Toggles.checkbox Mdl
+                [ toggle Mdl
                     (i :: index)
                     model.mdl
                     [ Toggles.value selected
+                    , Toggles.group (toString index) |> Options.when (model.mode == ModelScenario)
                     , Options.onToggle (SelectScenario s.id) |> Options.when (not selected)
-                    , Options.onToggle (UnselectScenario s.id) |> Options.when selected
+                    , Options.onToggle (UnselectScenario s.id) |> Options.when (selected && model.mode /= ModelScenario)
                     ]
                     []
                 ]
@@ -266,9 +297,10 @@ view index model =
         ]
 
 
-init : Model
-init =
+init : Mode -> Model
+init mode =
     { mdl = Material.model
+    , mode = mode
     , scenarios = []
     , mapScenario = Nothing
     , mapLayer = 0
@@ -280,7 +312,7 @@ init =
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( init, Cmd.batch [ Material.init Mdl, getScenarios ] )
+        { init = ( init ProjectionScenarios, Cmd.batch [ Material.init Mdl, getScenarios ] )
         , view = view [] >> Material.Scheme.top
         , update = update
         , subscriptions = Material.subscriptions Mdl
