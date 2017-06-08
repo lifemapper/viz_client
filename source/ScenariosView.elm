@@ -23,12 +23,11 @@ import Material.Card as Card
 import Material.Elevation as Elevation
 import Material.Typography as Typo
 import Material.Toggles as Toggles
-import Material.Helpers exposing (lift)
 import Html exposing (Html)
 import Html.Events
 import Http
 import Helpers exposing (Index)
-import Leaflet
+import Leaflet exposing (setLeafletMap, clearLeafletMap)
 
 
 type Mode
@@ -43,7 +42,6 @@ type alias Model =
     , mapScenario : Maybe ScenarioRecord
     , mapLayer : Int
     , selectedScenarios : Set Int
-    , leafletModel : Leaflet.Model
     }
 
 
@@ -55,7 +53,6 @@ type Msg
     | GotScenario (Result Http.Error Scenario)
     | SelectScenario Int
     | UnselectScenario Int
-    | LeafletMsg Leaflet.Msg
 
 
 getScenarios : Cmd Msg
@@ -102,49 +99,51 @@ update msg model =
             ( model, getMetadata id )
 
         MapLayer i ->
-            updateMap ({ model | mapLayer = i })
+            let
+                newModel =
+                    { model | mapLayer = i }
+            in
+                ( newModel, updateMap newModel )
 
         GotScenario (Ok (Scenario s)) ->
-            updateMap ({ model | mapScenario = Just s, mapLayer = 0 })
+            let
+                newModel =
+                    { model | mapScenario = Just s, mapLayer = 0 }
+            in
+                ( newModel, updateMap newModel )
 
         GotScenario (Err err) ->
             Debug.log (toString err) ( model, Cmd.none )
 
         SelectScenario id ->
-            case model.mode of
-                ProjectionScenarios ->
-                    ( { model | selectedScenarios = Set.insert id model.selectedScenarios }
-                    , Cmd.none
-                    )
+            let
+                selectedScenarios =
+                    case model.mode of
+                        ProjectionScenarios ->
+                            Set.insert id model.selectedScenarios
 
-                ModelScenario ->
-                    ( { model | selectedScenarios = Set.singleton id }
-                    , Cmd.none
-                    )
+                        ModelScenario ->
+                            Set.singleton id
+            in
+                ( { model | selectedScenarios = selectedScenarios }, Cmd.none )
 
         UnselectScenario id ->
-            ( { model | selectedScenarios = Set.remove id model.selectedScenarios }
-            , Cmd.none
-            )
-
-        LeafletMsg msg_ ->
-            lift
-                .leafletModel
-                (\m x -> { m | leafletModel = x })
-                LeafletMsg
-                Leaflet.update
-                msg_
-                model
+            ( { model | selectedScenarios = Set.remove id model.selectedScenarios }, Cmd.none )
 
 
-updateMap : Model -> ( Model, Cmd Msg )
+updateMap : Model -> Cmd Msg
 updateMap model =
     case mapInfo model of
         Nothing ->
-            updateLeaflet "" "" [] model
+            clearLeafletMap (mapContainerId model)
 
         Just ( endpoint, mapName, layerNames ) ->
-            updateLeaflet endpoint mapName ("bmng" :: (List.take 1 <| List.drop model.mapLayer layerNames)) model
+            setLeafletMap
+                { containerId = (mapContainerId model)
+                , endPoint = endpoint
+                , mapName = mapName
+                , layers = ("bmng" :: (List.take 1 <| List.drop model.mapLayer layerNames))
+                }
 
 
 mapInfo : Model -> Maybe ( String, String, List String )
@@ -164,21 +163,16 @@ mapInfo model =
             )
 
 
-updateLeaflet : String -> String -> List String -> Model -> ( Model, Cmd Msg )
-updateLeaflet endpoint mapName layers model =
-    lift
-        .leafletModel
-        (\m x -> { m | leafletModel = x })
-        LeafletMsg
-        Leaflet.update
-        (Leaflet.SetMap endpoint mapName layers)
-        model
+mapContainerId : Model -> String
+mapContainerId model =
+    "leaflet-map-" ++ (toString model.mode)
 
 
-leafletDiv : Html Msg
-leafletDiv =
+leafletDiv : Model -> Html Msg
+leafletDiv model =
     Options.div
-        [ Options.id "leaflet-map"
+        [ Options.id (mapContainerId model)
+        , Options.cs "leaflet-map"
         , Options.css "width" "800px"
         , Options.css "height" "600px"
         , Options.css "margin-left" "auto"
@@ -227,7 +221,7 @@ mapCard index model =
                     [ Menu.bottomRight ]
                     (List.indexedMap menuItem layerNames)
                 ]
-            , Card.text [ Options.css "padding" "0", Options.css "width" "100%" ] [ leafletDiv ]
+            , Card.text [ Options.css "padding" "0", Options.css "width" "100%" ] [ leafletDiv model ]
             ]
 
 
@@ -305,7 +299,6 @@ init mode =
     , mapScenario = Nothing
     , mapLayer = 0
     , selectedScenarios = Set.empty
-    , leafletModel = Leaflet.init
     }
 
 
