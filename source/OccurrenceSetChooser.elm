@@ -1,12 +1,14 @@
 module OccurrenceSetChooser exposing (..)
 
 import Decoder exposing (AtomObjectRecord, AtomList(..), decodeAtomList, AtomObject(..))
+import Json.Decode as Decode
 import Char
 import Helpers exposing (Index)
 import Http
 import Html exposing (Html)
 import Material
 import Material.Scheme
+import Material.Color as Color
 import Material.Options as Options
 import Material.Textfield as Textfield
 import Material.List as L
@@ -16,6 +18,7 @@ import QueryString as Q
 type alias Model =
     { searchText : String
     , searchResults : List AtomObjectRecord
+    , highlight : Maybe Int
     , mdl : Material.Model
     }
 
@@ -24,6 +27,10 @@ type Msg
     = Mdl (Material.Msg Msg)
     | UpdateSearchText String
     | GotOccurrenceSets (Result Http.Error AtomList)
+    | Select AtomObjectRecord
+    | HighlightUp
+    | HighlightDown
+    | Nop
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -54,6 +61,40 @@ update msg model =
         GotOccurrenceSets (Err err) ->
             Debug.log (toString err) ( model, Cmd.none )
 
+        Select object ->
+            ( { model | searchText = "", searchResults = [] }, Cmd.none )
+
+        HighlightUp ->
+            ( { model | highlight = highlightUp model }, Cmd.none )
+
+        HighlightDown ->
+            ( { model | highlight = highlightDown model }, Cmd.none )
+
+        Nop ->
+            ( model, Cmd.none )
+
+
+highlightDown : Model -> Maybe Int
+highlightDown model =
+    model.highlight
+        |> Maybe.withDefault (-1)
+        |> (+) 1
+        |> (min <| (List.length model.searchResults) - 1)
+        |> Just
+
+
+highlightUp : Model -> Maybe Int
+highlightUp model =
+    model.highlight
+        |> Maybe.andThen
+            (\n ->
+                if n == 0 then
+                    Nothing
+                else
+                    Just (n - 1)
+            )
+        |> Maybe.map (min <| (List.length model.searchResults) - 1)
+
 
 getOccurrenceSets : String -> Cmd Msg
 getOccurrenceSets searchText =
@@ -80,9 +121,15 @@ searchUrl searchText =
            )
 
 
-viewSearchResultItem : AtomObjectRecord -> Html Msg
-viewSearchResultItem object =
-    L.li [] [ L.content [] [ Html.text object.name ] ]
+viewSearchResultItem : Maybe Int -> Int -> AtomObjectRecord -> Html Msg
+viewSearchResultItem highlighted i object =
+    L.li []
+        [ L.content
+            [ Options.onClick <| Select object
+            , Color.text Color.accent |> Options.when (Just i == highlighted)
+            ]
+            [ Html.text object.name ]
+        ]
 
 
 viewSearchResults : Model -> Html Msg
@@ -90,7 +137,31 @@ viewSearchResults model =
     if model.searchResults == [] && model.searchText /= "" then
         Options.styled Html.p [] [ Html.text "No matches" ]
     else
-        L.ul [] <| List.map viewSearchResultItem model.searchResults
+        L.ul [] <| List.indexedMap (viewSearchResultItem model.highlight) model.searchResults
+
+
+onKeyUp : (String -> Msg) -> Options.Property c Msg
+onKeyUp msg =
+    Options.on "keyup" <| Decode.map msg (Decode.at [ "key" ] Decode.string)
+
+
+keyUp : Model -> String -> Msg
+keyUp model s =
+    case s of
+        "ArrowUp" ->
+            HighlightUp
+
+        "ArrowDown" ->
+            HighlightDown
+
+        "Enter" ->
+            model.highlight
+                |> Maybe.andThen (\i -> List.drop i model.searchResults |> List.head)
+                |> Maybe.map Select
+                |> Maybe.withDefault Nop
+
+        _ ->
+            Nop
 
 
 view : Index -> Model -> Html Msg
@@ -102,6 +173,7 @@ view index model =
             [ Textfield.label "Search"
             , Textfield.value model.searchText
             , Options.onInput UpdateSearchText
+            , onKeyUp (keyUp model)
             ]
             []
         , viewSearchResults model
@@ -110,7 +182,7 @@ view index model =
 
 init : Model
 init =
-    { searchText = "", searchResults = [], mdl = Material.model }
+    { searchText = "", searchResults = [], highlight = Nothing, mdl = Material.model }
 
 
 main : Program Never Model Msg

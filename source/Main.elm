@@ -8,6 +8,7 @@ import Material.Layout as Layout
 import Material.Options as Options
 import ScenariosView as Scns
 import AlgorithmsView as Algs
+import OccurrenceSetsView as Occs
 
 
 -- MODEL
@@ -41,16 +42,18 @@ type alias Model =
     , modelScenario : Scns.Model
     , projectionScenarios : Scns.Model
     , algorithmsModel : Algs.Model
+    , occurrenceSets : Occs.Model
     }
 
 
 model : Model
 model =
     { mdl = Material.model
-    , selectedTab = ProjScenarios
+    , selectedTab = OccurrenceSets
     , modelScenario = Scns.init Scns.ModelScenario
     , projectionScenarios = Scns.init Scns.ProjectionScenarios
     , algorithmsModel = Algs.init
+    , occurrenceSets = Occs.init
     }
 
 
@@ -60,6 +63,7 @@ type Msg
     | ProjScnsMsg Scns.Msg
     | MdlScnMsg Scns.Msg
     | AlgsMsg Algs.Msg
+    | OccsMsg Occs.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -95,6 +99,15 @@ update msg model =
                 msg_
                 model
 
+        OccsMsg msg_ ->
+            lift
+                .occurrenceSets
+                (\m x -> { m | occurrenceSets = x })
+                OccsMsg
+                Occs.update
+                msg_
+                model
+
         Mdl msg_ ->
             Material.update Mdl msg_ model
 
@@ -123,13 +136,13 @@ tabView tab =
             (.algorithmsModel >> Algs.view [] >> Html.map AlgsMsg)
 
         OccurrenceSets ->
-            (\m -> Options.div [] [])
+            (.occurrenceSets >> Occs.view [] >> Html.map OccsMsg)
 
         ModelScenario ->
-            (.modelScenario >> Scns.view [0] >> Html.map MdlScnMsg)
+            (.modelScenario >> Scns.view [ 0 ] >> Html.map MdlScnMsg)
 
         ProjScenarios ->
-            (.projectionScenarios >> Scns.view [0] >> Html.map ProjScnsMsg)
+            (.projectionScenarios >> Scns.view [ 0 ] >> Html.map ProjScnsMsg)
 
 
 view : Model -> Html Msg
