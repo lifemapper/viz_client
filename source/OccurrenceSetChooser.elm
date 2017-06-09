@@ -13,6 +13,8 @@ import Material.Options as Options
 import Material.Textfield as Textfield
 import Material.List as L
 import QueryString as Q
+import Dom
+import Task
 
 
 type alias Model =
@@ -62,7 +64,9 @@ update msg model =
             Debug.log (toString err) ( model, Cmd.none )
 
         Select object ->
-            ( { model | searchText = "", searchResults = [] }, Cmd.none )
+            ( { model | searchText = "", searchResults = [], highlight = Nothing }
+            , Dom.focus "occurrence-set-search-input" |> Task.attempt (always Nop)
+            )
 
         HighlightUp ->
             ( { model | highlight = highlightUp model }, Cmd.none )
@@ -172,6 +176,7 @@ view index model =
             model.mdl
             [ Textfield.label "Search"
             , Textfield.value model.searchText
+            , Options.id "occurrence-set-search-input"
             , Options.onInput UpdateSearchText
             , onKeyUp (keyUp model)
             ]
