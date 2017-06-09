@@ -8,6 +8,7 @@ import Material.Typography as Typo
 import Material.List as L
 import Material.Helpers as Helpers
 import Html exposing (Html)
+import Html.Events
 import Helpers exposing (Index)
 
 
@@ -20,11 +21,26 @@ type alias Model =
 
 type Msg
     = ChooserMsg OccurrenceSetChooser.Msg
+    | Remove Int
+    | Mdl (Material.Msg Msg)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Mdl msg_ ->
+            Material.update Mdl msg_ model
+
+        Remove i ->
+            ( { model
+                | occurrenceSets =
+                    List.append
+                        (List.take i model.occurrenceSets)
+                        (List.drop (i + 1) model.occurrenceSets)
+              }
+            , Cmd.none
+            )
+
         ChooserMsg msg_ ->
             Helpers.lift
                 .chooser
@@ -52,7 +68,10 @@ init =
 occurrenceSetLI : Model -> Index -> Int -> AtomObjectRecord -> Html Msg
 occurrenceSetLI model index i o =
     L.li []
-        [ L.content [] [ Html.text o.name ] ]
+        [ L.content [] [ Html.text o.name ]
+        , L.content2 []
+            [ L.icon "delete" [ Options.attribute <| Html.Events.onClick (Remove i) ] ]
+        ]
 
 
 occurrenceSetList : Index -> Model -> Html Msg
