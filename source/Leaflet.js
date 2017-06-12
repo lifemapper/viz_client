@@ -17,24 +17,40 @@ app.ports.clearLeafletMap.subscribe(function(containerId) {
     updateMap(containerId);
 });
 
+var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(m) {
+        m.addedNodes.forEach(function(n) {
+            if (n.getElementsByClassName == null) return;
 
-window.setInterval(function() {
-    var mapContainers = document.getElementsByClassName("leaflet-map");
-    Array.prototype.forEach.call(mapContainers, function(mapContainer) {
-        var id = mapContainer.id;
-        if (maps[id] == null) {
-            maps[id] = L.map(id, {crs: L.CRS.EPSG4326}).setView([0, 0], 1);
-            updateMap(id);
-        }
-    });
+            var elements = n.getElementsByClassName("leaflet-map");
+            Array.prototype.forEach.call(elements, function(element) {
+                var id = element.id;
+                console.log("adding map to ", id);
+                if (maps[id] == null) {
+                    maps[id] = L.map(id, {crs: L.CRS.EPSG4326}).setView([0, 0], 1);
+                    updateMap(id);
+                }
+            });
+        });
 
-    Object.keys(maps).forEach(function(id) {
-        if (document.getElementById(id) == null) {
-            maps[id].remove();
-            delete maps[id];
-        }
+        m.removedNodes.forEach(function(n) {
+            if (n.getElementsByClassName == null) return;
+
+            var elements = n.getElementsByClassName("leaflet-map");
+            Array.prototype.forEach.call(elements, function(element) {
+                var id = element.id;
+                if (maps[id] != null) {
+                    console.log("removing map from ", id);
+                    maps[id].remove();
+                    maps[id] = null;
+                }
+            });
+        });
     });
-}, 100);
+});
+
+observer.observe(document.body, { subtree: true, childList: true });
+
 
 function updateMap(id) {
     var map = maps[id];
