@@ -14,20 +14,17 @@ import Decoder
         , MapLayersItem(..)
         )
 import Material
-import Material.Menu as Menu
 import Material.List as L
-import Material.Icon as Icon
 import Material.Options as Options
-import Material.Card as Card
-import Material.Elevation as Elevation
 import Material.Typography as Typo
 import Material.Toggles as Toggles
+import Material.Helpers exposing (lift)
 import Html exposing (Html)
 import Html.Events
 import Http
 import Helpers exposing (Index)
-import Leaflet exposing (setLeafletMap, clearLeafletMap)
 import ScenariosList as SL
+import MapCard
 
 
 type Mode
@@ -39,16 +36,16 @@ type alias Model =
     { mdl : Material.Model
     , mode : Mode
     , mapScenario : Maybe ScenarioRecord
-    , mapLayer : Int
+    , mapCard : MapCard.Model
     , selectedScenarios : Set Int
     }
 
 
 type Msg
     = Mdl (Material.Msg Msg)
+    | MapCardMsg MapCard.Msg
     | MapScenario Int
-    | MapLayer Int
-    | GotScenario (Result Http.Error Scenario)
+    | SetScenario (Maybe ScenarioRecord)
     | SelectScenario Int
     | UnselectScenario Int
 
@@ -64,7 +61,18 @@ getMetadata id =
         , timeout = Nothing
         , withCredentials = False
         }
-        |> Http.send GotScenario
+        |> Http.send gotMetadata
+
+
+gotMetadata : Result Http.Error Scenario -> Msg
+gotMetadata result =
+    case result of
+        Ok (Scenario s) ->
+            SetScenario (Just s)
+
+        Err err ->
+            SetScenario Nothing
+                |> Debug.log (toString err)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -73,25 +81,26 @@ update msg model =
         Mdl msg_ ->
             Material.update Mdl msg_ model
 
+        MapCardMsg msg_ ->
+            lift
+                .mapCard
+                (\m x -> { m | mapCard = x })
+                MapCardMsg
+                MapCard.update
+                msg_
+                model
+
         MapScenario id ->
             ( model, getMetadata id )
 
-        MapLayer i ->
-            let
-                newModel =
-                    { model | mapLayer = i }
-            in
-                ( newModel, updateMap newModel )
-
-        GotScenario (Ok (Scenario s)) ->
-            let
-                newModel =
-                    { model | mapScenario = Just s, mapLayer = 0 }
-            in
-                ( newModel, updateMap newModel )
-
-        GotScenario (Err err) ->
-            Debug.log (toString err) ( model, Cmd.none )
+        SetScenario s ->
+            lift
+                .mapCard
+                (\m x -> { m | mapCard = x })
+                MapCardMsg
+                MapCard.update
+                (updateMap s)
+                ({ model | mapScenario = s })
 
         SelectScenario id ->
             let
@@ -109,24 +118,9 @@ update msg model =
             ( { model | selectedScenarios = Set.remove id model.selectedScenarios }, Cmd.none )
 
 
-updateMap : Model -> Cmd Msg
-updateMap model =
-    case mapInfo model of
-        Nothing ->
-            clearLeafletMap (mapContainerId model)
-
-        Just ( endpoint, mapName, layerNames ) ->
-            setLeafletMap
-                { containerId = (mapContainerId model)
-                , endPoint = endpoint
-                , mapName = mapName
-                , layers = ("bmng" :: (List.take 1 <| List.drop model.mapLayer layerNames))
-                }
-
-
-mapInfo : Model -> Maybe ( String, String, List String )
-mapInfo model =
-    model.mapScenario
+updateMap : Maybe ScenarioRecord -> MapCard.Msg
+updateMap scenario =
+    scenario
         |> Maybe.andThen (\{ map } -> map)
         |> Maybe.map
             (\(Decoder.Map { endpoint, mapName, layers }) ->
@@ -137,70 +131,9 @@ mapInfo model =
                     layerNames =
                         List.map (\(MapLayersItem l) -> l.layerName) ls
                 in
-                    ( endpoint, mapName, layerNames )
+                    { endPoint = endpoint, mapName = mapName, layers = layerNames }
             )
-
-
-mapContainerId : Model -> String
-mapContainerId model =
-    "leaflet-map-" ++ (toString model.mode)
-
-
-leafletDiv : Model -> Html Msg
-leafletDiv model =
-    Options.div
-        [ Options.id (mapContainerId model)
-        , Options.cs "leaflet-map"
-        , Options.css "width" "800px"
-        , Options.css "height" "600px"
-        , Options.css "margin-left" "auto"
-        , Options.css "margin-right" "auto"
-        ]
-        []
-
-
-mapCard : Index -> Model -> Html Msg
-mapCard index model =
-    let
-        layerNames =
-            mapInfo model
-                |> Maybe.map (\( _, _, ls ) -> ls)
-                |> Maybe.withDefault []
-
-        checkmark x =
-            if x then
-                Icon.view "check" [ Options.css "width" "40px" ]
-            else
-                Options.span [ Options.css "width" "40px" ] []
-
-        menuItem i layer =
-            Menu.item [ Menu.onSelect (MapLayer i) ]
-                [ checkmark (i == model.mapLayer)
-                , Html.text layer
-                ]
-    in
-        Card.view
-            [ Elevation.e2
-            , Options.css "width" "800px"
-            , Options.css "margin" "20px"
-            ]
-            [ Card.title [ Card.border ]
-                [ Card.head []
-                    [ model.mapScenario
-                        |> Maybe.andThen .code
-                        |> Maybe.withDefault "Map"
-                        |> Html.text
-                    ]
-                ]
-            , Card.menu []
-                [ Menu.render Mdl
-                    (-1 :: index)
-                    model.mdl
-                    [ Menu.bottomRight ]
-                    (List.indexedMap menuItem layerNames)
-                ]
-            , Card.text [ Options.css "padding" "0", Options.css "width" "100%" ] [ leafletDiv model ]
-            ]
+        |> MapCard.SetMap
 
 
 scenariosList : Index -> SL.Model -> Model -> Html Msg
@@ -265,7 +198,7 @@ view : Index -> SL.Model -> Model -> Html Msg
 view index availableScenarios model =
     Options.div [ Options.css "display" "flex" ]
         [ scenariosList index availableScenarios model
-        , mapCard index model
+        , MapCard.view index "Map" model.mapCard |> Html.map MapCardMsg
         ]
 
 
@@ -274,6 +207,6 @@ init mode =
     { mdl = Material.model
     , mode = mode
     , mapScenario = Nothing
-    , mapLayer = 0
+    , mapCard = MapCard.init ("leaflet-map-scenarios-" ++ (toString mode))
     , selectedScenarios = Set.empty
     }
