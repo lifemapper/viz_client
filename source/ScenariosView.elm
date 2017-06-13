@@ -14,7 +14,6 @@ import Decoder
         , MapLayersItem(..)
         )
 import Material
-import Material.Scheme
 import Material.Menu as Menu
 import Material.List as L
 import Material.Icon as Icon
@@ -28,6 +27,7 @@ import Html.Events
 import Http
 import Helpers exposing (Index)
 import Leaflet exposing (setLeafletMap, clearLeafletMap)
+import ScenariosList as SL
 
 
 type Mode
@@ -38,7 +38,6 @@ type Mode
 type alias Model =
     { mdl : Material.Model
     , mode : Mode
-    , scenarios : List AtomObjectRecord
     , mapScenario : Maybe ScenarioRecord
     , mapLayer : Int
     , selectedScenarios : Set Int
@@ -47,26 +46,11 @@ type alias Model =
 
 type Msg
     = Mdl (Material.Msg Msg)
-    | GotScenarioList (Result Http.Error AtomList)
     | MapScenario Int
     | MapLayer Int
     | GotScenario (Result Http.Error Scenario)
     | SelectScenario Int
     | UnselectScenario Int
-
-
-getScenarios : Cmd Msg
-getScenarios =
-    Http.request
-        { method = "GET"
-        , headers = [ Http.header "Accept" "application/json" ]
-        , url = "http://notyeti-191.lifemapper.org/api/v2/scenario"
-        , body = Http.emptyBody
-        , expect = Http.expectJson decodeAtomList
-        , timeout = Nothing
-        , withCredentials = False
-        }
-        |> Http.send GotScenarioList
 
 
 getMetadata : Int -> Cmd Msg
@@ -88,12 +72,6 @@ update msg model =
     case msg of
         Mdl msg_ ->
             Material.update Mdl msg_ model
-
-        GotScenarioList (Ok (AtomList atoms)) ->
-            ( { model | scenarios = atoms |> List.map (\(AtomObject o) -> o) }, Cmd.none )
-
-        GotScenarioList (Err err) ->
-            Debug.log (toString err) ( model, Cmd.none )
 
         MapScenario id ->
             ( model, getMetadata id )
@@ -225,8 +203,8 @@ mapCard index model =
             ]
 
 
-scenariosList : Index -> Model -> Html Msg
-scenariosList index model =
+scenariosList : Index -> SL.Model -> Model -> Html Msg
+scenariosList index availableScenarios model =
     let
         title =
             case model.mode of
@@ -238,7 +216,7 @@ scenariosList index model =
     in
         Options.div [ Options.css "margin" "20px" ]
             [ Options.styled Html.p [ Typo.title ] [ Html.text title ]
-            , L.ul [] <| List.indexedMap (scenarioLI model index) model.scenarios
+            , L.ul [] <| List.indexedMap (scenarioLI model index) availableScenarios
             ]
 
 
@@ -283,10 +261,10 @@ scenarioLI model index i s =
             ]
 
 
-view : Index -> Model -> Html Msg
-view index model =
+view : Index -> SL.Model -> Model -> Html Msg
+view index availableScenarios model =
     Options.div [ Options.css "display" "flex" ]
-        [ scenariosList index model
+        [ scenariosList index availableScenarios model
         , mapCard index model
         ]
 
@@ -295,18 +273,7 @@ init : Mode -> Model
 init mode =
     { mdl = Material.model
     , mode = mode
-    , scenarios = []
     , mapScenario = Nothing
     , mapLayer = 0
     , selectedScenarios = Set.empty
     }
-
-
-main : Program Never Model Msg
-main =
-    Html.program
-        { init = ( init ProjectionScenarios, Cmd.batch [ Material.init Mdl, getScenarios ] )
-        , view = view [] >> Material.Scheme.top
-        , update = update
-        , subscriptions = Material.subscriptions Mdl
-        }
