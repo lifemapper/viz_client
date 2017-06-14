@@ -1865,12 +1865,15 @@
     },
     "OccurrenceSet": {
       "type": "object",
+      "required": [
+        "id"
+      ],
       "properties": {
         "objectType": {
           "type": "string"
         },
         "id": {
-          "type": "string"
+          "type": "integer"
         },
         "url": {
           "type": "string"
@@ -1892,7 +1895,7 @@
           "type": "object"
         },
         "map": {
-          "$ref": "#/definitions/Map"
+          "$ref": "#/definitions/SingleLayerMap"
         },
         "spatialVector": {
           "$ref": "#/definitions/SpatialVector"
@@ -2028,7 +2031,7 @@
         "id": {
           "type": "integer"
         },
-        "metadataUrl": {
+        "url": {
           "type": "string"
         },
         "etag": {
@@ -2130,6 +2133,25 @@
     "Shapegrid": {
       "type": "object"
     },
+    "SingleLayerMap": {
+      "type": "object",
+      "required": [
+        "endpoint",
+        "mapName",
+        "layerName"
+      ],
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "mapName": {
+          "type": "string"
+        },
+        "layerName": {
+          "type": "string"
+        }
+      }
+    },
     "SpatialRaster": {
       "type": "object",
       "properties": {
@@ -2175,10 +2197,13 @@
       "type": "object",
       "properties": {
         "epsg": {
-          "type": "string"
+          "type": "integer"
         },
         "bbox": {
-          "type": "string"
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
         },
         "mapUnits": {
           "type": "string"
@@ -2193,7 +2218,7 @@
           "type": "string"
         },
         "ogrType": {
-          "type": "string"
+          "type": "integer"
         },
         "dataFormat": {
           "type": "string"

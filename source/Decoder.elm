@@ -334,14 +334,14 @@ type alias OccurrenceSetRecord =
     { squid : Maybe String
     , speciesName : Maybe String
     , spatialVector : Maybe SpatialVector
-    , map : Maybe Map
+    , map : Maybe SingleLayerMap
     , metadata : Maybe OccurrenceSetMetadata
     , etag : Maybe String
     , statusModTime : Maybe String
     , status : Maybe Int
     , user : Maybe String
     , url : Maybe String
-    , id : Maybe String
+    , id : Int
     , objectType : Maybe String
     }
 
@@ -356,14 +356,14 @@ decodeOccurrenceSet =
         |> maybe "squid" string
         |> maybe "speciesName" string
         |> maybe "spatialVector" (lazy (\_ -> decodeSpatialVector))
-        |> maybe "map" (lazy (\_ -> decodeMap))
+        |> maybe "map" (lazy (\_ -> decodeSingleLayerMap))
         |> maybe "metadata" (lazy (\_ -> decodeOccurrenceSetMetadata))
         |> maybe "etag" string
         |> maybe "statusModTime" string
         |> maybe "status" int
         |> maybe "user" string
         |> maybe "url" string
-        |> maybe "id" string
+        |> required "id" int
         |> maybe "objectType" string
         |> map OccurrenceSet
 
@@ -558,7 +558,7 @@ type alias ScenarioRecord =
     , userId : Maybe String
     , code : Maybe String
     , etag : Maybe String
-    , metadataUrl : Maybe String
+    , url : Maybe String
     , id : Int
     , objectType : Maybe String
     }
@@ -582,7 +582,7 @@ decodeScenario =
         |> maybe "userId" string
         |> maybe "code" string
         |> maybe "etag" string
-        |> maybe "metadataUrl" string
+        |> maybe "url" string
         |> required "id" int
         |> maybe "objectType" string
         |> map Scenario
@@ -718,6 +718,26 @@ decodeShapegrid =
         |> map Shapegrid
 
 
+type alias SingleLayerMapRecord =
+    { layerName : String
+    , mapName : String
+    , endpoint : String
+    }
+
+
+type SingleLayerMap
+    = SingleLayerMap SingleLayerMapRecord
+
+
+decodeSingleLayerMap : Decoder SingleLayerMap
+decodeSingleLayerMap =
+    decode SingleLayerMapRecord
+        |> required "layerName" string
+        |> required "mapName" string
+        |> required "endpoint" string
+        |> map SingleLayerMap
+
+
 type alias SpatialRasterRecord =
     { dataType : Maybe String
     , valueUnits : Maybe String
@@ -759,13 +779,13 @@ decodeSpatialRaster =
 type alias SpatialVectorRecord =
     { numFeatures : Maybe Int
     , dataFormat : Maybe String
-    , ogrType : Maybe String
+    , ogrType : Maybe Int
     , sha256 : Maybe String
     , dataUrl : Maybe String
     , resolution : Maybe Float
     , mapUnits : Maybe String
-    , bbox : Maybe String
-    , epsg : Maybe String
+    , bbox : Maybe SpatialVectorBbox
+    , epsg : Maybe Int
     }
 
 
@@ -778,14 +798,24 @@ decodeSpatialVector =
     decode SpatialVectorRecord
         |> maybe "numFeatures" int
         |> maybe "dataFormat" string
-        |> maybe "ogrType" string
+        |> maybe "ogrType" int
         |> maybe "sha256" string
         |> maybe "dataUrl" string
         |> maybe "resolution" float
         |> maybe "mapUnits" string
-        |> maybe "bbox" string
-        |> maybe "epsg" string
+        |> maybe "bbox" decodeSpatialVectorBbox
+        |> maybe "epsg" int
         |> map SpatialVector
+
+
+type SpatialVectorBbox
+    = SpatialVectorBbox (List Float)
+
+
+decodeSpatialVectorBbox : Decoder SpatialVectorBbox
+decodeSpatialVectorBbox =
+    list float
+        |> map SpatialVectorBbox
 
 
 type alias TreeRecord =
