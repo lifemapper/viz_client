@@ -7,6 +7,18 @@ type alias Index =
     List Int
 
 
+chain : (model -> ( model, Cmd msg )) -> (model -> ( model, Cmd msg )) -> model -> ( model, Cmd msg )
+chain first second model =
+    let
+        ( model1, cmd1 ) =
+            first model
+
+        ( model2, cmd2 ) =
+            second model1
+    in
+        model2 ! [ cmd1, cmd2 ]
+
+
 unsafeGet : Int -> Array.Array a -> a
 unsafeGet i array =
     case Array.get i array of

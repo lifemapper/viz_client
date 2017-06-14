@@ -17,7 +17,8 @@ import Material.Helpers as Helpers
 import Html exposing (Html)
 import Html.Events
 import Http
-import Helpers exposing (Index)
+import List.Extra exposing (removeAt)
+import Helpers exposing (Index, chain)
 import MapCard
 
 
@@ -41,63 +42,51 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        Mdl msg_ ->
-            Material.update Mdl msg_ model
+    let
+        liftedChooserUpdate =
+            Helpers.lift
+                .chooser
+                (\m x -> { m | chooser = x })
+                ChooserMsg
+                OccurrenceSetChooser.update
 
-        Remove i ->
-            ( { model
-                | occurrenceSets =
-                    List.append
-                        (List.take i model.occurrenceSets)
-                        (List.drop (i + 1) model.occurrenceSets)
-              }
-            , Cmd.none
+        liftedMapCardUpdate =
+            Helpers.lift
+                .mapCard
+                (\m x -> { m | mapCard = x })
+                MapCardMsg
+                MapCard.update
+    in
+        case msg of
+            Mdl msg_ ->
+                Material.update Mdl msg_ model
+
+            Remove i ->
+                ( { model | occurrenceSets = removeAt i model.occurrenceSets }, Cmd.none )
+
+            MapOccurrences id ->
+                ( model, getMetadataAndMap id )
+
+            SetMapped o ->
+                liftedMapCardUpdate (updateMap o) { model | mappedSet = o }
+
+            MapCardMsg msg_ ->
+                liftedMapCardUpdate msg_ model
+
+            ChooserMsg msg_ ->
+                chain (addSelected msg_) (liftedChooserUpdate msg_) model
+
+
+addSelected : OccurrenceSetChooser.Msg -> Model -> ( Model, Cmd Msg )
+addSelected msg model =
+    case msg of
+        OccurrenceSetChooser.Select object ->
+            ( { model | occurrenceSets = model.occurrenceSets ++ [ object ] }
+            , getMetadataAndMap object.id
             )
 
-        MapOccurrences id ->
-            ( model, getMetadataAndMap id )
-
-        SetMapped o ->
-            Helpers.lift
-                .mapCard
-                (\m x -> { m | mapCard = x })
-                MapCardMsg
-                MapCard.update
-                (updateMap o)
-                ({ model | mappedSet = o })
-
-        MapCardMsg msg_ ->
-            Helpers.lift
-                .mapCard
-                (\m x -> { m | mapCard = x })
-                MapCardMsg
-                MapCard.update
-                msg_
-                model
-
-        ChooserMsg msg_ ->
-            let
-                ( model1, cmd1 ) =
-                    case msg_ of
-                        OccurrenceSetChooser.Select object ->
-                            ( { model | occurrenceSets = model.occurrenceSets ++ [ object ] }
-                            , getMetadataAndMap object.id
-                            )
-
-                        msg_ ->
-                            ( model, Cmd.none )
-
-                ( model2, cmd2 ) =
-                    Helpers.lift
-                        .chooser
-                        (\m x -> { m | chooser = x })
-                        ChooserMsg
-                        OccurrenceSetChooser.update
-                        msg_
-                        model1
-            in
-                model2 ! [ cmd1, cmd2 ]
+        msg ->
+            ( model, Cmd.none )
 
 
 updateMap : Maybe OccurrenceSetRecord -> MapCard.Msg
