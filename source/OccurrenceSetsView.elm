@@ -56,7 +56,7 @@ update msg model =
             )
 
         MapOccurrences id ->
-            ( model, getMetadata id )
+            ( model, getMetadataAndMap id )
 
         SetMapped o ->
             Helpers.lift
@@ -77,19 +77,27 @@ update msg model =
                 model
 
         ChooserMsg msg_ ->
-            Helpers.lift
-                .chooser
-                (\m x -> { m | chooser = x })
-                ChooserMsg
-                OccurrenceSetChooser.update
-                msg_
-                (case msg_ of
-                    OccurrenceSetChooser.Select object ->
-                        { model | occurrenceSets = model.occurrenceSets ++ [ object ] }
+            let
+                ( model1, cmd1 ) =
+                    case msg_ of
+                        OccurrenceSetChooser.Select object ->
+                            ( { model | occurrenceSets = model.occurrenceSets ++ [ object ] }
+                            , getMetadataAndMap object.id
+                            )
 
-                    msg_ ->
-                        model
-                )
+                        msg_ ->
+                            ( model, Cmd.none )
+
+                ( model2, cmd2 ) =
+                    Helpers.lift
+                        .chooser
+                        (\m x -> { m | chooser = x })
+                        ChooserMsg
+                        OccurrenceSetChooser.update
+                        msg_
+                        model1
+            in
+                model2 ! [ cmd1, cmd2 ]
 
 
 updateMap : Maybe OccurrenceSetRecord -> MapCard.Msg
@@ -102,8 +110,8 @@ updateMap =
         >> MapCard.SetMap
 
 
-getMetadata : Int -> Cmd Msg
-getMetadata id =
+getMetadataAndMap : Int -> Cmd Msg
+getMetadataAndMap id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
