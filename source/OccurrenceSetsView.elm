@@ -148,7 +148,7 @@ occurrenceSetLI model index i o =
     in
         L.li []
             [ L.content [] [ Html.text o.name ]
-            , L.content2 []
+            , L.content2 [ Options.css "flex-flow" "row" ]
                 [ L.icon "delete" [ Options.attribute <| Html.Events.onClick (Remove i) ]
                 , icon
                 ]
