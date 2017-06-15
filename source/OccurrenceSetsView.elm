@@ -168,7 +168,11 @@ occurrenceSetList index model =
 
 view : Index -> Model -> Html Msg
 view index model =
-    Options.div [ Options.css "display" "flex" ]
-        [ occurrenceSetList index model
-        , MapCard.view index "Map" model.mapCard |> Html.map MapCardMsg
-        ]
+    let
+        mapCardTitle =
+            model.mappedSet |> Maybe.andThen .speciesName |> Maybe.withDefault "Map"
+    in
+        Options.div [ Options.css "display" "flex" ]
+            [ occurrenceSetList index model
+            , MapCard.view index mapCardTitle model.mapCard |> Html.map MapCardMsg
+            ]
