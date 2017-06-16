@@ -10,6 +10,7 @@ import AlgorithmView
 import AddAlgorithmView
 import AlgorithmDefinition as D
 import Helpers exposing (Index, unsafeGet, removeElem)
+import Decoder
 
 
 type alias Model =
@@ -17,6 +18,14 @@ type alias Model =
     , adder : AddAlgorithmView.Model
     , mdl : Material.Model
     }
+
+
+toApi : Model -> Decoder.ProjectionPOSTAlgorithms
+toApi =
+    .algorithms
+        >> Array.toList
+        >> List.map AlgorithmView.toApi
+        >> Decoder.ProjectionPOSTAlgorithms
 
 
 type Msg
@@ -84,6 +93,11 @@ view index model =
         grid [] <|
             List.append (List.indexedMap (viewAlgorithm index) (Array.toList model.algorithms))
                 [ cell [ Grid.size All 2 ] [ Html.map AddAlgorithmMsg <| AddAlgorithmView.view alreadyAdded model.adder ] ]
+
+
+complete : Model -> Bool
+complete model =
+    (Array.length model.algorithms) > 0
 
 
 init : Model

@@ -1,13 +1,21 @@
 module NewSDM exposing (Model, page, init, initCmd, update, Msg)
 
 import Html exposing (Html)
+import Http
 import Material
+import Material.Options as Options
+import Material.List as Lists
+import Material.Icon as Icon
+import Material.Button as Button
 import Material.Helpers exposing (lift)
 import ScenariosView as Scns
 import AlgorithmsView as Algs
 import OccurrenceSetsView as Occs
 import Page exposing (Page)
 import ScenariosList as SL
+import Helpers exposing (undefined, unsafeFromMaybe)
+import Decoder
+import Encoder
 
 
 -- MODEL
@@ -18,11 +26,12 @@ type Tab
     | OccurrenceSets
     | ModelScenario
     | ProjScenarios
+    | PostProjection
 
 
 tabs : List Tab
 tabs =
-    [ Algorithms, OccurrenceSets, ModelScenario, ProjScenarios ]
+    [ Algorithms, OccurrenceSets, ModelScenario, ProjScenarios, PostProjection ]
 
 
 tabIndex : Tab -> Int
@@ -46,6 +55,45 @@ type alias Model =
     }
 
 
+toApi : Model -> Decoder.ProjectionPOST
+toApi { algorithmsModel, occurrenceSets, modelScenario, projectionScenarios } =
+    Decoder.ProjectionPOST
+        { algorithms = Algs.toApi algorithmsModel
+        , occurrenceSets = Occs.toApi occurrenceSets
+        , modelScenario =
+            Scns.toIdList modelScenario
+                |> List.map
+                    (\id ->
+                        Decoder.ProjectionPOSTModelScenario
+                            { scenarioId = Just id, scenarioCode = Nothing }
+                    )
+                |> List.head
+                |> unsafeFromMaybe "No Model Scenario Selected"
+        , projectionScenarios =
+            Scns.toIdList projectionScenarios
+                |> List.map
+                    (\id ->
+                        Decoder.ProjectionPOSTProjectionScenariosItem
+                            { scenarioId = Just id, scenarioCode = Nothing }
+                    )
+                |> Decoder.ProjectionPOSTProjectionScenarios
+        }
+
+
+submitJob : Model -> Cmd Msg
+submitJob model =
+    Http.request
+        { method = "POST"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = "http://notyeti-191.lifemapper.org/api/v2/sdmProject"
+        , body = Http.jsonBody <| Encoder.encodeProjectionPOST <| toApi model
+        , expect = Http.expectString
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send JobSubmitted
+
+
 init : Model
 init =
     { mdl = Material.model
@@ -61,6 +109,8 @@ init =
 type Msg
     = Mdl (Material.Msg Msg)
     | SelectTab Tab
+    | SubmitJob
+    | JobSubmitted (Result Http.Error String)
     | ProjScnsMsg Scns.Msg
     | MdlScnMsg Scns.Msg
     | AlgsMsg Algs.Msg
@@ -73,6 +123,13 @@ update msg model =
     case msg of
         SelectTab tab ->
             ( { model | selectedTab = tab }, Cmd.none )
+
+        SubmitJob ->
+            ( model, submitJob model )
+
+        JobSubmitted result ->
+            Debug.log "result" (toString result)
+                |> always ( model, Cmd.none )
 
         ProjScnsMsg msg_ ->
             lift
@@ -139,6 +196,9 @@ tabTitle tab =
             ProjScenarios ->
                 "Projection Scenarios"
 
+            PostProjection ->
+                "Submit Project"
+
 
 mainView : Model -> Html Msg
 mainView model =
@@ -154,6 +214,51 @@ mainView model =
 
         ProjScenarios ->
             model.projectionScenarios |> Scns.view [ 0 ] (model.availableScenarios) |> Html.map ProjScnsMsg
+
+        PostProjection ->
+            Options.div [ Options.css "padding" "20px" ]
+                [ Html.p []
+                    [ Html.text """
+                                 Once all of inputs below have been defined the job
+                                 can be submitted. Ipsum lorem.
+                                 """
+                    ]
+                , Lists.ul [] <| List.map (taskLI model) tasks
+                , Button.render Mdl
+                    [ 0 ]
+                    model.mdl
+                    [ Button.raised
+                    , Button.disabled |> Options.when (not <| complete model)
+                    , Options.onClick SubmitJob |> Options.when (complete model)
+                    ]
+                    [ Html.text "Submit Job" ]
+                ]
+
+
+taskLI : Model -> ( Tab, Model -> Bool ) -> Html Msg
+taskLI model ( tab, complete ) =
+    let
+        icon =
+            if complete model then
+                Icon.i "check_box"
+            else
+                Icon.i "check_box_outline_blank"
+    in
+        Lists.li [] [ Lists.content [] [ icon, tabTitle tab ] ]
+
+
+tasks : List ( Tab, Model -> Bool )
+tasks =
+    [ ( Algorithms, (.algorithmsModel >> Algs.complete) )
+    , ( OccurrenceSets, (.occurrenceSets >> Occs.complete) )
+    , ( ModelScenario, (.modelScenario >> Scns.complete) )
+    , ( ProjScenarios, (.projectionScenarios >> Scns.complete) )
+    ]
+
+
+complete : Model -> Bool
+complete model =
+    List.all (\( _, taskComplete ) -> taskComplete model) tasks
 
 
 selectedTab : Model -> Int
@@ -183,4 +288,3 @@ page =
 initCmd : (Msg -> msg) -> Cmd msg
 initCmd map =
     SL.getScenarios SLMsg |> Cmd.map map
-

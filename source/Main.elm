@@ -56,7 +56,7 @@ update msg model =
 header : Model -> List (Html Msg)
 header model =
     [ Layout.row []
-        [ Layout.title [] [ Html.text "LifeMapper SDM" ] ]
+        [ Layout.title [] [ Html.text "Lifemapper SDM" ] ]
     ]
 
 
@@ -78,7 +78,7 @@ view model =
             ]
             { header = header model
             , drawer =
-                [ Layout.title [] [ Html.text "Drawer" ]
+                [ Layout.title [] [ Html.text "Lifemapper SDM" ]
                 ]
             , tabs = ( page.tabTitles model, [] )
             , main = [ page.view model ]

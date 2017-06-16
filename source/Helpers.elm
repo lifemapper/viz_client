@@ -7,6 +7,21 @@ type alias Index =
     List Int
 
 
+undefined : () -> a
+undefined _ =
+    Debug.crash "Undefined"
+
+
+unsafeFromMaybe : String -> Maybe a -> a
+unsafeFromMaybe error maybe =
+    case maybe of
+        Just a ->
+            a
+
+        Nothing ->
+            Debug.crash error
+
+
 chain : (model -> ( model, Cmd msg )) -> (model -> ( model, Cmd msg )) -> model -> ( model, Cmd msg )
 chain first second model =
     let

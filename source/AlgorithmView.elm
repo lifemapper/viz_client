@@ -2,11 +2,6 @@ module AlgorithmView exposing (..)
 
 import Array
 import Decoder
-    exposing
-        ( Algorithm(..)
-        , AlgorithmParameters(..)
-        , AlgorithmParametersItem(..)
-        )
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Material
@@ -31,19 +26,12 @@ type alias Model =
     }
 
 
-
--- initFromDecoder : Algorithm -> Model
--- initFromDecoder (Algorithm { code, parameters }) =
---     { code = code
---     , parameters = AlgorithmParametersView.initFromDecoder parameters
---     , mdl = Material.model
---     }
--- toAlgorithm : Model -> Algorithm
--- toAlgorithm { code, parameters } =
---     Algorithm
---         { code = code
---         , parameters = AlgorithmParametersView.toAlgorithmParameters parameters
---         }
+toApi : Model -> Decoder.Algorithm
+toApi { definition, parameters } =
+    Decoder.Algorithm
+        { code = definition.code
+        , parameters = parameters |> Array.toList |> List.map ParameterView.toApi |> Decoder.AlgorithmParameters
+        }
 
 
 init : D.Algorithm -> Model
@@ -161,6 +149,7 @@ exampleAlgorithm =
             a
 
 
+main : Program Never Model Msg
 main =
     Html.program
         { init = ( init exampleAlgorithm, Material.init Mdl )

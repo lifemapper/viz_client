@@ -31,6 +31,13 @@ type alias Model =
     }
 
 
+toApi : Model -> Decoder.ProjectionPOSTOccurrenceSets
+toApi =
+    .occurrenceSets
+        >> List.map (\o -> Decoder.ProjectionPOSTOccurrenceSetsItem { occurrenceSetId = Just o.id })
+        >> Decoder.ProjectionPOSTOccurrenceSets
+
+
 type Msg
     = ChooserMsg OccurrenceSetChooser.Msg
     | Remove Int
@@ -176,3 +183,8 @@ view index model =
             [ occurrenceSetList index model
             , MapCard.view index mapCardTitle model.mapCard |> Html.map MapCardMsg
             ]
+
+
+complete : Model -> Bool
+complete model =
+    (List.length model.occurrenceSets) > 0

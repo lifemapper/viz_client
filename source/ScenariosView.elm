@@ -41,6 +41,12 @@ type alias Model =
     }
 
 
+toIdList : Model -> List Int
+toIdList =
+    .selectedScenarios
+        >> Set.toList
+
+
 type Msg
     = Mdl (Material.Msg Msg)
     | MapCardMsg MapCard.Msg
@@ -200,6 +206,11 @@ view index availableScenarios model =
         [ scenariosList index availableScenarios model
         , MapCard.view index "Map" model.mapCard |> Html.map MapCardMsg
         ]
+
+
+complete : Model -> Bool
+complete model =
+    (Set.size model.selectedScenarios) > 0
 
 
 init : Mode -> Model

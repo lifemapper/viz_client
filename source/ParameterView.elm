@@ -11,6 +11,7 @@ import Material.Toggles as Toggles
 import Material.Scheme
 import AlgorithmDefinition as D
 import Helpers exposing (Index)
+import Decoder
 
 
 type alias Model =
@@ -20,6 +21,11 @@ type alias Model =
     , focused : Bool
     , mdl : Material.Model
     }
+
+
+toApi : Model -> Decoder.AlgorithmParametersItem
+toApi model =
+    Decoder.AlgorithmParametersItem { value = model.value, name = model.definition.name }
 
 
 init : D.Parameter -> Model
