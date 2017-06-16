@@ -1,6 +1,5 @@
 module AlgorithmView exposing (..)
 
-import Array
 import Decoder
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -8,18 +7,18 @@ import Material
 import Material.Elevation as Elevation
 import Material.Button as Button
 import Material.Icon as Icon
-import Material.Helpers exposing (lift)
 import Material.Options as Options
 import Material.Card as Card
 import Material.Scheme
 import ParameterView
 import AlgorithmDefinition as D
-import Helpers exposing (Index, unsafeGet)
+import Helpers exposing (Index)
+import List.Extra exposing (setAt, getAt)
 
 
 type alias Model =
     { definition : D.Algorithm
-    , parameters : Array.Array ParameterView.Model
+    , parameters : List ParameterView.Model
     , truncateDesc : Bool
     , mouseIn : Bool
     , mdl : Material.Model
@@ -30,14 +29,14 @@ toApi : Model -> Decoder.Algorithm
 toApi { definition, parameters } =
     Decoder.Algorithm
         { code = definition.code
-        , parameters = parameters |> Array.toList |> List.map ParameterView.toApi |> Decoder.AlgorithmParameters
+        , parameters = parameters |> List.map ParameterView.toApi |> Decoder.AlgorithmParameters
         }
 
 
 init : D.Algorithm -> Model
 init def =
     { definition = def
-    , parameters = Array.fromList <| List.map ParameterView.init def.parameters
+    , parameters = List.map ParameterView.init def.parameters
     , truncateDesc = True
     , mouseIn = False
     , mdl = Material.model
@@ -68,13 +67,14 @@ update msg model =
             Material.update Mdl msg_ model
 
         ParameterMsg i msg_ ->
-            lift
-                (.parameters >> unsafeGet i)
-                (\m x -> { m | parameters = Array.set i x m.parameters })
-                (ParameterMsg i)
-                ParameterView.update
-                msg_
-                model
+            getAt i model.parameters
+                |> Maybe.map (ParameterView.update msg_)
+                |> Maybe.andThen
+                    (\( param, cmd ) ->
+                        setAt i param model.parameters
+                            |> Maybe.map (\params -> ( { model | parameters = params }, Cmd.map (ParameterMsg i) cmd ))
+                    )
+                |> Maybe.withDefault ( model, Cmd.none )
 
 
 setRaised : Bool -> Model -> Model
@@ -84,7 +84,7 @@ setRaised raised model =
 
 raised : Model -> Bool
 raised model =
-    model.mouseIn || (model.parameters |> Array.filter (\p -> p.focused) |> Array.isEmpty |> not)
+    model.mouseIn || (model.parameters |> List.filter (\p -> p.focused) |> List.isEmpty |> not)
 
 
 descriptionView : Model -> Html Msg
@@ -110,7 +110,7 @@ parameterView index i model =
 parametersView : Index -> Model -> List (Html Msg)
 parametersView index model =
     if raised model then
-        [ List.indexedMap (parameterView index) (Array.toList model.parameters)
+        [ List.indexedMap (parameterView index) model.parameters
             |> Html.ul [ Attributes.style [ ( "padding", "0" ), ( "list-style", "none" ) ] ]
         ]
     else

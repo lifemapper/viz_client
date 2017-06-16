@@ -1,6 +1,5 @@
 module AlgorithmsView exposing (..)
 
-import Array
 import Html exposing (Html)
 import Material
 import Material.Scheme
@@ -9,12 +8,13 @@ import Material.Helpers exposing (lift)
 import AlgorithmView
 import AddAlgorithmView
 import AlgorithmDefinition as D
-import Helpers exposing (Index, unsafeGet, removeElem)
+import Helpers exposing (Index)
+import List.Extra exposing (removeAt, setAt, getAt)
 import Decoder
 
 
 type alias Model =
-    { algorithms : Array.Array AlgorithmView.Model
+    { algorithms : List AlgorithmView.Model
     , adder : AddAlgorithmView.Model
     , mdl : Material.Model
     }
@@ -23,7 +23,6 @@ type alias Model =
 toApi : Model -> Decoder.ProjectionPOSTAlgorithms
 toApi =
     .algorithms
-        >> Array.toList
         >> List.map AlgorithmView.toApi
         >> Decoder.ProjectionPOSTAlgorithms
 
@@ -43,16 +42,17 @@ update msg model =
         AlgorithmMsg i msg_ ->
             case msg_ of
                 AlgorithmView.Remove ->
-                    ( { model | algorithms = removeElem i model.algorithms }, Cmd.none )
+                    ( { model | algorithms = removeAt i model.algorithms }, Cmd.none )
 
                 _ ->
-                    lift
-                        (.algorithms >> unsafeGet i)
-                        (\m x -> { m | algorithms = Array.set i x m.algorithms })
-                        (AlgorithmMsg i)
-                        AlgorithmView.update
-                        msg_
-                        model
+                    getAt i model.algorithms
+                        |> Maybe.map (AlgorithmView.update msg_)
+                        |> Maybe.andThen
+                            (\( alg_, cmd ) ->
+                                setAt i alg_ model.algorithms
+                                    |> Maybe.map (\algs -> ( { model | algorithms = algs }, Cmd.map (AlgorithmMsg i) cmd ))
+                            )
+                        |> Maybe.withDefault ( model, Cmd.none )
 
         AddAlgorithmMsg msg_ ->
             case msg_ of
@@ -72,7 +72,7 @@ update msg model =
 addAlgorithm : D.Algorithm -> Model -> Model
 addAlgorithm def model =
     { model
-        | algorithms = Array.push (AlgorithmView.init def |> AlgorithmView.setRaised True) model.algorithms
+        | algorithms = model.algorithms ++ [ AlgorithmView.init def |> AlgorithmView.setRaised True ]
         , adder = AddAlgorithmView.setRaised False model.adder
     }
 
@@ -87,22 +87,21 @@ view index model =
     let
         alreadyAdded =
             model.algorithms
-                |> Array.toList
                 |> List.map .definition
     in
         grid [] <|
-            List.append (List.indexedMap (viewAlgorithm index) (Array.toList model.algorithms))
+            List.append (List.indexedMap (viewAlgorithm index) model.algorithms)
                 [ cell [ Grid.size All 2 ] [ Html.map AddAlgorithmMsg <| AddAlgorithmView.view alreadyAdded model.adder ] ]
 
 
 complete : Model -> Bool
 complete model =
-    (Array.length model.algorithms) > 0
+    (List.length model.algorithms) > 0
 
 
 init : Model
 init =
-    { algorithms = Array.empty
+    { algorithms = []
     , adder = AddAlgorithmView.init
     , mdl = Material.model
     }
