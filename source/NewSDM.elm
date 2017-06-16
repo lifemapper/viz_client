@@ -61,21 +61,11 @@ toApi { algorithmsModel, occurrenceSets, modelScenario, projectionScenarios } =
         { algorithms = Algs.toApi algorithmsModel
         , occurrenceSets = Occs.toApi occurrenceSets
         , modelScenario =
-            Scns.toIdList modelScenario
-                |> List.map
-                    (\id ->
-                        Decoder.ProjectionPOSTModelScenario
-                            { scenarioId = Just id, scenarioCode = Nothing }
-                    )
+            Scns.toApi Decoder.ProjectionPOSTModelScenario modelScenario
                 |> List.head
                 |> unsafeFromMaybe "No Model Scenario Selected"
         , projectionScenarios =
-            Scns.toIdList projectionScenarios
-                |> List.map
-                    (\id ->
-                        Decoder.ProjectionPOSTProjectionScenariosItem
-                            { scenarioId = Just id, scenarioCode = Nothing }
-                    )
+            Scns.toApi Decoder.ProjectionPOSTProjectionScenariosItem projectionScenarios
                 |> Decoder.ProjectionPOSTProjectionScenarios
         }
 

@@ -41,23 +41,27 @@ type alias Model =
     }
 
 
-toIdList : Model -> List Int
-toIdList =
-    .selectedScenarios
-        >> Set.toList
+toApi :
+    ({ scenarioId : Maybe Int, scenarioCode : Maybe String } -> scenarioType)
+    -> Model
+    -> List scenarioType
+toApi toScenarioPOST { selectedScenarios } =
+    selectedScenarios
+        |> Set.toList
+        |> List.map (\id -> toScenarioPOST { scenarioId = Just id, scenarioCode = Nothing })
 
 
 type Msg
     = Mdl (Material.Msg Msg)
     | MapCardMsg MapCard.Msg
     | MapScenario Int
-    | SetScenario (Maybe ScenarioRecord)
+    | SetMapped (Maybe ScenarioRecord)
     | SelectScenario Int
     | UnselectScenario Int
 
 
-getMetadata : Int -> Cmd Msg
-getMetadata id =
+getMetadataAndMap : Int -> Cmd Msg
+getMetadataAndMap id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
@@ -74,61 +78,56 @@ gotMetadata : Result Http.Error Scenario -> Msg
 gotMetadata result =
     case result of
         Ok (Scenario s) ->
-            SetScenario (Just s)
+            SetMapped (Just s)
 
         Err err ->
-            SetScenario Nothing
+            SetMapped Nothing
                 |> Debug.log (toString err)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        Mdl msg_ ->
-            Material.update Mdl msg_ model
-
-        MapCardMsg msg_ ->
+    let
+        liftedMapCardUpdate =
             lift
                 .mapCard
                 (\m x -> { m | mapCard = x })
                 MapCardMsg
                 MapCard.update
-                msg_
-                model
+    in
+        case msg of
+            Mdl msg_ ->
+                Material.update Mdl msg_ model
 
-        MapScenario id ->
-            ( model, getMetadata id )
+            MapCardMsg msg_ ->
+                liftedMapCardUpdate msg_ model
 
-        SetScenario s ->
-            lift
-                .mapCard
-                (\m x -> { m | mapCard = x })
-                MapCardMsg
-                MapCard.update
-                (updateMap s)
-                ({ model | mapScenario = s })
+            MapScenario id ->
+                ( model, getMetadataAndMap id )
 
-        SelectScenario id ->
-            let
-                selectedScenarios =
-                    case model.mode of
-                        ProjectionScenarios ->
-                            Set.insert id model.selectedScenarios
+            SetMapped s ->
+                liftedMapCardUpdate (updateMap s) ({ model | mapScenario = s })
 
-                        ModelScenario ->
-                            Set.singleton id
-            in
-                ( { model | selectedScenarios = selectedScenarios }, Cmd.none )
+            SelectScenario id ->
+                let
+                    selectedScenarios =
+                        case model.mode of
+                            ProjectionScenarios ->
+                                Set.insert id model.selectedScenarios
 
-        UnselectScenario id ->
-            ( { model | selectedScenarios = Set.remove id model.selectedScenarios }, Cmd.none )
+                            ModelScenario ->
+                                Set.singleton id
+                in
+                    ( { model | selectedScenarios = selectedScenarios }, Cmd.none )
+
+            UnselectScenario id ->
+                ( { model | selectedScenarios = Set.remove id model.selectedScenarios }, Cmd.none )
 
 
 updateMap : Maybe ScenarioRecord -> MapCard.Msg
-updateMap scenario =
-    scenario
-        |> Maybe.andThen (\{ map } -> map)
-        |> Maybe.map
+updateMap =
+    Maybe.andThen (\{ map } -> map)
+        >> Maybe.map
             (\(Decoder.Map { endpoint, mapName, layers }) ->
                 let
                     (MapLayers ls) =
@@ -139,7 +138,7 @@ updateMap scenario =
                 in
                     { endPoint = endpoint, mapName = mapName, layers = layerNames }
             )
-        |> MapCard.SetMap
+        >> MapCard.SetMap
 
 
 scenariosList : Index -> SL.Model -> Model -> Html Msg
