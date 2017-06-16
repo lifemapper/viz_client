@@ -118,7 +118,7 @@ update msg model =
                             ModelScenario ->
                                 Set.singleton id
                 in
-                    ( { model | selectedScenarios = selectedScenarios }, Cmd.none )
+                    ( { model | selectedScenarios = selectedScenarios }, getMetadataAndMap id )
 
             UnselectScenario id ->
                 ( { model | selectedScenarios = Set.remove id model.selectedScenarios }, Cmd.none )
@@ -167,26 +167,28 @@ scenarioLI model index i s =
             else
                 "visibility_off"
 
-        icon =
-            L.icon iconName [ Options.attribute <| Html.Events.onClick (MapScenario s.id) ]
-
         selected =
             Set.member s.id model.selectedScenarios
 
-        toggle =
+        ( toggle, icon ) =
             case model.mode of
                 ModelScenario ->
-                    Toggles.radio
+                    ( Toggles.radio, [] )
 
                 ProjectionScenarios ->
-                    Toggles.checkbox
+                    ( Toggles.checkbox
+                    , if selected then
+                        [ L.icon iconName [ Options.attribute <| Html.Events.onClick (MapScenario s.id) ] ]
+                      else
+                        [ Options.span [ Options.css "width" "24px" ] [] ]
+                    )
     in
         L.li []
             [ L.content
                 []
-                [ icon, Html.text s.name ]
-            , L.content2 []
-                [ toggle Mdl
+                [ Html.text s.name ]
+            , L.content2 [ Options.css "flex-flow" "row" ]
+                (toggle Mdl
                     (i :: index)
                     model.mdl
                     [ Toggles.value selected
@@ -195,16 +197,21 @@ scenarioLI model index i s =
                     , Options.onToggle (UnselectScenario s.id) |> Options.when (selected && model.mode /= ModelScenario)
                     ]
                     []
-                ]
+                    :: icon
+                )
             ]
 
 
 view : Index -> SL.Model -> Model -> Html Msg
 view index availableScenarios model =
-    Options.div [ Options.css "display" "flex" ]
-        [ scenariosList index availableScenarios model
-        , MapCard.view index "Map" model.mapCard |> Html.map MapCardMsg
-        ]
+    let
+        mapCardTitle =
+            model.mapScenario |> Maybe.andThen .code |> Maybe.withDefault "Map"
+    in
+        Options.div [ Options.css "display" "flex" ]
+            [ scenariosList index availableScenarios model
+            , MapCard.view index mapCardTitle model.mapCard |> Html.map MapCardMsg
+            ]
 
 
 complete : Model -> Bool
