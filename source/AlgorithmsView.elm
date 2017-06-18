@@ -77,9 +77,14 @@ addAlgorithm def model =
     }
 
 
+cardSize : Int
+cardSize =
+    4
+
+
 viewAlgorithm : Index -> Int -> AlgorithmView.Model -> Cell Msg
 viewAlgorithm index i model =
-    cell [ Grid.size All 2 ] [ Html.map (AlgorithmMsg i) <| AlgorithmView.view (i :: index) <| model ]
+    cell [ Grid.size All cardSize ] [ Html.map (AlgorithmMsg i) <| AlgorithmView.view (i :: index) <| model ]
 
 
 view : Index -> Model -> Html Msg
@@ -91,7 +96,7 @@ view index model =
     in
         grid [] <|
             List.append (List.indexedMap (viewAlgorithm index) model.algorithms)
-                [ cell [ Grid.size All 2 ] [ Html.map AddAlgorithmMsg <| AddAlgorithmView.view alreadyAdded model.adder ] ]
+                [ cell [ Grid.size All cardSize ] [ Html.map AddAlgorithmMsg <| AddAlgorithmView.view alreadyAdded model.adder ] ]
 
 
 complete : Model -> Bool

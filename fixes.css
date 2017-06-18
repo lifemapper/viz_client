@@ -1,0 +1,12 @@
+
+.elm-overlay {
+    z-index: 999;
+}
+
+label.mdl-switch, label.mdl-radio {
+    height: auto;
+}
+
+label.mdl-switch span, label.mdl-radio span {
+    padding-right: 1px;
+}
