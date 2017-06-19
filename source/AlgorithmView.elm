@@ -126,7 +126,7 @@ view index model =
         , Options.onMouseLeave (MouseIn False)
         , Options.css "width" "100%"
         ]
-        [ Card.title [] [ Card.head [] [ Html.text model.definition.name ] ]
+        [ Card.title [ Options.css "padding-right" "48px" ] [ Card.head [] [ Html.text model.definition.name ] ]
         , Card.menu []
             [ Button.render Mdl
                 (-1 :: index)
