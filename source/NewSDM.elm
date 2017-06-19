@@ -74,7 +74,7 @@ submitJob : Model -> Cmd Msg
 submitJob model =
     Http.request
         { method = "POST"
-        , headers = [ Http.header "Accept" "application/json" ]
+        , headers = [ Http.header "Accept" "application/json", Http.header "Content-Type" "text/plain" ]
         , url = "http://notyeti-191.lifemapper.org/api/v2/sdmProject"
         , body = Http.jsonBody <| Encoder.encodeProjectionPOST <| toApi model
         , expect = Http.expectString

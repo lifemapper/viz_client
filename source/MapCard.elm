@@ -107,7 +107,7 @@ view index title model =
             [ Card.title [ Card.border ]
                 [ Card.head [] [ Html.text title ]
                 ]
-            , Card.menu []
+            , Card.menu [ Options.cs "map-layers-menu" ]
                 [ Menu.render Mdl
                     (-1 :: index)
                     model.mdl
