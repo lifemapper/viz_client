@@ -29,7 +29,7 @@ toApi : Model -> Decoder.Algorithm
 toApi { definition, parameters } =
     Decoder.Algorithm
         { code = definition.code
-        , parameters = parameters |> List.map ParameterView.toApi |> Decoder.AlgorithmParameters
+        , parameters = parameters |> List.map ParameterView.toApi
         }
 
 

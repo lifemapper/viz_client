@@ -50,10 +50,5 @@ encodeAlgorithm (Algorithm { code, parameters }) =
 
 
 encodeAlgorithmParameters : AlgorithmParameters -> Value
-encodeAlgorithmParameters (AlgorithmParameters items) =
-    list <| List.map encodeAlgorithmParametersItem items
-
-
-encodeAlgorithmParametersItem : AlgorithmParametersItem -> Value
-encodeAlgorithmParametersItem (AlgorithmParametersItem { name, value }) =
-    object [ ( "name", string name ), ( "value", string value ) ]
+encodeAlgorithmParameters =
+    List.map (\( name, value ) -> ( name, string value )) >> object

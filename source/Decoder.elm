@@ -37,37 +37,19 @@ type Algorithm
 decodeAlgorithm : Decoder Algorithm
 decodeAlgorithm =
     decode AlgorithmRecord
-        |> required "parameters" decodeAlgorithmParameters
+        |> required "parameters" (lazy (\_ -> decodeAlgorithmParameters))
         |> required "code" string
         |> map Algorithm
 
 
-type AlgorithmParameters
-    = AlgorithmParameters (List AlgorithmParametersItem)
+type alias AlgorithmParameters =
+    List ( String, String )
 
 
 decodeAlgorithmParameters : Decoder AlgorithmParameters
 decodeAlgorithmParameters =
-    list (lazy (\_ -> decodeAlgorithmParametersItem))
-        |> map AlgorithmParameters
-
-
-type alias AlgorithmParametersItemRecord =
-    { value : String
-    , name : String
-    }
-
-
-type AlgorithmParametersItem
-    = AlgorithmParametersItem AlgorithmParametersItemRecord
-
-
-decodeAlgorithmParametersItem : Decoder AlgorithmParametersItem
-decodeAlgorithmParametersItem =
-    decode AlgorithmParametersItemRecord
-        |> required "value" string
-        |> required "name" string
-        |> map AlgorithmParametersItem
+    Json.Decode.keyValuePairs value
+        |> map (List.map (\( name, value ) -> ( name, toString value )))
 
 
 type AtomList
@@ -390,14 +372,14 @@ type alias ProjectionRecord =
     , modelScenario : Maybe ScenarioRef
     , algorithm : Maybe Algorithm
     , spatialRaster : Maybe SpatialRaster
-    , map : Maybe Map
+    , map : Maybe SingleLayerMap
     , metadata : Maybe ProjectionMetadata
     , etag : Maybe String
     , statusModTime : Maybe String
     , status : Maybe Int
     , user : Maybe String
     , url : Maybe String
-    , id : Maybe String
+    , id : Int
     , objectType : Maybe String
     }
 
@@ -416,14 +398,14 @@ decodeProjection =
         |> maybe "modelScenario" (lazy (\_ -> decodeScenarioRef))
         |> maybe "algorithm" (lazy (\_ -> decodeAlgorithm))
         |> maybe "spatialRaster" (lazy (\_ -> decodeSpatialRaster))
-        |> maybe "map" (lazy (\_ -> decodeMap))
+        |> maybe "map" (lazy (\_ -> decodeSingleLayerMap))
         |> maybe "metadata" (lazy (\_ -> decodeProjectionMetadata))
         |> maybe "etag" string
         |> maybe "statusModTime" string
         |> maybe "status" int
         |> maybe "user" string
         |> maybe "url" string
-        |> maybe "id" string
+        |> required "id" int
         |> maybe "objectType" string
         |> map Projection
 
@@ -739,18 +721,18 @@ decodeSingleLayerMap =
 
 
 type alias SpatialRasterRecord =
-    { dataType : Maybe String
+    { dataType : Maybe Int
     , valueUnits : Maybe String
     , maxVal : Maybe Float
     , minVal : Maybe Float
     , dataFormat : Maybe String
-    , gdalType : Maybe String
+    , gdalType : Maybe Int
     , sha256 : Maybe String
     , dataUrl : Maybe String
     , resolution : Maybe Float
     , mapUnits : Maybe String
-    , bbox : Maybe String
-    , epsg : Maybe String
+    , bbox : Maybe SpatialRasterBbox
+    , epsg : Maybe Int
     }
 
 
@@ -761,19 +743,29 @@ type SpatialRaster
 decodeSpatialRaster : Decoder SpatialRaster
 decodeSpatialRaster =
     decode SpatialRasterRecord
-        |> maybe "dataType" string
+        |> maybe "dataType" int
         |> maybe "valueUnits" string
         |> maybe "maxVal" float
         |> maybe "minVal" float
         |> maybe "dataFormat" string
-        |> maybe "gdalType" string
+        |> maybe "gdalType" int
         |> maybe "sha256" string
         |> maybe "dataUrl" string
         |> maybe "resolution" float
         |> maybe "mapUnits" string
-        |> maybe "bbox" string
-        |> maybe "epsg" string
+        |> maybe "bbox" decodeSpatialRasterBbox
+        |> maybe "epsg" int
         |> map SpatialRaster
+
+
+type SpatialRasterBbox
+    = SpatialRasterBbox (List Float)
+
+
+decodeSpatialRasterBbox : Decoder SpatialRasterBbox
+decodeSpatialRasterBbox =
+    list float
+        |> map SpatialRasterBbox
 
 
 type alias SpatialVectorRecord =
