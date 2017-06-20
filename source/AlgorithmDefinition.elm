@@ -2,6 +2,7 @@ module AlgorithmDefinition exposing (..)
 
 import Json.Decode exposing (Decoder, field, string, list, succeed, fail, andThen, map, decodeString)
 import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)
+import List.Extra exposing (find)
 
 
 type alias Algorithm =
@@ -28,17 +29,22 @@ type alias Parameter =
     }
 
 
-
 type ParameterType
     = IntegerParam
     | FloatParam
 
+
 typeFromString : String -> Decoder ParameterType
 typeFromString s =
     case s of
-        "Integer" -> succeed IntegerParam
-        "Float" -> succeed FloatParam
-        t -> fail ("Unknown type: " ++ t ++ ". Expected 'Integer' or 'Float'.")
+        "Integer" ->
+            succeed IntegerParam
+
+        "Float" ->
+            succeed FloatParam
+
+        t ->
+            fail ("Unknown type: " ++ t ++ ". Expected 'Integer' or 'Float'.")
 
 
 type alias ParameterOption =
@@ -46,12 +52,20 @@ type alias ParameterOption =
     , value : Int
     }
 
+
 optionValueFromString : String -> Decoder Int
 optionValueFromString s =
     case String.toInt s of
-        Err msg -> fail msg
-        Ok v -> succeed v
+        Err msg ->
+            fail msg
 
+        Ok v ->
+            succeed v
+
+
+getAlgorithmByCode : String -> Maybe Algorithm
+getAlgorithmByCode code =
+    find (\alg -> alg.code == code) algorithms
 
 
 algorithms : List Algorithm
@@ -95,7 +109,6 @@ parameterOption =
     decode ParameterOption
         |> required "name" string
         |> required "value" (string |> andThen optionValueFromString)
-
 
 
 json : String

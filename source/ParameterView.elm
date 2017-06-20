@@ -10,6 +10,7 @@ import Material.Tooltip as Tooltip
 import Material.Toggles as Toggles
 import Material.Scheme
 import AlgorithmDefinition as D
+import List.Extra exposing (find)
 import Helpers exposing (Index)
 
 
@@ -32,6 +33,22 @@ init def =
     let
         initValue =
             Maybe.withDefault "" def.default
+    in
+        { definition = def
+        , value = initValue
+        , validationResult = validate def initValue
+        , focused = False
+        , mdl = Material.model
+        }
+
+
+initFromValues : List ( String, String ) -> D.Parameter -> Model
+initFromValues values def =
+    let
+        initValue =
+            find (\( name, _ ) -> name == def.name) values
+                |> Maybe.map (\( _, value ) -> value)
+                |> Maybe.withDefault (def.default |> Maybe.withDefault "")
     in
         { definition = def
         , value = initValue

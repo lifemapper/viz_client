@@ -51,4 +51,4 @@ encodeAlgorithm (Algorithm { code, parameters }) =
 
 encodeAlgorithmParameters : AlgorithmParameters -> Value
 encodeAlgorithmParameters =
-    List.map (\( name, value ) -> ( name, string value )) >> object
+    List.map (\( name, value ) -> ( name, String.toFloat value |> Result.toMaybe |> Maybe.map float |> Maybe.withDefault null )) >> object

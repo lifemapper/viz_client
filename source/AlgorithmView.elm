@@ -33,6 +33,29 @@ toApi { definition, parameters } =
         }
 
 
+fromApi : Decoder.Algorithm -> Model
+fromApi (Decoder.Algorithm { code, parameters }) =
+    let
+        definition =
+            case D.getAlgorithmByCode code of
+                Nothing ->
+                    Debug.crash ("unknown algorithm code: " ++ code)
+
+                Just def ->
+                    def
+
+        params =
+            definition.parameters
+                |> List.map (ParameterView.initFromValues parameters)
+    in
+        { definition = definition
+        , parameters = params
+        , truncateDesc = True
+        , mouseIn = False
+        , mdl = Material.model
+        }
+
+
 init : D.Algorithm -> Model
 init def =
     { definition = def
