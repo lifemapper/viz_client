@@ -1,6 +1,6 @@
 module ScenariosView exposing (..)
 
-import Set exposing (Set)
+import List.Extra exposing (remove)
 import Decoder
     exposing
         ( AtomObjectRecord
@@ -21,9 +21,7 @@ import Material.Toggles as Toggles
 import Material.Helpers exposing (lift)
 import Html exposing (Html)
 import Html.Events
-import Http
 import Helpers exposing (Index)
-import ScenariosList as SL
 import MapCard
 
 
@@ -37,7 +35,7 @@ type alias Model =
     , mode : Mode
     , mapScenario : Maybe ScenarioRecord
     , mapCard : MapCard.Model
-    , selectedScenarios : Set Int
+    , selectedScenarios : List ScenarioRecord
     }
 
 
@@ -47,42 +45,15 @@ toApi :
     -> List scenarioType
 toApi toScenarioPOST { selectedScenarios } =
     selectedScenarios
-        |> Set.toList
-        |> List.map (\id -> toScenarioPOST { scenarioId = Just id, scenarioCode = Nothing })
+        |> List.map (\s -> toScenarioPOST { scenarioId = Just s.id, scenarioCode = s.code })
 
 
 type Msg
     = Mdl (Material.Msg Msg)
     | MapCardMsg MapCard.Msg
-    | MapScenario Int
-    | SetMapped (Maybe ScenarioRecord)
-    | SelectScenario Int
-    | UnselectScenario Int
-
-
-getMetadataAndMap : Int -> Cmd Msg
-getMetadataAndMap id =
-    Http.request
-        { method = "GET"
-        , headers = [ Http.header "Accept" "application/json" ]
-        , url = "http://notyeti-191.lifemapper.org/api/v2/scenario/" ++ (toString id)
-        , body = Http.emptyBody
-        , expect = Http.expectJson decodeScenario
-        , timeout = Nothing
-        , withCredentials = False
-        }
-        |> Http.send gotMetadata
-
-
-gotMetadata : Result Http.Error Scenario -> Msg
-gotMetadata result =
-    case result of
-        Ok (Scenario s) ->
-            SetMapped (Just s)
-
-        Err err ->
-            SetMapped Nothing
-                |> Debug.log (toString err)
+    | MapScenario ScenarioRecord
+    | SelectScenario ScenarioRecord
+    | UnselectScenario ScenarioRecord
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -102,26 +73,27 @@ update msg model =
             MapCardMsg msg_ ->
                 liftedMapCardUpdate msg_ model
 
-            MapScenario id ->
-                ( model, getMetadataAndMap id )
+            MapScenario s ->
+                liftedMapCardUpdate (updateMap (Just s)) ({ model | mapScenario = (Just s) })
 
-            SetMapped s ->
-                liftedMapCardUpdate (updateMap s) ({ model | mapScenario = s })
-
-            SelectScenario id ->
+            SelectScenario s ->
                 let
                     selectedScenarios =
                         case model.mode of
                             ProjectionScenarios ->
-                                Set.insert id model.selectedScenarios
+                                s :: model.selectedScenarios
 
                             ModelScenario ->
-                                Set.singleton id
+                                [ s ]
                 in
-                    ( { model | selectedScenarios = selectedScenarios }, getMetadataAndMap id )
+                    liftedMapCardUpdate (updateMap (Just s))
+                        { model
+                            | selectedScenarios = selectedScenarios
+                            , mapScenario = (Just s)
+                        }
 
             UnselectScenario id ->
-                ( { model | selectedScenarios = Set.remove id model.selectedScenarios }, Cmd.none )
+                ( { model | selectedScenarios = remove id model.selectedScenarios }, Cmd.none )
 
 
 updateMap : Maybe ScenarioRecord -> MapCard.Msg
@@ -141,7 +113,7 @@ updateMap =
         >> MapCard.SetMap
 
 
-scenariosList : Index -> SL.Model -> Model -> Html Msg
+scenariosList : Index -> List ScenarioRecord -> Model -> Html Msg
 scenariosList index availableScenarios model =
     let
         title =
@@ -158,7 +130,7 @@ scenariosList index availableScenarios model =
             ]
 
 
-scenarioLI : Model -> Index -> Int -> AtomObjectRecord -> Html Msg
+scenarioLI : Model -> Index -> Int -> ScenarioRecord -> Html Msg
 scenarioLI model index i s =
     let
         iconName =
@@ -168,7 +140,7 @@ scenarioLI model index i s =
                 "visibility_off"
 
         selected =
-            Set.member s.id model.selectedScenarios
+            List.member s model.selectedScenarios
 
         ( toggle, icon ) =
             case model.mode of
@@ -178,7 +150,7 @@ scenarioLI model index i s =
                 ProjectionScenarios ->
                     ( Toggles.checkbox
                     , if selected then
-                        [ L.icon iconName [ Options.attribute <| Html.Events.onClick (MapScenario s.id) ] ]
+                        [ L.icon iconName [ Options.attribute <| Html.Events.onClick (MapScenario s) ] ]
                       else
                         [ Options.span [ Options.css "width" "24px" ] [] ]
                     )
@@ -186,15 +158,15 @@ scenarioLI model index i s =
         L.li []
             [ L.content
                 []
-                [ Html.text s.name ]
+                [ Html.text <| Maybe.withDefault "" s.code ]
             , L.content2 [ Options.css "flex-flow" "row" ]
                 (toggle Mdl
                     (i :: index)
                     model.mdl
                     [ Toggles.value selected
                     , Toggles.group (toString index) |> Options.when (model.mode == ModelScenario)
-                    , Options.onToggle (SelectScenario s.id) |> Options.when (not selected)
-                    , Options.onToggle (UnselectScenario s.id) |> Options.when (selected && model.mode /= ModelScenario)
+                    , Options.onToggle (SelectScenario s) |> Options.when (not selected)
+                    , Options.onToggle (UnselectScenario s) |> Options.when (selected && model.mode /= ModelScenario)
                     ]
                     []
                     :: icon
@@ -202,7 +174,7 @@ scenarioLI model index i s =
             ]
 
 
-view : Index -> SL.Model -> Model -> Html Msg
+view : Index -> List ScenarioRecord -> Model -> Html Msg
 view index availableScenarios model =
     let
         mapCardTitle =
@@ -216,7 +188,7 @@ view index availableScenarios model =
 
 complete : Model -> Bool
 complete model =
-    (Set.size model.selectedScenarios) > 0
+    (List.length model.selectedScenarios) > 0
 
 
 init : Mode -> Model
@@ -225,5 +197,5 @@ init mode =
     , mode = mode
     , mapScenario = Nothing
     , mapCard = MapCard.init ("leaflet-map-scenarios-" ++ (toString mode))
-    , selectedScenarios = Set.empty
+    , selectedScenarios = []
     }

@@ -20,13 +20,13 @@ encodeProjectionPOSTProjectionScenarios (ProjectionPOSTProjectionScenarios ss) =
 
 
 encodeProjectionPOSTProjectionScenariosItem : ProjectionPOSTProjectionScenariosItem -> Value
-encodeProjectionPOSTProjectionScenariosItem (ProjectionPOSTProjectionScenariosItem { scenarioId }) =
-    object [ ( "scenarioId", scenarioId |> Maybe.map int |> Maybe.withDefault null ) ]
+encodeProjectionPOSTProjectionScenariosItem (ProjectionPOSTProjectionScenariosItem { scenarioCode }) =
+    object [ ( "scenarioCode", scenarioCode |> Maybe.map string |> Maybe.withDefault null ) ]
 
 
 encodeProjectionPOSTModelScenario : ProjectionPOSTModelScenario -> Value
-encodeProjectionPOSTModelScenario (ProjectionPOSTModelScenario { scenarioId }) =
-    object [ ( "scenarioId", scenarioId |> Maybe.map int |> Maybe.withDefault null ) ]
+encodeProjectionPOSTModelScenario (ProjectionPOSTModelScenario { scenarioCode }) =
+    object [ ( "scenarioId", scenarioCode |> Maybe.map string |> Maybe.withDefault null ) ]
 
 
 encodeProjectionPOSTOccurrenceSets : ProjectionPOSTOccurrenceSets -> Value
