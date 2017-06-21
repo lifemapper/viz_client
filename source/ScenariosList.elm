@@ -19,6 +19,16 @@ type alias Model =
     }
 
 
+observedScenarios : Model -> List ScenarioRecord
+observedScenarios { metadatas } =
+    metadatas |> List.filter (.code >> Maybe.map (String.startsWith "observed") >> Maybe.withDefault False)
+
+
+loading : Model -> ( Int, Int )
+loading { atoms, metadatas } =
+    ( List.length metadatas, List.length atoms )
+
+
 type Msg
     = GotScenarioList (Result Http.Error AtomList)
     | AddMetadata ScenarioRecord

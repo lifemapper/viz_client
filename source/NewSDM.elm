@@ -200,10 +200,10 @@ mainView model =
             model.occurrenceSets |> Occs.view [] |> Html.map OccsMsg
 
         ModelScenario ->
-            model.modelScenario |> Scns.view [ 0 ] (model.availableScenarios.metadatas) |> Html.map MdlScnMsg
+            model.modelScenario |> Scns.view [ 0 ] model.availableScenarios |> Html.map MdlScnMsg
 
         ProjScenarios ->
-            model.projectionScenarios |> Scns.view [ 0 ] (model.availableScenarios.metadatas) |> Html.map ProjScnsMsg
+            model.projectionScenarios |> Scns.view [ 0 ] model.availableScenarios |> Html.map ProjScnsMsg
 
         PostProjection ->
             Options.div [ Options.css "padding" "20px" ]

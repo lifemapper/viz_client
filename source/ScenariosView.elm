@@ -18,11 +18,13 @@ import Material.List as L
 import Material.Options as Options
 import Material.Typography as Typo
 import Material.Toggles as Toggles
+import Material.Progress as Loading
 import Material.Helpers exposing (lift)
 import Html exposing (Html)
 import Html.Events
 import Helpers exposing (Index)
 import MapCard
+import ScenariosList as SL
 
 
 type Mode
@@ -113,8 +115,8 @@ updateMap =
         >> MapCard.SetMap
 
 
-scenariosList : Index -> List ScenarioRecord -> Model -> Html Msg
-scenariosList index availableScenarios model =
+scenariosList : Index -> SL.Model -> Model -> Html Msg
+scenariosList index scenarioList model =
     let
         title =
             case model.mode of
@@ -123,11 +125,30 @@ scenariosList index availableScenarios model =
 
                 ProjectionScenarios ->
                     "Choose Projection Scenarios"
+
+        availableScenarios =
+            case model.mode of
+                ModelScenario ->
+                    SL.observedScenarios scenarioList
+
+                ProjectionScenarios ->
+                    scenarioList.metadatas
+
+        ( loaded, toLoad ) =
+            SL.loading scenarioList
+
+        loading =
+            if loaded < toLoad then
+                [ Loading.progress (toFloat loaded / toFloat toLoad * 100) ]
+            else
+                []
     in
-        Options.div [ Options.css "margin" "20px" ]
-            [ Options.styled Html.p [ Typo.title ] [ Html.text title ]
-            , L.ul [] <| List.indexedMap (scenarioLI model index) availableScenarios
-            ]
+        Options.div [ Options.css "margin" "20px" ] <|
+            List.concat
+                [ [ Options.styled Html.p [ Typo.title ] [ Html.text title ] ]
+                , loading
+                , [ L.ul [] <| List.indexedMap (scenarioLI model index) availableScenarios ]
+                ]
 
 
 scenarioLI : Model -> Index -> Int -> ScenarioRecord -> Html Msg
@@ -174,14 +195,14 @@ scenarioLI model index i s =
             ]
 
 
-view : Index -> List ScenarioRecord -> Model -> Html Msg
-view index availableScenarios model =
+view : Index -> SL.Model -> Model -> Html Msg
+view index scenarioList model =
     let
         mapCardTitle =
             model.mapScenario |> Maybe.andThen .code |> Maybe.withDefault "Map"
     in
         Options.div [ Options.css "display" "flex" ]
-            [ scenariosList index availableScenarios model
+            [ scenariosList index scenarioList model
             , MapCard.view index mapCardTitle model.mapCard |> Html.map MapCardMsg
             ]
 
