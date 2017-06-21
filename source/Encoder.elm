@@ -26,7 +26,7 @@ encodeProjectionPOSTProjectionScenariosItem (ProjectionPOSTProjectionScenariosIt
 
 encodeProjectionPOSTModelScenario : ProjectionPOSTModelScenario -> Value
 encodeProjectionPOSTModelScenario (ProjectionPOSTModelScenario { scenarioCode }) =
-    object [ ( "scenarioId", scenarioCode |> Maybe.map string |> Maybe.withDefault null ) ]
+    object [ ( "scenarioCode", scenarioCode |> Maybe.map string |> Maybe.withDefault null ) ]
 
 
 encodeProjectionPOSTOccurrenceSets : ProjectionPOSTOccurrenceSets -> Value
