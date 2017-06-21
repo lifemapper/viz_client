@@ -109,22 +109,22 @@ update msg model =
                 ( { model | state = Loading id }, loadMetadata id )
 
             SetState state ->
-                chain
-                    (liftedMapCardUpdate (updateMap state model.selectedTab))
-                    loadOccurrenceSetAndScenarios
-                    (updateState state model)
+                updateState state model
+                    |> chain
+                        updateMap
+                        loadOccurrenceSetAndScenarios
 
             SelectTab tab ->
-                liftedMapCardUpdate (updateMap model.state model.selectedTab) { model | selectedTab = tab }
+                updateMap { model | selectedTab = tab }
 
             SetOccurrenceSet o ->
-                liftedMapCardUpdate (updateMap model.state model.selectedTab) { model | occurrenceSet = Just o }
+                updateMap { model | occurrenceSet = Just o }
 
             SetModelScn s ->
-                liftedMapCardUpdate (updateMap model.state model.selectedTab) { model | modelScenario = Just s }
+                updateMap { model | modelScenario = Just s }
 
             SetProjScn s ->
-                liftedMapCardUpdate (updateMap model.state model.selectedTab) { model | projectionScenario = Just s }
+                updateMap { model | projectionScenario = Just s }
 
             Nop ->
                 ( model, Cmd.none )
@@ -137,6 +137,77 @@ update msg model =
 
             AlgMsg msg_ ->
                 liftedAlgUpdate msg_ model
+
+
+updateMap : Model -> ( Model, Cmd Msg )
+updateMap model =
+    let
+        liftedMapCardUpdate =
+            Helpers.lift
+                .mapCard
+                (\m x -> { m | mapCard = x })
+                MapCardMsg
+                MapCard.update
+
+        mapInfo projection =
+            case model.selectedTab of
+                Algorithm ->
+                    Nothing
+
+                Map ->
+                    projection.map
+                        |> Maybe.map
+                            (\(SingleLayerMap { endpoint, mapName, layerName }) ->
+                                { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                            )
+
+                OccurrenceSet ->
+                    model.occurrenceSet
+                        |> Maybe.andThen .map
+                        |> Maybe.map
+                            (\(SingleLayerMap { endpoint, mapName, layerName }) ->
+                                { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                            )
+
+                ModelScenario ->
+                    model.modelScenario
+                        |> Maybe.andThen .map
+                        |> Maybe.map
+                            (\(Decoder.Map { endpoint, mapName, layers }) ->
+                                let
+                                    (Decoder.MapLayers ls) =
+                                        layers
+
+                                    layerNames =
+                                        List.map (\(Decoder.MapLayersItem l) -> l.layerName) ls
+                                in
+                                    { endPoint = endpoint, mapName = mapName, layers = layerNames }
+                            )
+
+                ProjScenario ->
+                    model.projectionScenario
+                        |> Maybe.andThen .map
+                        |> Maybe.map
+                            (\(Decoder.Map { endpoint, mapName, layers }) ->
+                                let
+                                    (Decoder.MapLayers ls) =
+                                        layers
+
+                                    layerNames =
+                                        List.map (\(Decoder.MapLayersItem l) -> l.layerName) ls
+                                in
+                                    { endPoint = endpoint, mapName = mapName, layers = layerNames }
+                            )
+
+        mapMsg =
+            case model.state of
+                Showing projection ->
+                    MapCard.SetMap (mapInfo projection)
+
+                _ ->
+                    MapCard.SetMap Nothing
+    in
+        liftedMapCardUpdate mapMsg model
 
 
 updateState : State -> Model -> Model
@@ -226,21 +297,6 @@ gotScenario andThen result =
         Err err ->
             SetState Blank
                 |> Debug.log (toString err)
-
-
-updateMap : State -> Tab -> MapCard.Msg
-updateMap state tab =
-    case state of
-        Showing { map } ->
-            map
-                |> Maybe.map
-                    (\(SingleLayerMap { endpoint, mapName, layerName }) ->
-                        { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
-                    )
-                |> MapCard.SetMap
-
-        _ ->
-            MapCard.SetMap Nothing
 
 
 loadMetadata : Int -> Cmd Msg
