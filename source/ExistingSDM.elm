@@ -6,9 +6,18 @@ import Material.Helpers as Helpers
 import Http
 import Html exposing (Html)
 import Page exposing (Page)
-import Decoder exposing (ProjectionRecord, decodeProjection, Projection(..), SingleLayerMap(..))
+import Decoder
+    exposing
+        ( ProjectionRecord
+        , decodeProjection
+        , Projection(..)
+        , SingleLayerMap(..)
+        , OccurrenceSetRecord
+        , ScenarioRecord
+        )
 import MapCard
 import AlgorithmView as Alg
+import Helpers exposing (chain)
 
 
 type Tab
@@ -44,6 +53,9 @@ type alias Model =
     { mdl : Material.Model
     , mapCard : MapCard.Model
     , algorithm : Alg.Model
+    , occurrenceSet : Maybe OccurrenceSetRecord
+    , modelScenario : Maybe ScenarioRecord
+    , projectionScenario : Maybe ScenarioRecord
     , state : State
     , selectedTab : Tab
     }
@@ -56,6 +68,9 @@ init =
     , selectedTab = Map
     , mapCard = MapCard.init "leaflet-map-projection"
     , algorithm = Alg.init Alg.exampleAlgorithm True
+    , occurrenceSet = Nothing
+    , modelScenario = Nothing
+    , projectionScenario = Nothing
     }
 
 
@@ -66,6 +81,9 @@ type Msg
     | SetState State
     | LoadMetadata Int
     | SelectTab Tab
+    | SetOccurrenceSet OccurrenceSetRecord
+    | SetModelScn ScenarioRecord
+    | SetProjScn ScenarioRecord
     | Nop
 
 
@@ -91,10 +109,22 @@ update msg model =
                 ( { model | state = Loading id }, loadMetadata id )
 
             SetState state ->
-                liftedMapCardUpdate (updateMap state) (updateState state model)
+                chain
+                    (liftedMapCardUpdate (updateMap state model.selectedTab))
+                    loadOccurrenceSetAndScenarios
+                    (updateState state model)
 
             SelectTab tab ->
-                ( { model | selectedTab = tab }, Cmd.none )
+                liftedMapCardUpdate (updateMap model.state model.selectedTab) { model | selectedTab = tab }
+
+            SetOccurrenceSet o ->
+                liftedMapCardUpdate (updateMap model.state model.selectedTab) { model | occurrenceSet = Just o }
+
+            SetModelScn s ->
+                liftedMapCardUpdate (updateMap model.state model.selectedTab) { model | modelScenario = Just s }
+
+            SetProjScn s ->
+                liftedMapCardUpdate (updateMap model.state model.selectedTab) { model | projectionScenario = Just s }
 
             Nop ->
                 ( model, Cmd.none )
@@ -125,8 +155,81 @@ updateState state model =
         { model | state = state, algorithm = algorithm }
 
 
-updateMap : State -> MapCard.Msg
-updateMap state =
+loadOccurrenceSetAndScenarios : Model -> ( Model, Cmd Msg )
+loadOccurrenceSetAndScenarios model =
+    let
+        commands =
+            case model.state of
+                Showing projection ->
+                    [ projection.occurrenceSet
+                        |> Maybe.andThen (\(Decoder.ObjectRef r) -> r.metadataUrl)
+                        |> Maybe.map loadOccurrenceSet
+                    , projection.modelScenario
+                        |> Maybe.andThen (\(Decoder.ScenarioRef r) -> r.metadataUrl)
+                        |> Maybe.map (loadScenario SetModelScn)
+                    , projection.projectionScenario
+                        |> Maybe.andThen (\(Decoder.ScenarioRef r) -> r.metadataUrl)
+                        |> Maybe.map (loadScenario SetProjScn)
+                    ]
+
+                _ ->
+                    []
+    in
+        model ! List.filterMap identity commands
+
+
+loadOccurrenceSet : String -> Cmd Msg
+loadOccurrenceSet url =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = url
+        , body = Http.emptyBody
+        , expect = Http.expectJson Decoder.decodeOccurrenceSet
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send gotOccurrenceSet
+
+
+loadScenario : (ScenarioRecord -> Msg) -> String -> Cmd Msg
+loadScenario andThen url =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = url
+        , body = Http.emptyBody
+        , expect = Http.expectJson Decoder.decodeScenario
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send (gotScenario andThen)
+
+
+gotOccurrenceSet : Result Http.Error Decoder.OccurrenceSet -> Msg
+gotOccurrenceSet result =
+    case result of
+        Ok (Decoder.OccurrenceSet o) ->
+            SetOccurrenceSet o
+
+        Err err ->
+            SetState Blank
+                |> Debug.log (toString err)
+
+
+gotScenario : (ScenarioRecord -> Msg) -> Result Http.Error Decoder.Scenario -> Msg
+gotScenario andThen result =
+    case result of
+        Ok (Decoder.Scenario s) ->
+            andThen s
+
+        Err err ->
+            SetState Blank
+                |> Debug.log (toString err)
+
+
+updateMap : State -> Tab -> MapCard.Msg
+updateMap state tab =
     case state of
         Showing { map } ->
             map
@@ -202,7 +305,7 @@ mainView : Model -> ProjectionRecord -> Html Msg
 mainView model proj =
     case model.selectedTab of
         Map ->
-            Options.div [] [ MapCard.view [] "Map" model.mapCard |> Html.map MapCardMsg ]
+            Options.div [] [ MapCard.view [] "Projection" model.mapCard |> Html.map MapCardMsg ]
 
         Algorithm ->
             Options.div [] [ Alg.view [] model.algorithm |> Html.map AlgMsg ]
