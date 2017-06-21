@@ -4,7 +4,6 @@ import Material
 import Material.Layout as Layout
 import Material.Typography as Typo
 import Material.Options as Options
-import Material.Scheme
 import Material.Helpers exposing (lift)
 import Html exposing (Html)
 import Navigation as Nav exposing (Location)
@@ -174,20 +173,21 @@ view model =
             }
 
 
+start : Location -> ( Model, Cmd Msg )
+start loc =
+    let
+        ( model, msg ) =
+            update (UrlChange loc) init
+    in
+        model ! [ Material.init Mdl, NewSDM.initCmd NewSDMMsg, getExistingSDMs, msg ]
+
+
 main : Program Never Model Msg
 main =
     Nav.program
         UrlChange
-        { init =
-            always
-                ( init
-                , Cmd.batch
-                    [ Material.init Mdl
-                    , NewSDM.initCmd NewSDMMsg
-                    , getExistingSDMs
-                    ]
-                )
-        , view = view >> Material.Scheme.top
+        { init = start
+        , view = view
         , subscriptions = Material.subscriptions Mdl
         , update = update
         }
