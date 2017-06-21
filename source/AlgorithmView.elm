@@ -21,6 +21,7 @@ type alias Model =
     , parameters : List ParameterView.Model
     , truncateDesc : Bool
     , mouseIn : Bool
+    , viewOnly : Bool
     , mdl : Material.Model
     }
 
@@ -33,8 +34,8 @@ toApi { definition, parameters } =
         }
 
 
-fromApi : Decoder.Algorithm -> Model
-fromApi (Decoder.Algorithm { code, parameters }) =
+fromApi : Bool -> Decoder.Algorithm -> Model
+fromApi viewOnly (Decoder.Algorithm { code, parameters }) =
     let
         definition =
             case D.getAlgorithmByCode code of
@@ -52,16 +53,18 @@ fromApi (Decoder.Algorithm { code, parameters }) =
         , parameters = params
         , truncateDesc = True
         , mouseIn = False
+        , viewOnly = viewOnly
         , mdl = Material.model
         }
 
 
-init : D.Algorithm -> Model
-init def =
+init : D.Algorithm -> Bool -> Model
+init def viewOnly =
     { definition = def
     , parameters = List.map ParameterView.init def.parameters
     , truncateDesc = True
     , mouseIn = False
+    , viewOnly = viewOnly
     , mdl = Material.model
     }
 
@@ -107,7 +110,7 @@ setRaised raised model =
 
 raised : Model -> Bool
 raised model =
-    model.mouseIn || (model.parameters |> List.filter (\p -> p.focused) |> List.isEmpty |> not)
+    model.viewOnly || model.mouseIn || (model.parameters |> List.filter (\p -> p.focused) |> List.isEmpty |> not)
 
 
 descriptionView : Model -> Html Msg
@@ -125,19 +128,27 @@ descriptionView model =
             ]
 
 
-parameterView : Index -> Int -> ParameterView.Model -> Html Msg
-parameterView index i model =
-    Html.map (ParameterMsg i) <| ParameterView.view (i :: index) <| model
+parameterView : Bool -> Index -> Int -> ParameterView.Model -> Html Msg
+parameterView readOnly index i model =
+    Html.map (ParameterMsg i) <| ParameterView.view readOnly (i :: index) <| model
 
 
 parametersView : Index -> Model -> List (Html Msg)
 parametersView index model =
     if raised model then
-        [ List.indexedMap (parameterView index) model.parameters
+        [ List.indexedMap (parameterView model.viewOnly index) model.parameters
             |> Html.ul [ Attributes.style [ ( "padding", "0" ), ( "list-style", "none" ) ] ]
         ]
     else
         []
+
+
+removeButton : Index -> Model -> List (Html Msg)
+removeButton index model =
+    if model.viewOnly then
+        []
+    else
+        [ Button.render Mdl index model.mdl [ Button.icon, Options.onClick Remove ] [ Icon.i "delete" ] ]
 
 
 view : Index -> Model -> Html Msg
@@ -150,13 +161,7 @@ view index model =
         , Options.css "width" "100%"
         ]
         [ Card.title [ Options.css "padding-right" "48px" ] [ Card.head [] [ Html.text model.definition.name ] ]
-        , Card.menu []
-            [ Button.render Mdl
-                (-1 :: index)
-                model.mdl
-                [ Button.icon, Options.onClick Remove ]
-                [ Icon.i "delete" ]
-            ]
+        , Card.menu [] <| removeButton (-1 :: index) model
         , Card.text []
             (descriptionView model :: parametersView index model)
         ]
@@ -175,7 +180,7 @@ exampleAlgorithm =
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( init exampleAlgorithm, Material.init Mdl )
+        { init = ( init exampleAlgorithm False, Material.init Mdl )
         , view = view [] >> Material.Scheme.top
         , update = update
         , subscriptions =

@@ -55,7 +55,7 @@ init =
     , state = Blank
     , selectedTab = Map
     , mapCard = MapCard.init "leaflet-map-projection"
-    , algorithm = Alg.init Alg.exampleAlgorithm
+    , algorithm = Alg.init Alg.exampleAlgorithm True
     }
 
 
@@ -116,11 +116,11 @@ updateState state model =
             case state of
                 Showing projection ->
                     projection.algorithm
-                        |> Maybe.map Alg.fromApi
-                        |> Maybe.withDefault (Alg.init Alg.exampleAlgorithm)
+                        |> Maybe.map (Alg.fromApi True)
+                        |> Maybe.withDefault (Alg.init Alg.exampleAlgorithm True)
 
                 _ ->
-                    Alg.init Alg.exampleAlgorithm
+                    Alg.init Alg.exampleAlgorithm True
     in
         { model | state = state, algorithm = algorithm }
 

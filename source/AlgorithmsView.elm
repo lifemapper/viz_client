@@ -72,7 +72,7 @@ update msg model =
 addAlgorithm : D.Algorithm -> Model -> Model
 addAlgorithm def model =
     { model
-        | algorithms = model.algorithms ++ [ AlgorithmView.init def |> AlgorithmView.setRaised True ]
+        | algorithms = model.algorithms ++ [ AlgorithmView.init def False |> AlgorithmView.setRaised True ]
         , adder = AddAlgorithmView.setRaised False model.adder
     }
 

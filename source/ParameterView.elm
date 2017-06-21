@@ -143,29 +143,30 @@ renderValidation model =
             Textfield.error error
 
 
-view : Index -> Model -> Html Msg
-view idx model =
+view : Bool -> Index -> Model -> Html Msg
+view readOnly idx model =
     case model.definition.options of
         [] ->
-            viewField idx model
+            viewField readOnly idx model
 
         options ->
             case List.filter (\{ name } -> name /= "Yes" && name /= "No") options of
                 [] ->
-                    viewSwitch idx model
+                    viewSwitch readOnly idx model
 
                 _ ->
-                    viewOptions idx model
+                    viewOptions readOnly idx model
 
 
-viewField : Index -> Model -> Html Msg
-viewField idx model =
+viewField : Bool -> Index -> Model -> Html Msg
+viewField readOnly idx model =
     Html.li [ Attributes.style [ ( "padding", "4px" ) ] ]
         [ Textfield.render Mdl
             (0 :: idx)
             model.mdl
             [ Textfield.label model.definition.displayName
             , Textfield.value model.value
+            , Options.attribute <| Attributes.readonly readOnly
             , Options.onInput Update
             , Textfield.floatingLabel
             , renderValidation model
@@ -182,23 +183,24 @@ viewField idx model =
         ]
 
 
-viewOptions : Index -> Model -> Html Msg
-viewOptions idx model =
+viewOptions : Bool -> Index -> Model -> Html Msg
+viewOptions readOnly idx model =
     Html.li [ Attributes.style [ ( "padding", "4px" ) ] ]
         [ Html.p [] [ Html.text model.definition.displayName ]
         , Html.ul [ Attributes.style [ ( "margin", "0" ), ( "padding", "0" ), ( "list-style", "none" ) ] ]
-            (List.indexedMap (optionView idx model) model.definition.options)
+            (List.indexedMap (optionView readOnly idx model) model.definition.options)
         ]
 
 
-optionView : Index -> Model -> Int -> D.ParameterOption -> Html Msg
-optionView idx model i option =
+optionView : Bool -> Index -> Model -> Int -> D.ParameterOption -> Html Msg
+optionView readOnly idx model i option =
     Html.li []
         [ Toggles.radio Mdl
             (i :: idx)
             model.mdl
             [ Toggles.group (toString idx)
             , Toggles.value (toString option.value == model.value)
+            , Toggles.disabled |> Options.when readOnly
             , Options.onToggle (Update <| toString option.value)
             , Options.onFocus (Focused True)
             , Options.onBlur (Focused False)
@@ -207,8 +209,8 @@ optionView idx model i option =
         ]
 
 
-viewSwitch : Index -> Model -> Html Msg
-viewSwitch idx model =
+viewSwitch : Bool -> Index -> Model -> Html Msg
+viewSwitch readOnly idx model =
     let
         options =
             model.definition.options
@@ -233,6 +235,7 @@ viewSwitch idx model =
                 model.mdl
                 [ Options.onToggle toggle
                 , Toggles.value (model.value == yes)
+                , Toggles.disabled |> Options.when readOnly
                 , Options.onFocus (Focused True)
                 , Options.onBlur (Focused False)
                 ]
@@ -243,7 +246,7 @@ viewSwitch idx model =
 exView : Model -> Html Msg
 exView model =
     Html.ul [ Attributes.style [ ( "padding", "0" ) ] ]
-        [ view [] model ]
+        [ view False [] model ]
 
 
 exampleAlgorithm : D.Algorithm
