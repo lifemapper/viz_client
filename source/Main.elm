@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Time
 import Material
 import Material.Layout as Layout
 import Material.Typography as Typo
@@ -61,6 +62,7 @@ type Msg
     | UrlChange Location
     | OpenExisting Int
     | OpenNew
+    | Tick Time.Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -106,6 +108,9 @@ update msg model =
 
             OpenNew ->
                 model ! [ Nav.newUrl "/sdm-new" ]
+
+            Tick _ ->
+                ( model, getSDMProjections )
 
             GotSDMProjections projections ->
                 ( { model | sdmProjections = projections }, Cmd.none )
@@ -193,12 +198,17 @@ start loc =
         model ! [ Material.init Mdl, NewSDM.initCmd NewSDMMsg, getSDMProjections, msg ]
 
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch [ Material.subscriptions Mdl model, Time.every (5 * Time.second) Tick ]
+
+
 main : Program Never Model Msg
 main =
     Nav.program
         UrlChange
         { init = start
         , view = view
-        , subscriptions = Material.subscriptions Mdl
+        , subscriptions = subscriptions
         , update = update
         }
