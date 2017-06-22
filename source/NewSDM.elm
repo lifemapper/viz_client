@@ -6,8 +6,10 @@ import Material
 import Material.Options as Options
 import Material.List as Lists
 import Material.Icon as Icon
+import Material.Typography as Typo
 import Material.Button as Button
 import Material.Helpers exposing (lift)
+import Material.Spinner as Loading
 import ScenariosView as Scns
 import AlgorithmsView as Algs
 import OccurrenceSetsView as Occs
@@ -52,6 +54,7 @@ type alias Model =
     , algorithmsModel : Algs.Model
     , occurrenceSets : Occs.Model
     , availableScenarios : SL.Model
+    , submitted : Bool
     }
 
 
@@ -93,6 +96,7 @@ init =
     , algorithmsModel = Algs.init
     , occurrenceSets = Occs.init
     , availableScenarios = SL.init
+    , submitted = False
     }
 
 
@@ -115,11 +119,11 @@ update msg model =
             ( { model | selectedTab = tab }, Cmd.none )
 
         SubmitJob ->
-            ( model, submitJob model )
+            ( { model | submitted = True }, submitJob model )
 
         JobSubmitted result ->
             Debug.log "result" (toString result)
-                |> always ( model, Cmd.none )
+                |> always ( init, Cmd.none )
 
         ProjScnsMsg msg_ ->
             lift
@@ -192,37 +196,43 @@ tabTitle tab =
 
 mainView : Model -> Html Msg
 mainView model =
-    case model.selectedTab of
-        Algorithms ->
-            model.algorithmsModel |> Algs.view [] |> Html.map AlgsMsg
+    if model.submitted then
+        Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+            [ Html.text "Submitting job"
+            , Html.p [] [ Loading.spinner [ Loading.active True ] ]
+            ]
+    else
+        case model.selectedTab of
+            Algorithms ->
+                model.algorithmsModel |> Algs.view [] |> Html.map AlgsMsg
 
-        OccurrenceSets ->
-            model.occurrenceSets |> Occs.view [] |> Html.map OccsMsg
+            OccurrenceSets ->
+                model.occurrenceSets |> Occs.view [] |> Html.map OccsMsg
 
-        ModelScenario ->
-            model.modelScenario |> Scns.view [ 0 ] model.availableScenarios |> Html.map MdlScnMsg
+            ModelScenario ->
+                model.modelScenario |> Scns.view [ 0 ] model.availableScenarios |> Html.map MdlScnMsg
 
-        ProjScenarios ->
-            model.projectionScenarios |> Scns.view [ 0 ] model.availableScenarios |> Html.map ProjScnsMsg
+            ProjScenarios ->
+                model.projectionScenarios |> Scns.view [ 0 ] model.availableScenarios |> Html.map ProjScnsMsg
 
-        PostProjection ->
-            Options.div [ Options.css "padding" "20px" ]
-                [ Html.p []
-                    [ Html.text """
+            PostProjection ->
+                Options.div [ Options.css "padding" "20px" ]
+                    [ Html.p []
+                        [ Html.text """
                                  Once all of inputs below have been defined the job
                                  can be submitted. Ipsum lorem.
                                  """
+                        ]
+                    , Lists.ul [] <| List.map (taskLI model) tasks
+                    , Button.render Mdl
+                        [ 0 ]
+                        model.mdl
+                        [ Button.raised
+                        , Button.disabled |> Options.when (not <| complete model)
+                        , Options.onClick SubmitJob |> Options.when (complete model)
+                        ]
+                        [ Html.text "Submit Job" ]
                     ]
-                , Lists.ul [] <| List.map (taskLI model) tasks
-                , Button.render Mdl
-                    [ 0 ]
-                    model.mdl
-                    [ Button.raised
-                    , Button.disabled |> Options.when (not <| complete model)
-                    , Options.onClick SubmitJob |> Options.when (complete model)
-                    ]
-                    [ Html.text "Submit Job" ]
-                ]
 
 
 taskLI : Model -> ( Tab, Model -> Bool ) -> Html Msg
