@@ -1,4 +1,4 @@
-module MapCard exposing (..)
+module MapCard exposing (Model, update, Msg(..), view, init)
 
 import Material
 import Material.Options as Options
@@ -43,29 +43,32 @@ update msg model =
                 newModel =
                     { model | mapInfo = mapInfo, mapLayer = 0 }
             in
-                ( newModel, updateMap newModel )
+                ( newModel, updateMap model newModel )
 
         SetLayer layer ->
             let
                 newModel =
                     { model | mapLayer = layer }
             in
-                ( newModel, updateMap newModel )
+                ( newModel, updateMap model newModel )
 
 
-updateMap : Model -> Cmd Msg
-updateMap model =
-    case model.mapInfo of
-        Nothing ->
-            clearLeafletMap model.mapContainerId
+updateMap : Model -> Model -> Cmd Msg
+updateMap oldModel model =
+    if model.mapInfo == oldModel.mapInfo then
+        Cmd.none
+    else
+        case model.mapInfo of
+            Nothing ->
+                clearLeafletMap model.mapContainerId
 
-        Just { endPoint, mapName, layers } ->
-            setLeafletMap
-                { containerId = model.mapContainerId
-                , endPoint = endPoint
-                , mapName = mapName
-                , layers = ("bmng" :: (List.take 1 <| List.drop model.mapLayer layers))
-                }
+            Just { endPoint, mapName, layers } ->
+                setLeafletMap
+                    { containerId = model.mapContainerId
+                    , endPoint = endPoint
+                    , mapName = mapName
+                    , layers = ("bmng" :: (List.take 1 <| List.drop model.mapLayer layers))
+                    }
 
 
 view : Index -> String -> Model -> Html Msg
