@@ -239,7 +239,7 @@ mainView model =
                     Options.div [ Options.css "padding" "20px" ]
                         [ Html.p []
                             [ Html.text """
-                                 Once all of inputs below have been defined the job
+                                 Once all of the inputs below have been defined the job
                                  can be submitted.
                                  """
                             ]
