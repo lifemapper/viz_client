@@ -115,6 +115,14 @@ updateMap =
         >> MapCard.SetMap
 
 
+scenarioTitle : SL.Model -> ScenarioRecord -> String
+scenarioTitle scenarioList s =
+    SL.metadataToAtom scenarioList s
+        |> Maybe.map (Just << .name)
+        |> Maybe.withDefault s.code
+        |> Maybe.withDefault (toString s.id)
+
+
 scenariosList : Index -> SL.Model -> Model -> Html Msg
 scenariosList index scenarioList model =
     let
@@ -134,6 +142,9 @@ scenariosList index scenarioList model =
                 ProjectionScenarios ->
                     scenarioList.metadatas
 
+        makeScenTitle =
+            scenarioTitle scenarioList
+
         ( loaded, toLoad ) =
             SL.loading scenarioList
 
@@ -147,12 +158,12 @@ scenariosList index scenarioList model =
             List.concat
                 [ [ Options.styled Html.p [ Typo.title ] [ Html.text title ] ]
                 , loading
-                , [ L.ul [] <| List.indexedMap (scenarioLI model index) availableScenarios ]
+                , [ L.ul [] <| List.indexedMap (scenarioLI model index makeScenTitle) availableScenarios ]
                 ]
 
 
-scenarioLI : Model -> Index -> Int -> ScenarioRecord -> Html Msg
-scenarioLI model index i s =
+scenarioLI : Model -> Index -> (ScenarioRecord -> String) -> Int -> ScenarioRecord -> Html Msg
+scenarioLI model index title i s =
     let
         iconName =
             if Just s.id == Maybe.map .id model.mapScenario then
@@ -179,7 +190,7 @@ scenarioLI model index i s =
         L.li []
             [ L.content
                 []
-                [ Html.text <| Maybe.withDefault "" s.code ]
+                [ Html.text <| title s ]
             , L.content2 [ Options.css "flex-flow" "row" ]
                 (toggle Mdl
                     (i :: index)
@@ -199,7 +210,9 @@ view : Index -> SL.Model -> Model -> Html Msg
 view index scenarioList model =
     let
         mapCardTitle =
-            model.mapScenario |> Maybe.andThen .code |> Maybe.withDefault "Map"
+            model.mapScenario
+                |> Maybe.map (scenarioTitle scenarioList)
+                |> Maybe.withDefault "Map"
     in
         Options.div [ Options.css "display" "flex" ]
             [ scenariosList index scenarioList model

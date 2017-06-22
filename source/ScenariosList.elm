@@ -1,6 +1,7 @@
 module ScenariosList exposing (..)
 
 import Http
+import List.Extra exposing (find)
 import Decoder
     exposing
         ( AtomObjectRecord
@@ -27,6 +28,12 @@ observedScenarios { metadatas } =
 loading : Model -> ( Int, Int )
 loading { atoms, metadatas } =
     ( List.length metadatas, List.length atoms )
+
+
+metadataToAtom : Model -> ScenarioRecord -> Maybe AtomObjectRecord
+metadataToAtom model metadata =
+    model.atoms
+        |> find (.id >> (==) metadata.id)
 
 
 type Msg
