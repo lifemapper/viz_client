@@ -10,7 +10,7 @@ import Navigation as Nav exposing (Location)
 import UrlParser as Url exposing ((</>))
 import Http
 import Page
-import ExistingSDM
+import SDMProjection
 import NewSDM
 import Decoder
     exposing
@@ -23,22 +23,22 @@ import Decoder
 
 type SDMPage
     = NewSDM
-    | ExistingSDM Int
+    | SDMProjection Int
 
 
 route : Url.Parser (SDMPage -> a) a
 route =
     Url.oneOf
         [ Url.map NewSDM (Url.s "sdm-new")
-        , Url.map ExistingSDM (Url.s "sdm-projection" </> Url.int)
+        , Url.map SDMProjection (Url.s "sdm-projection" </> Url.int)
         ]
 
 
 type alias Model =
     { mdl : Material.Model
     , page : SDMPage
-    , existingSDMs : List AtomObjectRecord
-    , existingSDM : ExistingSDM.Model
+    , sdmProjections : List AtomObjectRecord
+    , sdmProjection : SDMProjection.Model
     , newSDM : NewSDM.Model
     }
 
@@ -47,8 +47,8 @@ init : Model
 init =
     { mdl = Material.model
     , page = NewSDM
-    , existingSDMs = []
-    , existingSDM = ExistingSDM.init
+    , sdmProjections = []
+    , sdmProjection = SDMProjection.init
     , newSDM = NewSDM.init
     }
 
@@ -56,8 +56,8 @@ init =
 type Msg
     = Mdl (Material.Msg Msg)
     | NewSDMMsg NewSDM.Msg
-    | ExistingSDMMsg ExistingSDM.Msg
-    | GotExistingSDMs (Result Http.Error AtomList)
+    | SDMProjectionMsg SDMProjection.Msg
+    | GotSDMProjections (Result Http.Error AtomList)
     | UrlChange Location
     | OpenExisting Int
     | OpenNew
@@ -73,12 +73,12 @@ update msg model =
                 NewSDMMsg
                 NewSDM.update
 
-        liftedExistingSDMUpdate =
+        liftedSDMProjectionUpdate =
             lift
-                .existingSDM
-                (\m x -> { m | existingSDM = x })
-                ExistingSDMMsg
-                ExistingSDM.update
+                .sdmProjection
+                (\m x -> { m | sdmProjection = x })
+                SDMProjectionMsg
+                SDMProjection.update
     in
         case msg of
             Mdl msg_ ->
@@ -87,8 +87,8 @@ update msg model =
             NewSDMMsg msg_ ->
                 liftedNewSDMUpdate msg_ model
 
-            ExistingSDMMsg msg_ ->
-                liftedExistingSDMUpdate msg_ model
+            SDMProjectionMsg msg_ ->
+                liftedSDMProjectionUpdate msg_ model
 
             UrlChange loc ->
                 case Debug.log "path" (Url.parsePath route loc) of
@@ -98,8 +98,8 @@ update msg model =
                     Just NewSDM ->
                         ( { model | page = NewSDM }, Cmd.none )
 
-                    Just (ExistingSDM id) ->
-                        liftedExistingSDMUpdate (ExistingSDM.LoadMetadata id) { model | page = ExistingSDM id }
+                    Just (SDMProjection id) ->
+                        liftedSDMProjectionUpdate (SDMProjection.LoadMetadata id) { model | page = SDMProjection id }
 
             OpenExisting id ->
                 model ! [ Nav.newUrl ("/sdm-projection/" ++ toString id) ]
@@ -107,15 +107,15 @@ update msg model =
             OpenNew ->
                 model ! [ Nav.newUrl "/sdm-new" ]
 
-            GotExistingSDMs (Ok (AtomList atoms)) ->
-                ( { model | existingSDMs = atoms |> List.map (\(AtomObject o) -> o) }, Cmd.none )
+            GotSDMProjections (Ok (AtomList atoms)) ->
+                ( { model | sdmProjections = atoms |> List.map (\(AtomObject o) -> o) }, Cmd.none )
 
-            GotExistingSDMs (Err err) ->
+            GotSDMProjections (Err err) ->
                 Debug.log "Error fetching existing SDMs" (toString err) |> always ( model, Cmd.none )
 
 
-getExistingSDMs : Cmd Msg
-getExistingSDMs =
+getSDMProjections : Cmd Msg
+getSDMProjections =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
@@ -125,7 +125,7 @@ getExistingSDMs =
         , timeout = Nothing
         , withCredentials = False
         }
-        |> Http.send GotExistingSDMs
+        |> Http.send GotSDMProjections
 
 
 header : Model -> List (Html Msg)
@@ -141,7 +141,7 @@ drawer model =
     , Layout.navigation []
         [ Layout.link [ Options.onClick OpenNew ] [ Html.text "New SDM Project" ] ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
-    , model.existingSDMs
+    , model.sdmProjections
         |> List.map (\{ name, id } -> Layout.link [ Options.onClick (OpenExisting id) ] [ Html.text name ])
         |> Layout.navigation []
     ]
@@ -155,8 +155,8 @@ view model =
                 NewSDM ->
                     Page.lift NewSDM.page .newSDM NewSDMMsg
 
-                ExistingSDM id ->
-                    Page.lift ExistingSDM.page .existingSDM ExistingSDMMsg
+                SDMProjection id ->
+                    Page.lift SDMProjection.page .sdmProjection SDMProjectionMsg
     in
         Layout.render Mdl
             model.mdl
@@ -179,7 +179,7 @@ start loc =
         ( model, msg ) =
             update (UrlChange loc) init
     in
-        model ! [ Material.init Mdl, NewSDM.initCmd NewSDMMsg, getExistingSDMs, msg ]
+        model ! [ Material.init Mdl, NewSDM.initCmd NewSDMMsg, getSDMProjections, msg ]
 
 
 main : Program Never Model Msg

@@ -1,4 +1,4 @@
-module ExistingSDM exposing (Model, update, page, init, Msg(LoadMetadata))
+module SDMProjection exposing (Model, update, page, init, Msg(LoadMetadata))
 
 import Material
 import Material.Options as Options
