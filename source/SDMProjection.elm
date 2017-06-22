@@ -324,24 +324,23 @@ gotMetadata result =
                 |> Debug.log (toString err)
 
 
-tabTitle : Tab -> Html msg
+tabTitle : Tab -> String
 tabTitle tab =
-    Html.text <|
-        case tab of
-            Map ->
-                "Projection"
+    case tab of
+        Map ->
+            "Projection"
 
-            Algorithm ->
-                "Algorithm"
+        Algorithm ->
+            "Algorithm"
 
-            OccurrenceSet ->
-                "Occurrence Set"
+        OccurrenceSet ->
+            "Occurrence Set"
 
-            ModelScenario ->
-                "Model Scenario"
+        ModelScenario ->
+            "Model Scenario"
 
-            ProjScenario ->
-                "Projection Scenario"
+        ProjScenario ->
+            "Projection Scenario"
 
 
 view : Model -> Html Msg
@@ -361,25 +360,25 @@ mapTitle : Model -> String
 mapTitle model =
     case model.selectedTab of
         Algorithm ->
-            ""
+            tabTitle model.selectedTab
 
         Map ->
-            "Projection"
+            tabTitle model.selectedTab
 
         OccurrenceSet ->
             model.occurrenceSet
                 |> Maybe.andThen .speciesName
-                |> Maybe.withDefault "Occurence Set"
+                |> Maybe.withDefault (tabTitle model.selectedTab)
 
         ModelScenario ->
             model.modelScenario
                 |> Maybe.andThen .code
-                |> Maybe.withDefault "Model Scenario"
+                |> Maybe.withDefault (tabTitle model.selectedTab)
 
         ProjScenario ->
             model.projectionScenario
                 |> Maybe.andThen .code
-                |> Maybe.withDefault "Projection Scenairo"
+                |> Maybe.withDefault (tabTitle model.selectedTab)
 
 
 mainView : Model -> ProjectionRecord -> Html Msg
@@ -397,5 +396,5 @@ page =
     { view = view
     , selectedTab = .selectedTab >> tabIndex
     , selectTab = (\i -> List.drop i tabs |> List.head |> Maybe.withDefault Map |> SelectTab)
-    , tabTitles = always <| List.map tabTitle tabs
+    , tabTitles = always <| List.map (tabTitle >> Html.text) tabs
     }
