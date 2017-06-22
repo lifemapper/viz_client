@@ -1,5 +1,6 @@
 module NewSDM exposing (Model, page, init, initCmd, update, Msg)
 
+import List.Extra exposing (elemIndex)
 import Html exposing (Html)
 import Http
 import Material
@@ -38,12 +39,13 @@ tabs =
 
 tabIndex : Tab -> Int
 tabIndex tab =
-    tabs
-        |> List.indexedMap (,)
-        |> List.filter (\( i, t ) -> t == tab)
-        |> List.head
-        |> Maybe.map (\( i, _ ) -> i)
-        |> Maybe.withDefault 0
+    elemIndex tab tabs |> Maybe.withDefault 0
+
+
+type WorkFlowState
+    = Defining
+    | Submitting
+    | Submitted
 
 
 type alias Model =
@@ -54,7 +56,7 @@ type alias Model =
     , algorithmsModel : Algs.Model
     , occurrenceSets : Occs.Model
     , availableScenarios : SL.Model
-    , submitted : Bool
+    , workFlowState : WorkFlowState
     }
 
 
@@ -96,7 +98,7 @@ init =
     , algorithmsModel = Algs.init
     , occurrenceSets = Occs.init
     , availableScenarios = SL.init
-    , submitted = False
+    , workFlowState = Defining
     }
 
 
@@ -105,6 +107,7 @@ type Msg
     | SelectTab Tab
     | SubmitJob
     | JobSubmitted (Result Http.Error String)
+    | Restart
     | ProjScnsMsg Scns.Msg
     | MdlScnMsg Scns.Msg
     | AlgsMsg Algs.Msg
@@ -119,11 +122,14 @@ update msg model =
             ( { model | selectedTab = tab }, Cmd.none )
 
         SubmitJob ->
-            ( { model | submitted = True }, submitJob model )
+            ( { model | workFlowState = Submitting }, submitJob model )
 
         JobSubmitted result ->
             Debug.log "result" (toString result)
-                |> always ( init, Cmd.none )
+                |> always ( { model | workFlowState = Submitted }, Cmd.none )
+
+        Restart ->
+            ( init, Cmd.none )
 
         ProjScnsMsg msg_ ->
             lift
@@ -196,43 +202,57 @@ tabTitle tab =
 
 mainView : Model -> Html Msg
 mainView model =
-    if model.submitted then
-        Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-            [ Html.text "Submitting job"
-            , Html.p [] [ Loading.spinner [ Loading.active True ] ]
-            ]
-    else
-        case model.selectedTab of
-            Algorithms ->
-                model.algorithmsModel |> Algs.view [] |> Html.map AlgsMsg
+    case model.workFlowState of
+        Submitted ->
+            Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                [ Html.text "Job was successfully submitted."
+                , Html.p []
+                    [ Button.render Mdl
+                        [ 0 ]
+                        model.mdl
+                        [ Button.raised, Options.onClick Restart ]
+                        [ Html.text "OK" ]
+                    ]
+                ]
 
-            OccurrenceSets ->
-                model.occurrenceSets |> Occs.view [] |> Html.map OccsMsg
+        Submitting ->
+            Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                [ Html.text "Submitting job"
+                , Html.p [] [ Loading.spinner [ Loading.active True ] ]
+                ]
 
-            ModelScenario ->
-                model.modelScenario |> Scns.view [ 0 ] model.availableScenarios |> Html.map MdlScnMsg
+        Defining ->
+            case model.selectedTab of
+                Algorithms ->
+                    model.algorithmsModel |> Algs.view [] |> Html.map AlgsMsg
 
-            ProjScenarios ->
-                model.projectionScenarios |> Scns.view [ 0 ] model.availableScenarios |> Html.map ProjScnsMsg
+                OccurrenceSets ->
+                    model.occurrenceSets |> Occs.view [] |> Html.map OccsMsg
 
-            PostProjection ->
-                Options.div [ Options.css "padding" "20px" ]
-                    [ Html.p []
-                        [ Html.text """
+                ModelScenario ->
+                    model.modelScenario |> Scns.view [ 0 ] model.availableScenarios |> Html.map MdlScnMsg
+
+                ProjScenarios ->
+                    model.projectionScenarios |> Scns.view [ 0 ] model.availableScenarios |> Html.map ProjScnsMsg
+
+                PostProjection ->
+                    Options.div [ Options.css "padding" "20px" ]
+                        [ Html.p []
+                            [ Html.text """
                                  Once all of inputs below have been defined the job
                                  can be submitted. Ipsum lorem.
                                  """
+                            ]
+                        , Lists.ul [] <| List.map (taskLI model) tasks
+                        , Button.render Mdl
+                            [ 0 ]
+                            model.mdl
+                            [ Button.raised
+                            , Button.disabled |> Options.when (not <| complete model)
+                            , Options.onClick SubmitJob |> Options.when (complete model)
+                            ]
+                            [ Html.text "Submit Job" ]
                         ]
-                    , Lists.ul [] <| List.map (taskLI model) tasks
-                    , Button.render Mdl
-                        [ 0 ]
-                        model.mdl
-                        [ Button.raised
-                        , Button.disabled |> Options.when (not <| complete model)
-                        , Options.onClick SubmitJob |> Options.when (complete model)
-                        ]
-                        [ Html.text "Submit Job" ]
-                    ]
 
 
 taskLI : Model -> ( Tab, Model -> Bool ) -> Html Msg
