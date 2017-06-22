@@ -129,7 +129,7 @@ update msg model =
                 |> always ( { model | workFlowState = Submitted }, Cmd.none )
 
         Restart ->
-            ( init, Cmd.none )
+            ( { init | availableScenarios = model.availableScenarios }, Cmd.none )
 
         ProjScnsMsg msg_ ->
             lift
@@ -217,7 +217,7 @@ mainView model =
 
         Submitting ->
             Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text "Submitting job"
+                [ Html.text "Submitting job..."
                 , Html.p [] [ Loading.spinner [ Loading.active True ] ]
                 ]
 
@@ -240,7 +240,7 @@ mainView model =
                         [ Html.p []
                             [ Html.text """
                                  Once all of inputs below have been defined the job
-                                 can be submitted. Ipsum lorem.
+                                 can be submitted.
                                  """
                             ]
                         , Lists.ul [] <| List.map (taskLI model) tasks
@@ -252,6 +252,14 @@ mainView model =
                             , Options.onClick SubmitJob |> Options.when (complete model)
                             ]
                             [ Html.text "Submit Job" ]
+                          -- , Button.render Mdl
+                          --     [ 1 ]
+                          --     model.mdl
+                          --     [ Button.raised
+                          --     , Options.onClick Restart
+                          --     , Options.css "margin-left" "40px"
+                          --     ]
+                          --     [ Html.text "Start Over" ]
                         ]
 
 
