@@ -46,6 +46,7 @@ type WorkFlowState
     = Defining
     | Submitting
     | Submitted
+    | SubmissionFailed
 
 
 type alias Model =
@@ -124,9 +125,13 @@ update msg model =
         SubmitJob ->
             ( { model | workFlowState = Submitting }, submitJob model )
 
-        JobSubmitted result ->
-            Debug.log "result" (toString result)
+        JobSubmitted (Ok result) ->
+            Debug.log "submitted" (toString result)
                 |> always ( { model | workFlowState = Submitted }, Cmd.none )
+
+        JobSubmitted (Err err) ->
+            Debug.log "submission failed" (toString err)
+                |> always ( { model | workFlowState = SubmissionFailed }, Cmd.none )
 
         Restart ->
             ( { init | availableScenarios = model.availableScenarios }, Cmd.none )
@@ -212,6 +217,18 @@ mainView model =
                         model.mdl
                         [ Button.raised, Options.onClick Restart ]
                         [ Html.text "OK" ]
+                    ]
+                ]
+
+        SubmissionFailed ->
+            Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                [ Html.text "There was a problem submitting the job."
+                , Html.p []
+                    [ Button.render Mdl
+                        [ 0 ]
+                        model.mdl
+                        [ Button.raised, Options.onClick SubmitJob ]
+                        [ Html.text "Retry" ]
                     ]
                 ]
 
