@@ -329,13 +329,13 @@ tabTitle tab =
     Html.text <|
         case tab of
             Map ->
-                "Map"
+                "Projection"
 
             Algorithm ->
                 "Algorithm"
 
             OccurrenceSet ->
-                "OccurrenceSet"
+                "Occurrence Set"
 
             ModelScenario ->
                 "Model Scenario"
@@ -357,23 +357,39 @@ view model =
             mainView model projection
 
 
+mapTitle : Model -> String
+mapTitle model =
+    case model.selectedTab of
+        Algorithm ->
+            ""
+
+        Map ->
+            "Projection"
+
+        OccurrenceSet ->
+            model.occurrenceSet
+                |> Maybe.andThen .speciesName
+                |> Maybe.withDefault "Occurence Set"
+
+        ModelScenario ->
+            model.modelScenario
+                |> Maybe.andThen .code
+                |> Maybe.withDefault "Model Scenario"
+
+        ProjScenario ->
+            model.projectionScenario
+                |> Maybe.andThen .code
+                |> Maybe.withDefault "Projection Scenairo"
+
+
 mainView : Model -> ProjectionRecord -> Html Msg
 mainView model proj =
     case model.selectedTab of
-        Map ->
-            Options.div [] [ MapCard.view [] "Projection" model.mapCard |> Html.map MapCardMsg ]
-
         Algorithm ->
             Options.div [] [ Alg.view [] model.algorithm |> Html.map AlgMsg ]
 
-        OccurrenceSet ->
-            Options.div [] [ MapCard.view [] "Map" model.mapCard |> Html.map MapCardMsg ]
-
-        ModelScenario ->
-            Options.div [] [ MapCard.view [] "Map" model.mapCard |> Html.map MapCardMsg ]
-
-        ProjScenario ->
-            Options.div [] [ MapCard.view [] "Map" model.mapCard |> Html.map MapCardMsg ]
+        _ ->
+            Options.div [] [ MapCard.view [] (mapTitle model) model.mapCard |> Html.map MapCardMsg ]
 
 
 page : Page Model Msg
