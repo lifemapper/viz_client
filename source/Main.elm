@@ -57,7 +57,7 @@ type Msg
     = Mdl (Material.Msg Msg)
     | NewSDMMsg NewSDM.Msg
     | SDMProjectionMsg SDMProjection.Msg
-    | GotSDMProjections (Result Http.Error AtomList)
+    | GotSDMProjections (List AtomObjectRecord)
     | UrlChange Location
     | OpenExisting Int
     | OpenNew
@@ -107,11 +107,8 @@ update msg model =
             OpenNew ->
                 model ! [ Nav.newUrl "/sdm-new" ]
 
-            GotSDMProjections (Ok (AtomList atoms)) ->
-                ( { model | sdmProjections = atoms |> List.map (\(AtomObject o) -> o) }, Cmd.none )
-
-            GotSDMProjections (Err err) ->
-                Debug.log "Error fetching existing SDMs" (toString err) |> always ( model, Cmd.none )
+            GotSDMProjections projections ->
+                ( { model | sdmProjections = projections }, Cmd.none )
 
 
 getSDMProjections : Cmd Msg
@@ -125,7 +122,21 @@ getSDMProjections =
         , timeout = Nothing
         , withCredentials = False
         }
-        |> Http.send GotSDMProjections
+        |> Http.send gotSDMProjections
+
+
+gotSDMProjections : Result Http.Error AtomList -> Msg
+gotSDMProjections result =
+    case result of
+        Ok (AtomList atoms) ->
+            atoms
+                |> List.map (\(AtomObject o) -> o)
+                |> List.sortBy .modificationTime
+                |> List.reverse
+                |> GotSDMProjections
+
+        Err err ->
+            Debug.log "Error fetching existing SDMs" (toString err) |> always (GotSDMProjections [])
 
 
 header : Model -> List (Html Msg)
