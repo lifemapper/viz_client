@@ -30,8 +30,8 @@ type SDMPage
 route : Url.Parser (SDMPage -> a) a
 route =
     Url.oneOf
-        [ Url.map NewSDM (Url.s "sdm-new")
-        , Url.map SDMProjection (Url.s "sdm-projection" </> Url.int)
+        [ Url.map NewSDM (Url.s "new")
+        , Url.map SDMProjection (Url.s "projection" </> Url.int)
         ]
 
 
@@ -93,7 +93,7 @@ update msg model =
                 liftedSDMProjectionUpdate msg_ model
 
             UrlChange loc ->
-                case Debug.log "path" (Url.parsePath route loc) of
+                case Debug.log "path" (Url.parseHash route loc) of
                     Nothing ->
                         ( model, Cmd.none )
 
@@ -104,10 +104,10 @@ update msg model =
                         liftedSDMProjectionUpdate (SDMProjection.LoadMetadata id) { model | page = SDMProjection id }
 
             OpenExisting id ->
-                model ! [ Nav.newUrl ("/sdm-projection/" ++ toString id) ]
+                model ! [ Nav.newUrl ("#projection/" ++ toString id) ]
 
             OpenNew ->
-                model ! [ Nav.newUrl "/sdm-new" ]
+                model ! [ Nav.newUrl "#new" ]
 
             Tick _ ->
                 ( model, getSDMProjections )
