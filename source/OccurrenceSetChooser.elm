@@ -1,7 +1,7 @@
 module OccurrenceSetChooser exposing (..)
 
 import Decoder exposing (AtomObjectRecord, AtomList(..), decodeAtomList, AtomObject(..))
-import Constants exposing (apiRoot)
+import Constants exposing (apiRoot, minimumOccurrencePoints)
 import Json.Decode as Decode
 import Char
 import Helpers exposing (Index)
@@ -122,6 +122,7 @@ searchUrl searchText =
         ++ (Q.empty
                 |> Q.add "limit" "10"
                 |> Q.add "status" "300"
+                |> Q.add "minimumNumberOfPoints" (toString minimumOccurrencePoints)
                 |> Q.add "displayName" searchText
                 |> Q.render
            )
