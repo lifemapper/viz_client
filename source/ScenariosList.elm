@@ -2,6 +2,7 @@ module ScenariosList exposing (..)
 
 import Http
 import List.Extra exposing (find)
+import Constants exposing (apiRoot)
 import Decoder
     exposing
         ( AtomObjectRecord
@@ -54,7 +55,7 @@ getScenarios msgMap =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = "http://notyeti-191.lifemapper.org/api/v2/scenario"
+        , url = apiRoot ++ "scenario"
         , body = Http.emptyBody
         , expect = Http.expectJson decodeAtomList
         , timeout = Nothing
@@ -69,7 +70,7 @@ getMetadata id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = "http://notyeti-191.lifemapper.org/api/v2/scenario/" ++ (toString id)
+        , url = apiRoot ++ "scenario/" ++ (toString id)
         , body = Http.emptyBody
         , expect = Http.expectJson decodeScenario
         , timeout = Nothing

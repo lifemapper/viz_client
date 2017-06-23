@@ -6,6 +6,7 @@ import Material.Helpers as Helpers
 import Http
 import Html exposing (Html)
 import Page exposing (Page)
+import Constants exposing (apiRoot)
 import Decoder
     exposing
         ( ProjectionRecord
@@ -299,7 +300,7 @@ loadMetadata id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = "http://notyeti-191.lifemapper.org/api/v2/sdmProject/" ++ (toString id)
+        , url = apiRoot ++ "sdmProject/" ++ (toString id)
         , body = Http.emptyBody
         , expect = Http.expectJson decodeProjection
         , timeout = Nothing

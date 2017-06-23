@@ -1,5 +1,6 @@
 module OccurrenceSetsView exposing (..)
 
+import Constants exposing (apiRoot)
 import Decoder
     exposing
         ( AtomObjectRecord
@@ -120,7 +121,7 @@ getMetadataAndMap id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = "http://notyeti-191.lifemapper.org/api/v2/occurrence/" ++ (toString id)
+        , url = apiRoot ++ "occurrence/" ++ (toString id)
         , body = Http.emptyBody
         , expect = Http.expectJson decodeOccurrenceSet
         , timeout = Nothing

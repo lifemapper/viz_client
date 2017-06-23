@@ -1,5 +1,6 @@
 module NewSDM exposing (Model, page, init, initCmd, update, Msg)
 
+import Constants exposing (apiRoot)
 import List.Extra exposing (elemIndex)
 import Html exposing (Html)
 import Http
@@ -81,7 +82,7 @@ submitJob model =
     Http.request
         { method = "POST"
         , headers = [ Http.header "Accept" "application/json", Http.header "Content-Type" "text/plain" ]
-        , url = "http://notyeti-191.lifemapper.org/api/v2/sdmProject"
+        , url = apiRoot ++ "sdmProject"
         , body = Http.jsonBody <| Encoder.encodeProjectionPOST <| toApi model
         , expect = Http.expectString
         , timeout = Nothing

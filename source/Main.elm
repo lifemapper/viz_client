@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Constants exposing (apiRoot)
 import Time
 import Material
 import Material.Layout as Layout
@@ -121,7 +122,7 @@ getSDMProjections =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = "http://notyeti-191.lifemapper.org/api/v2/sdmProject?status=300"
+        , url = apiRoot ++ "sdmProject?status=300"
         , body = Http.emptyBody
         , expect = Http.expectJson decodeAtomList
         , timeout = Nothing

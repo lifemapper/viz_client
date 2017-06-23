@@ -1,6 +1,7 @@
 module OccurrenceSetChooser exposing (..)
 
 import Decoder exposing (AtomObjectRecord, AtomList(..), decodeAtomList, AtomObject(..))
+import Constants exposing (apiRoot)
 import Json.Decode as Decode
 import Char
 import Helpers exposing (Index)
@@ -116,7 +117,8 @@ getOccurrenceSets searchText =
 
 searchUrl : String -> String
 searchUrl searchText =
-    "http://notyeti-191.lifemapper.org/api/v2/occurrence"
+    apiRoot
+        ++ "occurrence"
         ++ (Q.empty
                 |> Q.add "limit" "10"
                 |> Q.add "status" "300"
