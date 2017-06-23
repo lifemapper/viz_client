@@ -1,4 +1,4 @@
-module MapCard exposing (Model, update, Msg(..), view, init)
+module MapCard exposing (Model, update, Msg, view, init, setMap, MapInfo)
 
 import Material
 import Material.Options as Options
@@ -6,6 +6,7 @@ import Material.Card as Card
 import Material.Menu as Menu
 import Material.Elevation as Elevation
 import Material.Icon as Icon
+import Material.Helpers exposing (lift)
 import Html exposing (Html)
 import Helpers exposing (Index)
 import Leaflet exposing (setLeafletMap, clearLeafletMap)
@@ -30,6 +31,11 @@ type Msg
     = Mdl (Material.Msg Msg)
     | SetLayer Int
     | SetMap (Maybe MapInfo)
+
+
+setMap : (model -> Model) -> (model -> Model -> model) -> (Msg -> msg) -> Maybe MapInfo -> model -> ( model, Cmd msg )
+setMap getter setter liftMsg mapInfo =
+    lift getter setter liftMsg update (SetMap mapInfo)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

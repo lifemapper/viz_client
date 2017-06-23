@@ -76,7 +76,7 @@ update msg model =
                 liftedMapCardUpdate msg_ model
 
             MapScenario s ->
-                liftedMapCardUpdate (updateMap (Just s)) ({ model | mapScenario = (Just s) })
+                updateMap { model | mapScenario = (Just s) }
 
             SelectScenario s ->
                 let
@@ -88,31 +88,36 @@ update msg model =
                             ModelScenario ->
                                 [ s ]
                 in
-                    liftedMapCardUpdate (updateMap (Just s))
-                        { model
-                            | selectedScenarios = selectedScenarios
-                            , mapScenario = (Just s)
-                        }
+                    updateMap { model | selectedScenarios = selectedScenarios, mapScenario = (Just s) }
 
             UnselectScenario id ->
                 ( { model | selectedScenarios = remove id model.selectedScenarios }, Cmd.none )
 
 
-updateMap : Maybe ScenarioRecord -> MapCard.Msg
-updateMap =
-    Maybe.andThen (\{ map } -> map)
-        >> Maybe.map
-            (\(Decoder.Map { endpoint, mapName, layers }) ->
-                let
-                    (MapLayers ls) =
-                        layers
+setMap : Maybe MapCard.MapInfo -> Model -> ( Model, Cmd Msg )
+setMap =
+    MapCard.setMap .mapCard (\m x -> { m | mapCard = x }) MapCardMsg
 
-                    layerNames =
-                        List.map (\(MapLayersItem l) -> l.layerName) ls
-                in
-                    { endPoint = endpoint, mapName = mapName, layers = layerNames }
-            )
-        >> MapCard.SetMap
+
+updateMap : Model -> ( Model, Cmd Msg )
+updateMap model =
+    let
+        mapInfo =
+            model.mapScenario
+                |> Maybe.andThen (\{ map } -> map)
+                |> Maybe.map
+                    (\(Decoder.Map { endpoint, mapName, layers }) ->
+                        let
+                            (MapLayers ls) =
+                                layers
+
+                            layerNames =
+                                List.map (\(MapLayersItem l) -> l.layerName) ls
+                        in
+                            { endPoint = endpoint, mapName = mapName, layers = layerNames }
+                    )
+    in
+        setMap mapInfo model
 
 
 scenarioTitle : SL.Model -> ScenarioRecord -> String

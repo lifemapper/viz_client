@@ -139,16 +139,14 @@ update msg model =
                 liftedAlgUpdate msg_ model
 
 
+setMap : Maybe MapCard.MapInfo -> Model -> ( Model, Cmd Msg )
+setMap =
+    MapCard.setMap .mapCard (\m x -> { m | mapCard = x }) MapCardMsg
+
+
 updateMap : Model -> ( Model, Cmd Msg )
 updateMap model =
     let
-        liftedMapCardUpdate =
-            Helpers.lift
-                .mapCard
-                (\m x -> { m | mapCard = x })
-                MapCardMsg
-                MapCard.update
-
         mapInfo projection =
             case model.selectedTab of
                 Algorithm ->
@@ -198,16 +196,13 @@ updateMap model =
                                 in
                                     { endPoint = endpoint, mapName = mapName, layers = layerNames }
                             )
-
-        mapMsg =
-            case model.state of
-                Showing projection ->
-                    MapCard.SetMap (mapInfo projection)
-
-                _ ->
-                    MapCard.SetMap Nothing
     in
-        liftedMapCardUpdate mapMsg model
+        case model.state of
+            Showing projection ->
+                setMap (mapInfo projection) model
+
+            _ ->
+                setMap Nothing model
 
 
 updateState : State -> Model -> Model

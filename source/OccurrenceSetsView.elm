@@ -75,7 +75,7 @@ update msg model =
                 ( model, getMetadataAndMap id )
 
             SetMapped o ->
-                liftedMapCardUpdate (updateMap o) { model | mappedSet = o }
+                updateMap { model | mappedSet = o }
 
             MapCardMsg msg_ ->
                 liftedMapCardUpdate msg_ model
@@ -96,14 +96,23 @@ addSelected msg model =
             ( model, Cmd.none )
 
 
-updateMap : Maybe OccurrenceSetRecord -> MapCard.Msg
-updateMap =
-    Maybe.andThen (\{ map } -> map)
-        >> Maybe.map
-            (\(SingleLayerMap { endpoint, mapName, layerName }) ->
-                { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
-            )
-        >> MapCard.SetMap
+setMap : Maybe MapCard.MapInfo -> Model -> ( Model, Cmd Msg )
+setMap =
+    MapCard.setMap .mapCard (\m x -> { m | mapCard = x }) MapCardMsg
+
+
+updateMap : Model -> ( Model, Cmd Msg )
+updateMap model =
+    let
+        mapInfo =
+            model.mappedSet
+                |> Maybe.andThen (\{ map } -> map)
+                |> Maybe.map
+                    (\(SingleLayerMap { endpoint, mapName, layerName }) ->
+                        { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                    )
+    in
+        setMap mapInfo model
 
 
 getMetadataAndMap : Int -> Cmd Msg
