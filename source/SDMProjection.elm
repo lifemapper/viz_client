@@ -3,6 +3,8 @@ module SDMProjection exposing (Model, update, page, init, Msg(LoadMetadata))
 import Material
 import Material.Options as Options
 import Material.Helpers as Helpers
+import Material.Spinner as Loading
+import Material.Typography as Typo
 import Http
 import Html exposing (Html)
 import Page exposing (Page)
@@ -346,7 +348,10 @@ view model =
             Options.div [] []
 
         Loading _ ->
-            Options.div [] [ Html.text "Loading" ]
+            Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                [ Html.text "Loading projection..."
+                , Html.p [] [ Loading.spinner [ Loading.active True ] ]
+                ]
 
         Showing projection ->
             mainView model projection
