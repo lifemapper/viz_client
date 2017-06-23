@@ -61,20 +61,17 @@ update msg model =
 
 updateMap : Model -> Model -> Cmd Msg
 updateMap oldModel model =
-    if model.mapInfo == oldModel.mapInfo then
-        Cmd.none
-    else
-        case model.mapInfo of
-            Nothing ->
-                clearLeafletMap model.mapContainerId
+    case model.mapInfo of
+        Nothing ->
+            clearLeafletMap model.mapContainerId
 
-            Just { endPoint, mapName, layers } ->
-                setLeafletMap
-                    { containerId = model.mapContainerId
-                    , endPoint = endPoint
-                    , mapName = mapName
-                    , layers = ("bmng" :: (List.take 1 <| List.drop model.mapLayer layers))
-                    }
+        Just { endPoint, mapName, layers } ->
+            setLeafletMap
+                { containerId = model.mapContainerId
+                , endPoint = endPoint
+                , mapName = mapName
+                , layers = ("bmng" :: (List.take 1 <| List.drop model.mapLayer layers))
+                }
 
 
 view : Index -> String -> Model -> Html Msg
