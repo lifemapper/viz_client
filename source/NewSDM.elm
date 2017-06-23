@@ -35,7 +35,7 @@ type Tab
 
 tabs : List Tab
 tabs =
-    [ Algorithms, OccurrenceSets, ModelScenario, ProjScenarios, PostProjection ]
+    [ OccurrenceSets, Algorithms, ModelScenario, ProjScenarios, PostProjection ]
 
 
 tabIndex : Tab -> Int
@@ -94,7 +94,7 @@ submitJob model =
 init : Model
 init =
     { mdl = Material.model
-    , selectedTab = Algorithms
+    , selectedTab = OccurrenceSets
     , modelScenario = Scns.init Scns.ModelScenario
     , projectionScenarios = Scns.init Scns.ProjectionScenarios
     , algorithmsModel = Algs.init
@@ -194,13 +194,13 @@ tabTitle tab =
                 "Algorithms"
 
             OccurrenceSets ->
-                "Occurrence Sets"
+                "Species Data"
 
             ModelScenario ->
-                "Model Scenario"
+                "Model Input Layers"
 
             ProjScenarios ->
-                "Projection Scenarios"
+                "Projection Input Layers"
 
             PostProjection ->
                 "Submit Project"

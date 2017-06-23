@@ -31,7 +31,7 @@ type Tab
 
 tabs : List Tab
 tabs =
-    [ Map, Algorithm, OccurrenceSet, ModelScenario, ProjScenario ]
+    [ Map, OccurrenceSet, Algorithm, ModelScenario, ProjScenario ]
 
 
 tabIndex : Tab -> Int
@@ -330,13 +330,13 @@ tabTitle tab =
             "Algorithm"
 
         OccurrenceSet ->
-            "Occurrence Set"
+            "Species Data"
 
         ModelScenario ->
-            "Model Scenario"
+            "Model Input Layers"
 
         ProjScenario ->
-            "Projection Scenario"
+            "Projection Input Layers"
 
 
 view : Model -> Html Msg
