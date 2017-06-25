@@ -65,6 +65,7 @@ function updateMap(id) {
         mapName: mapModel.mapName,
         format: 'image/png',
         version: '1.1.0',
+        transparent: true,
         layers: mapModel.layers.join(',')
     }).addTo(map);
 }
