@@ -2,7 +2,7 @@ module Constants exposing (..)
 
 apiRoot : String
 apiRoot =
-    "http://notyeti-191.lifemapper.org/api/v2/"
+    "http://notyeti-190.lifemapper.org/api/v2/"
 
 
 minimumOccurrencePoints : Int

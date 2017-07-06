@@ -201,7 +201,12 @@ start loc =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch [ Material.subscriptions Mdl model, Time.every (5 * Time.second) Tick ]
+    Sub.batch
+        [ Material.subscriptions Mdl model
+        , Time.every (5 * Time.second) Tick
+        , SDMProjection.subscriptions SDMProjectionMsg
+        , NewSDM.subscriptions NewSDMMsg
+        ]
 
 
 main : Program Never Model Msg

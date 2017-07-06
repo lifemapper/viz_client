@@ -2,20 +2,32 @@
 
 var app = Elm.Main.fullscreen();
 
-var mapModels = {};
 var maps = {};
 var mapLayers = {};
 
 
 app.ports.setLeafletMap.subscribe(function(leafletMap) {
-    mapModels[leafletMap.containerId] = leafletMap;
-    updateMap(leafletMap.containerId);
+    var map = maps[leafletMap.id];
+    if (map == null) return;
+
+    var layer = mapLayers[leafletMap.id];
+    layer == null || map.removeLayer(layer);
+
+    var wmsInfo = leafletMap.state.wmsLayer;
+
+    mapLayers[leafletMap.id] = wmsInfo && L.tileLayer.wms(wmsInfo.endPoint, {
+        mapName: wmsInfo.mapName,
+        format: 'image/png',
+        version: '1.1.0',
+        transparent: true,
+        layers: wmsInfo.layers.join(',')
+    }).addTo(map);
+
+    var view = leafletMap.state.view;
+
+    map.setView({lat: view[0], lng: view[1]}, view[2], {animate: false});
 });
 
-app.ports.clearLeafletMap.subscribe(function(containerId) {
-    mapModels[containerId] = null;
-    updateMap(containerId);
-});
 
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(m) {
@@ -27,8 +39,15 @@ var observer = new MutationObserver(function(mutations) {
                 var id = element.id;
                 console.log("adding map to ", id);
                 if (maps[id] == null) {
-                    maps[id] = L.map(id, {crs: L.CRS.EPSG4326}).setView([0, 0], 1);
-                    updateMap(id);
+                    maps[id] = L.map(id, {crs: L.CRS.EPSG4326})
+                        .setView([0, 0], 1)
+                        .on('moveend', function(event) {
+                            var center = maps[id].getCenter();
+                            var zoom = maps[id].getZoom();
+
+                            app.ports.leafletViewChanged.send([id, [center.lat, center.lng, zoom]]);
+                        });
+                    app.ports.leafletRequestState.send(id);
                 }
             });
         });
@@ -43,6 +62,7 @@ var observer = new MutationObserver(function(mutations) {
                     console.log("removing map from ", id);
                     maps[id].remove();
                     maps[id] = null;
+                    mapLayers[id] = null;
                 }
             });
         });
@@ -51,21 +71,3 @@ var observer = new MutationObserver(function(mutations) {
 
 observer.observe(document.body, { subtree: true, childList: true });
 
-
-function updateMap(id) {
-    var map = maps[id];
-    if (map == null) return;
-
-    var mapModel = mapModels[id];
-
-    var layer = mapLayers[id];
-    layer == null || map.removeLayer(layer);
-
-    mapLayers[id] = mapModel && L.tileLayer.wms(mapModel.endPoint, {
-        mapName: mapModel.mapName,
-        format: 'image/png',
-        version: '1.1.0',
-        transparent: true,
-        layers: mapModel.layers.join(',')
-    }).addTo(map);
-}

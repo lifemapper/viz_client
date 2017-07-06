@@ -198,3 +198,8 @@ view index model =
 complete : Model -> Bool
 complete model =
     (List.length model.occurrenceSets) > 0
+
+
+subscriptions : (Msg -> msg) -> Sub msg
+subscriptions liftMsg =
+    MapCard.subscriptions (MapCardMsg >> liftMsg)

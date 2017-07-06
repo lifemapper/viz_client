@@ -1,4 +1,4 @@
-module NewSDM exposing (Model, page, init, initCmd, update, Msg)
+module NewSDM exposing (Model, page, init, initCmd, update, Msg, subscriptions)
 
 import Constants exposing (apiRoot)
 import List.Extra exposing (elemIndex)
@@ -334,3 +334,12 @@ page =
 initCmd : (Msg -> msg) -> Cmd msg
 initCmd map =
     SL.getScenarios SLMsg |> Cmd.map map
+
+
+subscriptions : (Msg -> msg) -> Sub msg
+subscriptions liftMsg =
+    Sub.batch
+        [ Occs.subscriptions (OccsMsg >> liftMsg)
+        , Scns.subscriptions (MdlScnMsg >> liftMsg)
+        , Scns.subscriptions (ProjScnsMsg >> liftMsg)
+        ]

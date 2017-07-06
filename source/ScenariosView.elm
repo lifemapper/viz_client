@@ -238,3 +238,8 @@ init mode =
     , mapCard = MapCard.init ("leaflet-map-scenarios-" ++ (toString mode))
     , selectedScenarios = []
     }
+
+
+subscriptions : (Msg -> msg) -> Sub msg
+subscriptions liftMsg =
+    MapCard.subscriptions (MapCardMsg >> liftMsg)

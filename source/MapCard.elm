@@ -1,5 +1,7 @@
-module MapCard exposing (Model, update, Msg, view, init, setMap, MapInfo)
+module MapCard exposing (Model, update, Msg, view, init, subscriptions, setMap, MapInfo)
 
+import Maybe.Extra as Maybe
+import List.Extra as List
 import Material
 import Material.Options as Options
 import Material.Card as Card
@@ -9,26 +11,24 @@ import Material.Icon as Icon
 import Material.Helpers exposing (lift)
 import Html exposing (Html)
 import Helpers exposing (Index)
-import Leaflet exposing (setLeafletMap, clearLeafletMap)
+import Leaflet
 
 
 type alias MapInfo =
-    { endPoint : String
-    , mapName : String
-    , layers : List String
-    }
+    Leaflet.WMSInfo
 
 
 type alias Model =
     { mapInfo : Maybe MapInfo
     , mapLayer : Int
-    , mapContainerId : String
+    , leaflet : Leaflet.Model
     , mdl : Material.Model
     }
 
 
 type Msg
     = Mdl (Material.Msg Msg)
+    | LeafletMsg Leaflet.Msg
     | SetLayer Int
     | SetMap (Maybe MapInfo)
 
@@ -44,34 +44,38 @@ update msg model =
         Mdl msg_ ->
             Material.update Mdl msg_ model
 
+        LeafletMsg msg_ ->
+            lift
+                .leaflet
+                (\m l -> { m | leaflet = l })
+                LeafletMsg
+                Leaflet.update
+                msg_
+                model
+
         SetMap mapInfo ->
-            let
-                newModel =
-                    { model | mapInfo = mapInfo, mapLayer = 0 }
-            in
-                ( newModel, updateMap model newModel )
+            updateMap { model | mapInfo = mapInfo, mapLayer = 0 }
 
         SetLayer layer ->
-            let
-                newModel =
-                    { model | mapLayer = layer }
-            in
-                ( newModel, updateMap model newModel )
+            updateMap { model | mapLayer = layer }
 
 
-updateMap : Model -> Model -> Cmd Msg
-updateMap oldModel model =
-    case model.mapInfo of
-        Nothing ->
-            clearLeafletMap model.mapContainerId
+updateMap : Model -> ( Model, Cmd Msg )
+updateMap model =
+    setWMS (model.mapInfo |> Maybe.map (selectLayers model.mapLayer)) model
 
-        Just { endPoint, mapName, layers } ->
-            setLeafletMap
-                { containerId = model.mapContainerId
-                , endPoint = endPoint
-                , mapName = mapName
-                , layers = ("bmng" :: (List.take 1 <| List.drop model.mapLayer layers))
-                }
+
+selectLayers : Int -> MapInfo -> MapInfo
+selectLayers i mapInfo =
+    { mapInfo
+        | layers =
+            "bmng" :: (mapInfo.layers |> List.getAt i |> Maybe.toList)
+    }
+
+
+setWMS : Maybe MapInfo -> Model -> ( Model, Cmd Msg )
+setWMS =
+    Leaflet.setWMS .leaflet (\m l -> { m | leaflet = l }) LeafletMsg
 
 
 view : Index -> String -> Model -> Html Msg
@@ -96,7 +100,7 @@ view index title model =
 
         leafletDiv =
             Options.div
-                [ Options.id model.mapContainerId
+                [ Options.id <| Leaflet.getId <| model.leaflet
                 , Options.cs "leaflet-map"
                 , Options.css "width" "800px"
                 , Options.css "height" "600px"
@@ -128,6 +132,11 @@ init : String -> Model
 init mapContainerId =
     { mapInfo = Nothing
     , mapLayer = 0
-    , mapContainerId = mapContainerId
+    , leaflet = Leaflet.initModel mapContainerId
     , mdl = Material.model
     }
+
+
+subscriptions : (Msg -> msg) -> Sub msg
+subscriptions liftMsg =
+    Leaflet.subscriptions (LeafletMsg >> liftMsg)

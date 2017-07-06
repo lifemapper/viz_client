@@ -1,4 +1,4 @@
-module SDMProjection exposing (Model, update, page, init, Msg(LoadMetadata))
+module SDMProjection exposing (Model, update, page, init, Msg(LoadMetadata), subscriptions)
 
 import Material
 import Material.Options as Options
@@ -399,3 +399,8 @@ page =
     , selectTab = (\i -> List.drop i tabs |> List.head |> Maybe.withDefault Map |> SelectTab)
     , tabTitles = always <| List.map (tabTitle >> Html.text) tabs
     }
+
+
+subscriptions : (Msg -> msg) -> Sub msg
+subscriptions liftMsg =
+    MapCard.subscriptions (MapCardMsg >> liftMsg)
