@@ -1,4 +1,16 @@
-module AlgorithmView exposing (..)
+module AlgorithmView
+    exposing
+        ( Model
+        , toApi
+        , fromApi
+        , Msg(Remove)
+        , update
+        , init
+        , setRaised
+        , view
+        , exampleAlgorithm
+        , validationErrors
+        )
 
 import Decoder
 import Html exposing (Html)
@@ -7,9 +19,9 @@ import Material
 import Material.Elevation as Elevation
 import Material.Button as Button
 import Material.Icon as Icon
+import Material.Color as Color
 import Material.Options as Options
 import Material.Card as Card
-import Material.Scheme
 import ParameterView
 import AlgorithmDefinition as D
 import Helpers exposing (Index)
@@ -32,6 +44,11 @@ toApi { definition, parameters } =
         { code = definition.code
         , parameters = parameters |> List.map ParameterView.toApi
         }
+
+
+validationErrors : Model -> List ( String, String )
+validationErrors model =
+    List.filterMap ParameterView.validationError model.parameters
 
 
 fromApi : Bool -> Decoder.Algorithm -> Model
@@ -151,6 +168,18 @@ removeButton index model =
         [ Button.render Mdl index model.mdl [ Button.icon, Options.onClick Remove ] [ Icon.i "delete" ] ]
 
 
+header : Model -> List (Html Msg)
+header model =
+    case validationErrors model of
+        [] ->
+            [ Html.text model.definition.name ]
+
+        _ ->
+            [ Icon.view "warning" [ Color.text Color.accent, Options.css "margin-right" "5px" ]
+            , Html.text model.definition.name
+            ]
+
+
 view : Index -> Model -> Html Msg
 view index model =
     Card.view
@@ -160,7 +189,8 @@ view index model =
         , Options.onMouseLeave (MouseIn False)
         , Options.css "width" "100%"
         ]
-        [ Card.title [ Options.css "padding-right" "48px" ] [ Card.head [] [ Html.text model.definition.name ] ]
+        [ Card.title [ Options.css "padding-right" "48px" ]
+            [ Card.head [] <| header model ]
         , Card.menu [] <| removeButton (-1 :: index) model
         , Card.text []
             (descriptionView model :: parametersView index model)
@@ -175,17 +205,3 @@ exampleAlgorithm =
 
         Just a ->
             a
-
-
-main : Program Never Model Msg
-main =
-    Html.program
-        { init = ( init exampleAlgorithm False, Material.init Mdl )
-        , view = view [] >> Material.Scheme.top
-        , update = update
-        , subscriptions =
-            \model ->
-                Sub.batch
-                    [ Material.subscriptions Mdl model
-                    ]
-        }

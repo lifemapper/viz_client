@@ -281,30 +281,41 @@ mainView model =
                         ]
 
 
-taskLI : Model -> ( Tab, Model -> Bool ) -> Html Msg
-taskLI model ( tab, complete ) =
+taskLI : Model -> ( Tab, Model -> Maybe String ) -> Html Msg
+taskLI model ( tab, problemFunc ) =
     let
-        icon =
-            if complete model then
-                Icon.i "check_box"
-            else
-                Icon.i "check_box_outline_blank"
+        problems =
+            problemFunc model
+
+        ( icon, hint ) =
+            case problems of
+                Nothing ->
+                    ( Icon.i "check_box"
+                    , []
+                    )
+
+                Just problem ->
+                    ( Icon.i "check_box_outline_blank"
+                    , [ Options.span [ Options.css "margin-left" "5px", Typo.caption ]
+                            [ Html.text <| "(" ++ problem ++ ")" ]
+                      ]
+                    )
     in
-        Lists.li [] [ Lists.content [] [ icon, tabTitle tab ] ]
+        Lists.li [] [ Lists.content [] <| [ icon, tabTitle tab ] ++ hint ]
 
 
-tasks : List ( Tab, Model -> Bool )
+tasks : List ( Tab, Model -> Maybe String )
 tasks =
-    [ ( Algorithms, (.algorithmsModel >> Algs.complete) )
-    , ( OccurrenceSets, (.occurrenceSets >> Occs.complete) )
-    , ( ModelScenario, (.modelScenario >> Scns.complete) )
-    , ( ProjScenarios, (.projectionScenarios >> Scns.complete) )
+    [ ( OccurrenceSets, (.occurrenceSets >> Occs.problems) )
+    , ( Algorithms, (.algorithmsModel >> Algs.problems) )
+    , ( ModelScenario, (.modelScenario >> Scns.problems) )
+    , ( ProjScenarios, (.projectionScenarios >> Scns.problems) )
     ]
 
 
 complete : Model -> Bool
 complete model =
-    List.all (\( _, taskComplete ) -> taskComplete model) tasks
+    List.all (\( _, problems ) -> problems model == Nothing) tasks
 
 
 selectedTab : Model -> Int

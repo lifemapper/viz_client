@@ -195,9 +195,14 @@ view index model =
             ]
 
 
-complete : Model -> Bool
-complete model =
-    (List.length model.occurrenceSets) > 0
+problems : Model -> Maybe String
+problems model =
+    case model.occurrenceSets of
+        [] ->
+            Just "No occurrence sets chosen."
+
+        _ ->
+            Nothing
 
 
 subscriptions : (Msg -> msg) -> Sub msg

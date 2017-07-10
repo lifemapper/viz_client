@@ -28,6 +28,16 @@ toApi model =
     ( model.definition.name, model.value )
 
 
+validationError : Model -> Maybe ( String, String )
+validationError model =
+    case model.validationResult of
+        Ok _ ->
+            Nothing
+
+        Err msg ->
+            Just ( model.definition.name, msg )
+
+
 init : D.Parameter -> Model
 init def =
     let

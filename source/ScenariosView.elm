@@ -225,9 +225,14 @@ view index scenarioList model =
             ]
 
 
-complete : Model -> Bool
-complete model =
-    (List.length model.selectedScenarios) > 0
+problems : Model -> Maybe String
+problems model =
+    case model.selectedScenarios of
+        [] ->
+            Just "No scenarios selected."
+
+        _ ->
+            Nothing
 
 
 init : Mode -> Model

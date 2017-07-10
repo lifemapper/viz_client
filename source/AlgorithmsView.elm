@@ -1,8 +1,7 @@
-module AlgorithmsView exposing (..)
+module AlgorithmsView exposing (Model, toApi, init, update, view, Msg, problems)
 
 import Html exposing (Html)
 import Material
-import Material.Scheme
 import Material.Grid as Grid exposing (Cell, Device(..), grid, cell)
 import Material.Helpers exposing (lift)
 import AlgorithmView
@@ -99,9 +98,17 @@ view index model =
                 [ cell [ Grid.size All cardSize ] [ Html.map AddAlgorithmMsg <| AddAlgorithmView.view alreadyAdded model.adder ] ]
 
 
-complete : Model -> Bool
-complete model =
-    (List.length model.algorithms) > 0
+problems : Model -> Maybe String
+problems model =
+    case model.algorithms of
+        [] ->
+            Just "No algorithms chosen."
+
+        algs ->
+            if algs |> List.any (AlgorithmView.validationErrors >> List.isEmpty) then
+                Nothing
+            else
+                Just "An algorithm has invalid parameters."
 
 
 init : Model
@@ -110,17 +117,3 @@ init =
     , adder = AddAlgorithmView.init
     , mdl = Material.model
     }
-
-
-main : Program Never Model Msg
-main =
-    Html.program
-        { init = ( init, Material.init Mdl )
-        , view = view [] >> Material.Scheme.top
-        , update = update
-        , subscriptions =
-            \model ->
-                Sub.batch
-                    [ Material.subscriptions Mdl model
-                    ]
-        }
