@@ -1,4 +1,4 @@
-module OccurrenceSetsView exposing (..)
+module OccurrenceSetsView exposing (Model, toApi, Msg, update, view, init, subscriptions, problems)
 
 import Constants exposing (apiRoot)
 import Decoder

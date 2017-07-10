@@ -1,8 +1,7 @@
-module AddAlgorithmView exposing (..)
+module AddAlgorithmView exposing (Model, Msg(Add), update, setRaised, init, view)
 
 import Html exposing (Html)
 import Material
-import Material.Scheme
 import Material.Options as Options
 import Material.Card as Card
 import Material.Elevation as Elevation
@@ -103,17 +102,3 @@ init =
     , expanded = Nothing
     , mdl = Material.model
     }
-
-
-main : Program Never Model Msg
-main =
-    Html.program
-        { init = ( init, Material.init Mdl )
-        , view = view [] >> Material.Scheme.top
-        , update = update
-        , subscriptions =
-            \model ->
-                Sub.batch
-                    [ Material.subscriptions Mdl model
-                    ]
-        }

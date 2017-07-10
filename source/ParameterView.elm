@@ -1,4 +1,14 @@
-module ParameterView exposing (..)
+module ParameterView
+    exposing
+        ( Model
+        , toApi
+        , Msg
+        , update
+        , view
+        , validationError
+        , init
+        , initFromValues
+        )
 
 import Dict
 import Html exposing (Html)
@@ -8,7 +18,6 @@ import Material.Textfield as Textfield
 import Material.Options as Options
 import Material.Tooltip as Tooltip
 import Material.Toggles as Toggles
-import Material.Scheme
 import AlgorithmDefinition as D
 import List.Extra exposing (find)
 import Helpers exposing (Index)
@@ -251,43 +260,3 @@ viewSwitch readOnly idx model =
                 ]
                 [ Html.text model.definition.displayName ]
             ]
-
-
-exView : Model -> Html Msg
-exView model =
-    Html.ul [ Attributes.style [ ( "padding", "0" ) ] ]
-        [ view False [] model ]
-
-
-exampleAlgorithm : D.Algorithm
-exampleAlgorithm =
-    case List.head D.algorithms of
-        Nothing ->
-            Debug.crash "No example algorithm def"
-
-        Just a ->
-            a
-
-
-exampleParameter : D.Parameter
-exampleParameter =
-    case List.head (List.drop 3 exampleAlgorithm.parameters) of
-        Nothing ->
-            Debug.crash "Example algorithm has no params"
-
-        Just p ->
-            p
-
-
-main : Program Never Model Msg
-main =
-    Html.program
-        { init = ( init exampleParameter, Material.init Mdl )
-        , view = exView >> Material.Scheme.top
-        , update = update
-        , subscriptions =
-            \model ->
-                Sub.batch
-                    [ Material.subscriptions Mdl model
-                    ]
-        }

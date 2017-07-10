@@ -1,4 +1,12 @@
-module AlgorithmDefinition exposing (..)
+module AlgorithmDefinition
+    exposing
+        ( Algorithm
+        , Parameter
+        , ParameterType(..)
+        , ParameterOption
+        , algorithms
+        , getAlgorithmByCode
+        )
 
 import Json.Decode exposing (Decoder, field, string, list, succeed, fail, andThen, map, decodeString)
 import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)

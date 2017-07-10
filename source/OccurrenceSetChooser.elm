@@ -1,4 +1,4 @@
-module OccurrenceSetChooser exposing (..)
+module OccurrenceSetChooser exposing (Model, Msg(Select), update, view, init)
 
 import Decoder exposing (AtomObjectRecord, AtomList(..), decodeAtomList, AtomObject(..))
 import Constants exposing (apiRoot, minimumOccurrencePoints)
@@ -8,7 +8,6 @@ import Helpers exposing (Index)
 import Http
 import Html exposing (Html)
 import Material
-import Material.Scheme
 import Material.Color as Color
 import Material.Options as Options
 import Material.Textfield as Textfield
@@ -191,13 +190,3 @@ view index model =
 init : Model
 init =
     { searchText = "", searchResults = [], highlight = Nothing, mdl = Material.model }
-
-
-main : Program Never Model Msg
-main =
-    Html.program
-        { init = ( init, Material.init Mdl )
-        , view = view [] >> Material.Scheme.top
-        , update = update
-        , subscriptions = Material.subscriptions Mdl
-        }

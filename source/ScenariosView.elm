@@ -1,4 +1,15 @@
-module ScenariosView exposing (..)
+module ScenariosView
+    exposing
+        ( Model
+        , Msg
+        , init
+        , update
+        , view
+        , toApi
+        , Mode(..)
+        , problems
+        , subscriptions
+        )
 
 import List.Extra exposing (remove)
 import Decoder
