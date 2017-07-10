@@ -64,6 +64,7 @@ type Msg
     | OpenExisting Int
     | OpenNew
     | Tick Time.Time
+    | Nop
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -116,6 +117,9 @@ update msg model =
             GotSDMProjections projections ->
                 ( { model | sdmProjections = projections }, Cmd.none )
 
+            Nop ->
+                ( model, Cmd.none )
+
 
 getSDMProjections : Cmd Msg
 getSDMProjections =
@@ -142,7 +146,7 @@ gotSDMProjections result =
                 |> GotSDMProjections
 
         Err err ->
-            Debug.log "Error fetching existing SDMs" (toString err) |> always (GotSDMProjections [])
+            Debug.log "Error fetching existing SDMs" (toString err) |> always Nop
 
 
 header : Model -> List (Html Msg)
