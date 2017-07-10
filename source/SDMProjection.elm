@@ -48,8 +48,7 @@ tabIndex tab =
 
 type State
     = Showing ProjectionRecord
-    | Loading Int
-    | Blank
+    | Loading
 
 
 type alias Model =
@@ -67,7 +66,7 @@ type alias Model =
 init : Model
 init =
     { mdl = Material.model
-    , state = Blank
+    , state = Loading
     , selectedTab = Map
     , mapCard = MapCard.init "leaflet-map-projection"
     , algorithm = Alg.init Alg.exampleAlgorithm True
@@ -109,7 +108,7 @@ update msg model =
     in
         case msg of
             LoadMetadata id ->
-                ( { model | state = Loading id }, loadMetadata id )
+                ( { model | state = Loading }, loadMetadata id )
 
             SetState state ->
                 updateState state model
@@ -282,8 +281,7 @@ gotOccurrenceSet result =
             SetOccurrenceSet o
 
         Err err ->
-            SetState Blank
-                |> Debug.log (toString err)
+            Debug.log "Failed to load occurrence set" err |> always Nop
 
 
 gotScenario : (ScenarioRecord -> Msg) -> Result Http.Error Decoder.Scenario -> Msg
@@ -293,8 +291,7 @@ gotScenario andThen result =
             andThen s
 
         Err err ->
-            SetState Blank
-                |> Debug.log (toString err)
+            Debug.log "Failed to load scenario" err |> always Nop
 
 
 loadMetadata : Int -> Cmd Msg
@@ -318,8 +315,7 @@ gotMetadata result =
             SetState (Showing p)
 
         Err err ->
-            SetState Blank
-                |> Debug.log (toString err)
+            Debug.log "Failed to load projection" err |> always Nop
 
 
 tabTitle : Tab -> String
@@ -344,10 +340,7 @@ tabTitle tab =
 view : Model -> Html Msg
 view model =
     case model.state of
-        Blank ->
-            Options.div [] []
-
-        Loading _ ->
+        Loading ->
             Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
                 [ Html.text "Loading projection..."
                 , Html.p [] [ Loading.spinner [ Loading.active True ] ]
