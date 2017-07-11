@@ -20,6 +20,7 @@ import Material.Tooltip as Tooltip
 import Material.Toggles as Toggles
 import AlgorithmDefinition as D
 import List.Extra exposing (find)
+import Maybe.Extra exposing (or)
 import Helpers exposing (Index)
 
 
@@ -64,10 +65,13 @@ init def =
 initFromValues : List ( String, String ) -> D.Parameter -> Model
 initFromValues values def =
     let
+        givenValue =
+            values
+                |> find (Tuple.first >> ((==) def.name))
+                |> Maybe.map Tuple.second
+
         initValue =
-            find (\( name, _ ) -> name == def.name) values
-                |> Maybe.map (\( _, value ) -> value)
-                |> Maybe.withDefault (def.default |> Maybe.withDefault "")
+            or givenValue def.default |> Maybe.withDefault ""
     in
         { definition = def
         , value = initValue
@@ -101,15 +105,14 @@ boundErrMsg reject bound =
 
 checkBound : Maybe comparable -> Order -> comparable -> Result String comparable
 checkBound bound reject value =
-    Maybe.withDefault (Ok value) <|
-        Maybe.map
-            (\b ->
-                if compare value b /= reject then
-                    Ok value
-                else
-                    Err (boundErrMsg reject b)
-            )
-            bound
+    let
+        compareWith bound =
+            if compare value bound == reject then
+                Err (boundErrMsg reject bound)
+            else
+                Ok value
+    in
+        bound |> Maybe.map compareWith |> Maybe.withDefault (Ok value)
 
 
 checkBounds :
@@ -169,12 +172,10 @@ view readOnly idx model =
             viewField readOnly idx model
 
         options ->
-            case List.filter (\{ name } -> name /= "Yes" && name /= "No") options of
-                [] ->
-                    viewSwitch readOnly idx model
-
-                _ ->
-                    viewOptions readOnly idx model
+            if options |> List.all (\{ name } -> name == "Yes" || name == "No") then
+                viewSwitch readOnly idx model
+            else
+                viewOptions readOnly idx model
 
 
 viewField : Bool -> Index -> Model -> Html Msg

@@ -1,5 +1,6 @@
 module SDMProjection exposing (Model, update, page, init, Msg(LoadMetadata), subscriptions)
 
+import List.Extra exposing (elemIndex, getAt)
 import Material
 import Material.Options as Options
 import Material.Helpers as Helpers
@@ -38,12 +39,7 @@ tabs =
 
 tabIndex : Tab -> Int
 tabIndex tab =
-    tabs
-        |> List.indexedMap (,)
-        |> List.filter (\( i, t ) -> t == tab)
-        |> List.head
-        |> Maybe.map (\( i, _ ) -> i)
-        |> Maybe.withDefault 0
+    tabs |> elemIndex tab |> Maybe.withDefault 0
 
 
 type State
@@ -389,7 +385,7 @@ page : Page Model Msg
 page =
     { view = view
     , selectedTab = .selectedTab >> tabIndex
-    , selectTab = (\i -> List.drop i tabs |> List.head |> Maybe.withDefault Map |> SelectTab)
+    , selectTab = (\i -> tabs |> getAt i |> Maybe.withDefault Map |> SelectTab)
     , tabTitles = always <| List.map (tabTitle >> Html.text) tabs
     }
 

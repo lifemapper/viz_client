@@ -1,7 +1,7 @@
 module NewSDM exposing (Model, page, init, initCmd, update, Msg, subscriptions)
 
 import Constants exposing (apiRoot)
-import List.Extra exposing (elemIndex)
+import List.Extra exposing (elemIndex, getAt)
 import Html exposing (Html)
 import Http
 import Material
@@ -17,7 +17,6 @@ import AlgorithmsView as Algs
 import OccurrenceSetsView as Occs
 import Page exposing (Page)
 import ScenariosList as SL
-import Helpers exposing (undefined, unsafeFromMaybe)
 import Decoder
 import Encoder
 
@@ -40,7 +39,7 @@ tabs =
 
 tabIndex : Tab -> Int
 tabIndex tab =
-    elemIndex tab tabs |> Maybe.withDefault 0
+    tabs |> elemIndex tab |> Maybe.withDefault 0
 
 
 type WorkFlowState
@@ -62,33 +61,44 @@ type alias Model =
     }
 
 
-toApi : Model -> Decoder.ProjectionPOST
+toApi : Model -> Result String Decoder.ProjectionPOST
 toApi { algorithmsModel, occurrenceSets, modelScenario, projectionScenarios } =
-    Decoder.ProjectionPOST
-        { algorithms = Algs.toApi algorithmsModel
-        , occurrenceSets = Occs.toApi occurrenceSets
-        , modelScenario =
-            Scns.toApi Decoder.ProjectionPOSTModelScenario modelScenario
-                |> List.head
-                |> unsafeFromMaybe "No Model Scenario Selected"
-        , projectionScenarios =
-            Scns.toApi Decoder.ProjectionPOSTProjectionScenariosItem projectionScenarios
-                |> Decoder.ProjectionPOSTProjectionScenarios
-        }
+    case Scns.toApi Decoder.ProjectionPOSTModelScenario modelScenario of
+        [] ->
+            Err "No Model Scenario Selected"
+
+        [ modelScenario ] ->
+            Ok <|
+                Decoder.ProjectionPOST
+                    { algorithms = Algs.toApi algorithmsModel
+                    , occurrenceSets = Occs.toApi occurrenceSets
+                    , modelScenario = modelScenario
+                    , projectionScenarios =
+                        Scns.toApi Decoder.ProjectionPOSTProjectionScenariosItem projectionScenarios
+                            |> Decoder.ProjectionPOSTProjectionScenarios
+                    }
+
+        _ ->
+            Err "Multiple Model Scenarios Selected"
 
 
 submitJob : Model -> Cmd Msg
 submitJob model =
-    Http.request
-        { method = "POST"
-        , headers = [ Http.header "Accept" "application/json", Http.header "Content-Type" "text/plain" ]
-        , url = apiRoot ++ "sdmProject"
-        , body = Http.jsonBody <| Encoder.encodeProjectionPOST <| toApi model
-        , expect = Http.expectString
-        , timeout = Nothing
-        , withCredentials = False
-        }
-        |> Http.send JobSubmitted
+    case toApi model of
+        Ok postData ->
+            Http.request
+                { method = "POST"
+                , headers = [ Http.header "Accept" "application/json", Http.header "Content-Type" "text/plain" ]
+                , url = apiRoot ++ "sdmProject"
+                , body = Http.jsonBody <| Encoder.encodeProjectionPOST <| postData
+                , expect = Http.expectString
+                , timeout = Nothing
+                , withCredentials = False
+                }
+                |> Http.send JobSubmitted
+
+        Err msg ->
+            Debug.log "Can't post SDM." msg |> always Cmd.none
 
 
 init : Model
@@ -325,7 +335,7 @@ selectedTab model =
 
 selectTab : Int -> Msg
 selectTab i =
-    List.drop i tabs |> List.head |> Maybe.withDefault Algorithms |> SelectTab
+    tabs |> getAt i |> Maybe.withDefault Algorithms |> SelectTab
 
 
 tabTitles : Model -> List (Html msg)
