@@ -1,0 +1,25 @@
+--- Decoder.elm.generated	2017-07-12 13:59:59.267704904 -0500
++++ Decoder.elm	2017-07-12 14:01:31.637350766 -0500
+@@ -42,18 +42,14 @@
+         |> map Algorithm
+ 
+ 
+-type alias AlgorithmParametersRecord =
+-    {}
+-
+-
+-type AlgorithmParameters
+-    = AlgorithmParameters AlgorithmParametersRecord
++type alias AlgorithmParameters =
++    List ( String, String )
+ 
+ 
+ decodeAlgorithmParameters : Decoder AlgorithmParameters
+ decodeAlgorithmParameters =
+-    decode AlgorithmParametersRecord
+-        |> map AlgorithmParameters
++    Json.Decode.keyValuePairs value
++        |> map (List.map (\( name, value ) -> ( name, toString value )))
+ 
+ 
+ type AtomList
