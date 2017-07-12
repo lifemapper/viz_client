@@ -424,108 +424,126 @@ decodeProjectionMetadata =
         |> map ProjectionMetadata
 
 
-type alias ProjectionPOSTRecord =
-    { projectionScenarios : ProjectionPOSTProjectionScenarios
-    , modelScenario : ProjectionPOSTModelScenario
-    , occurrenceSets : ProjectionPOSTOccurrenceSets
-    , algorithms : ProjectionPOSTAlgorithms
+type alias BoomPOSTRecord =
+    { projectionScenarios : BoomPOSTProjectionScenarios
+    , modelScenario : BoomPOSTModelScenario
+    , occurrenceSets : BoomPOSTOccurrenceSets
+    , algorithms : BoomPOSTAlgorithms
     }
 
 
-type ProjectionPOST
-    = ProjectionPOST ProjectionPOSTRecord
+type BoomPOST
+    = BoomPOST BoomPOSTRecord
 
 
-decodeProjectionPOST : Decoder ProjectionPOST
-decodeProjectionPOST =
-    decode ProjectionPOSTRecord
-        |> required "projectionScenarios" decodeProjectionPOSTProjectionScenarios
-        |> required "modelScenario" (lazy (\_ -> decodeProjectionPOSTModelScenario))
-        |> required "occurrenceSets" decodeProjectionPOSTOccurrenceSets
-        |> required "algorithms" decodeProjectionPOSTAlgorithms
-        |> map ProjectionPOST
+decodeBoomPOST : Decoder BoomPOST
+decodeBoomPOST =
+    decode BoomPOSTRecord
+        |> required "projectionScenarios" decodeBoomPOSTProjectionScenarios
+        |> required "modelScenario" (lazy (\_ -> decodeBoomPOSTModelScenario))
+        |> required "occurrenceSets" decodeBoomPOSTOccurrenceSets
+        |> required "algorithms" decodeBoomPOSTAlgorithms
+        |> map BoomPOST
 
 
-type ProjectionPOSTAlgorithms
-    = ProjectionPOSTAlgorithms (List Algorithm)
+type BoomPOSTAlgorithms
+    = BoomPOSTAlgorithms (List Algorithm)
 
 
-decodeProjectionPOSTAlgorithms : Decoder ProjectionPOSTAlgorithms
-decodeProjectionPOSTAlgorithms =
+decodeBoomPOSTAlgorithms : Decoder BoomPOSTAlgorithms
+decodeBoomPOSTAlgorithms =
     list (lazy (\_ -> decodeAlgorithm))
-        |> map ProjectionPOSTAlgorithms
+        |> map BoomPOSTAlgorithms
 
 
-type ProjectionPOSTOccurrenceSets
-    = ProjectionPOSTOccurrenceSets (List ProjectionPOSTOccurrenceSetsItem)
+type BoomPOSTOccurrenceSets
+    = BoomPOSTOccurrenceSets (List BoomPOSTOccurrenceSetsItem)
 
 
-decodeProjectionPOSTOccurrenceSets : Decoder ProjectionPOSTOccurrenceSets
-decodeProjectionPOSTOccurrenceSets =
-    list (lazy (\_ -> decodeProjectionPOSTOccurrenceSetsItem))
-        |> map ProjectionPOSTOccurrenceSets
+decodeBoomPOSTOccurrenceSets : Decoder BoomPOSTOccurrenceSets
+decodeBoomPOSTOccurrenceSets =
+    list (lazy (\_ -> decodeBoomPOSTOccurrenceSetsItem))
+        |> map BoomPOSTOccurrenceSets
 
 
-type alias ProjectionPOSTOccurrenceSetsItemRecord =
-    { occurrenceSetId : Maybe Int
+type alias BoomPOSTOccurrenceSetsItemRecord =
+    { occurrenceMeta : Maybe BoomPOSTOccurrenceSetsItemOccurrenceMeta
+    , occurrenceData : Maybe String
+    , occurrenceSetId : Maybe Int
     }
 
 
-type ProjectionPOSTOccurrenceSetsItem
-    = ProjectionPOSTOccurrenceSetsItem ProjectionPOSTOccurrenceSetsItemRecord
+type BoomPOSTOccurrenceSetsItem
+    = BoomPOSTOccurrenceSetsItem BoomPOSTOccurrenceSetsItemRecord
 
 
-decodeProjectionPOSTOccurrenceSetsItem : Decoder ProjectionPOSTOccurrenceSetsItem
-decodeProjectionPOSTOccurrenceSetsItem =
-    decode ProjectionPOSTOccurrenceSetsItemRecord
+decodeBoomPOSTOccurrenceSetsItem : Decoder BoomPOSTOccurrenceSetsItem
+decodeBoomPOSTOccurrenceSetsItem =
+    decode BoomPOSTOccurrenceSetsItemRecord
+        |> maybe "occurrenceMeta" (lazy (\_ -> decodeBoomPOSTOccurrenceSetsItemOccurrenceMeta))
+        |> maybe "occurrenceData" string
         |> maybe "occurrenceSetId" int
-        |> map ProjectionPOSTOccurrenceSetsItem
+        |> map BoomPOSTOccurrenceSetsItem
 
 
-type alias ProjectionPOSTModelScenarioRecord =
+type alias BoomPOSTOccurrenceSetsItemOccurrenceMetaRecord =
+    {}
+
+
+type BoomPOSTOccurrenceSetsItemOccurrenceMeta
+    = BoomPOSTOccurrenceSetsItemOccurrenceMeta BoomPOSTOccurrenceSetsItemOccurrenceMetaRecord
+
+
+decodeBoomPOSTOccurrenceSetsItemOccurrenceMeta : Decoder BoomPOSTOccurrenceSetsItemOccurrenceMeta
+decodeBoomPOSTOccurrenceSetsItemOccurrenceMeta =
+    decode BoomPOSTOccurrenceSetsItemOccurrenceMetaRecord
+        |> map BoomPOSTOccurrenceSetsItemOccurrenceMeta
+
+
+type alias BoomPOSTModelScenarioRecord =
     { scenarioCode : Maybe String
     , scenarioId : Maybe Int
     }
 
 
-type ProjectionPOSTModelScenario
-    = ProjectionPOSTModelScenario ProjectionPOSTModelScenarioRecord
+type BoomPOSTModelScenario
+    = BoomPOSTModelScenario BoomPOSTModelScenarioRecord
 
 
-decodeProjectionPOSTModelScenario : Decoder ProjectionPOSTModelScenario
-decodeProjectionPOSTModelScenario =
-    decode ProjectionPOSTModelScenarioRecord
+decodeBoomPOSTModelScenario : Decoder BoomPOSTModelScenario
+decodeBoomPOSTModelScenario =
+    decode BoomPOSTModelScenarioRecord
         |> maybe "scenarioCode" string
         |> maybe "scenarioId" int
-        |> map ProjectionPOSTModelScenario
+        |> map BoomPOSTModelScenario
 
 
-type ProjectionPOSTProjectionScenarios
-    = ProjectionPOSTProjectionScenarios (List ProjectionPOSTProjectionScenariosItem)
+type BoomPOSTProjectionScenarios
+    = BoomPOSTProjectionScenarios (List BoomPOSTProjectionScenariosItem)
 
 
-decodeProjectionPOSTProjectionScenarios : Decoder ProjectionPOSTProjectionScenarios
-decodeProjectionPOSTProjectionScenarios =
-    list (lazy (\_ -> decodeProjectionPOSTProjectionScenariosItem))
-        |> map ProjectionPOSTProjectionScenarios
+decodeBoomPOSTProjectionScenarios : Decoder BoomPOSTProjectionScenarios
+decodeBoomPOSTProjectionScenarios =
+    list (lazy (\_ -> decodeBoomPOSTProjectionScenariosItem))
+        |> map BoomPOSTProjectionScenarios
 
 
-type alias ProjectionPOSTProjectionScenariosItemRecord =
+type alias BoomPOSTProjectionScenariosItemRecord =
     { scenarioCode : Maybe String
     , scenarioId : Maybe Int
     }
 
 
-type ProjectionPOSTProjectionScenariosItem
-    = ProjectionPOSTProjectionScenariosItem ProjectionPOSTProjectionScenariosItemRecord
+type BoomPOSTProjectionScenariosItem
+    = BoomPOSTProjectionScenariosItem BoomPOSTProjectionScenariosItemRecord
 
 
-decodeProjectionPOSTProjectionScenariosItem : Decoder ProjectionPOSTProjectionScenariosItem
-decodeProjectionPOSTProjectionScenariosItem =
-    decode ProjectionPOSTProjectionScenariosItemRecord
+decodeBoomPOSTProjectionScenariosItem : Decoder BoomPOSTProjectionScenariosItem
+decodeBoomPOSTProjectionScenariosItem =
+    decode BoomPOSTProjectionScenariosItemRecord
         |> maybe "scenarioCode" string
         |> maybe "scenarioId" int
-        |> map ProjectionPOSTProjectionScenariosItem
+        |> map BoomPOSTProjectionScenariosItem
 
 
 type alias ScenarioRecord =
@@ -582,6 +600,42 @@ decodeScenarioMetadata : Decoder ScenarioMetadata
 decodeScenarioMetadata =
     decode ScenarioMetadataRecord
         |> map ScenarioMetadata
+
+
+type alias ScenarioPackageRecord =
+    { user : Maybe String
+    , name : Maybe String
+    , url : Maybe String
+    , scenarios : ScenarioPackageScenarios
+    , id : Int
+    , objectType : Maybe String
+    }
+
+
+type ScenarioPackage
+    = ScenarioPackage ScenarioPackageRecord
+
+
+decodeScenarioPackage : Decoder ScenarioPackage
+decodeScenarioPackage =
+    decode ScenarioPackageRecord
+        |> maybe "user" string
+        |> maybe "name" string
+        |> maybe "url" string
+        |> required "scenarios" decodeScenarioPackageScenarios
+        |> required "id" int
+        |> maybe "objectType" string
+        |> map ScenarioPackage
+
+
+type ScenarioPackageScenarios
+    = ScenarioPackageScenarios (List Scenario)
+
+
+decodeScenarioPackageScenarios : Decoder ScenarioPackageScenarios
+decodeScenarioPackageScenarios =
+    list (lazy (\_ -> decodeScenario))
+        |> map ScenarioPackageScenarios
 
 
 type alias ScenarioPOSTRecord =
@@ -718,6 +772,90 @@ decodeSingleLayerMap =
         |> required "mapName" string
         |> required "endpoint" string
         |> map SingleLayerMap
+
+
+type SolrList
+    = SolrList (List SolrPAV)
+
+
+decodeSolrList : Decoder SolrList
+decodeSolrList =
+    list (lazy (\_ -> decodeSolrPAV))
+        |> map SolrList
+
+
+type alias SolrPAVRecord =
+    { userId : String
+    , squid : String
+    , shapegridMetaUrl : String
+    , shapegridId : Int
+    , shapegridDataUrl : String
+    , sdmProjScenarioUrl : Maybe String
+    , sdmProjScenarioId : Maybe Int
+    , sdmProjScenarioGCM : Maybe String
+    , sdmProjScenarioDateCode : Maybe String
+    , sdmProjScenarioCode : Maybe String
+    , sdmProjScenarioAltPredCode : Maybe String
+    , sdmProjMetaUrl : Maybe String
+    , sdmProjId : Maybe Int
+    , sdmProjDataUrl : Maybe String
+    , pavMetaUrl : String
+    , pointCount : Maybe Int
+    , occurrenceMetaUrl : Maybe String
+    , occurrenceId : Maybe Int
+    , occurrenceDataUrl : Maybe String
+    , modelScenarioUrl : Maybe String
+    , modelScenarioId : Maybe Int
+    , modelScenarioCode : Maybe String
+    , id : Int
+    , gridSetMetaUrl : String
+    , gridSetId : Int
+    , epsgCode : Int
+    , displayName : String
+    , compressedPAV : String
+    , algorithmParameters : Maybe String
+    , algorithmCode : Maybe String
+    }
+
+
+type SolrPAV
+    = SolrPAV SolrPAVRecord
+
+
+decodeSolrPAV : Decoder SolrPAV
+decodeSolrPAV =
+    decode SolrPAVRecord
+        |> required "userId" string
+        |> required "squid" string
+        |> required "shapegridMetaUrl" string
+        |> required "shapegridId" int
+        |> required "shapegridDataUrl" string
+        |> maybe "sdmProjScenarioUrl" string
+        |> maybe "sdmProjScenarioId" int
+        |> maybe "sdmProjScenarioGCM" string
+        |> maybe "sdmProjScenarioDateCode" string
+        |> maybe "sdmProjScenarioCode" string
+        |> maybe "sdmProjScenarioAltPredCode" string
+        |> maybe "sdmProjMetaUrl" string
+        |> maybe "sdmProjId" int
+        |> maybe "sdmProjDataUrl" string
+        |> required "pavMetaUrl" string
+        |> maybe "pointCount" int
+        |> maybe "occurrenceMetaUrl" string
+        |> maybe "occurrenceId" int
+        |> maybe "occurrenceDataUrl" string
+        |> maybe "modelScenarioUrl" string
+        |> maybe "modelScenarioId" int
+        |> maybe "modelScenarioCode" string
+        |> required "id" int
+        |> required "gridSetMetaUrl" string
+        |> required "gridSetId" int
+        |> required "epsgCode" int
+        |> required "displayName" string
+        |> required "compressedPAV" string
+        |> maybe "algorithmParameters" string
+        |> maybe "algorithmCode" string
+        |> map SolrPAV
 
 
 type alias SpatialRasterRecord =

@@ -19,11 +19,11 @@ type alias Model =
     }
 
 
-toApi : Model -> Decoder.ProjectionPOSTAlgorithms
+toApi : Model -> Decoder.BoomPOSTAlgorithms
 toApi =
     .algorithms
         >> List.map AlgorithmView.toApi
-        >> Decoder.ProjectionPOSTAlgorithms
+        >> Decoder.BoomPOSTAlgorithms
 
 
 type Msg

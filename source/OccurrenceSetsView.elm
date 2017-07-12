@@ -32,11 +32,18 @@ type alias Model =
     }
 
 
-toApi : Model -> Decoder.ProjectionPOSTOccurrenceSets
+toApi : Model -> Decoder.BoomPOSTOccurrenceSets
 toApi =
     .occurrenceSets
-        >> List.map (\o -> Decoder.ProjectionPOSTOccurrenceSetsItem { occurrenceSetId = Just o.id })
-        >> Decoder.ProjectionPOSTOccurrenceSets
+        >> List.map
+            (\o ->
+                Decoder.BoomPOSTOccurrenceSetsItem
+                    { occurrenceSetId = Just o.id
+                    , occurrenceData = Nothing
+                    , occurrenceMeta = Nothing
+                    }
+            )
+        >> Decoder.BoomPOSTOccurrenceSets
 
 
 type Msg

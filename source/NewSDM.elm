@@ -61,21 +61,21 @@ type alias Model =
     }
 
 
-toApi : Model -> Result String Decoder.ProjectionPOST
+toApi : Model -> Result String Decoder.BoomPOST
 toApi { algorithmsModel, occurrenceSets, modelScenario, projectionScenarios } =
-    case Scns.toApi Decoder.ProjectionPOSTModelScenario modelScenario of
+    case Scns.toApi Decoder.BoomPOSTModelScenario modelScenario of
         [] ->
             Err "No Model Scenario Selected"
 
         [ modelScenario ] ->
             Ok <|
-                Decoder.ProjectionPOST
+                Decoder.BoomPOST
                     { algorithms = Algs.toApi algorithmsModel
                     , occurrenceSets = Occs.toApi occurrenceSets
                     , modelScenario = modelScenario
                     , projectionScenarios =
-                        Scns.toApi Decoder.ProjectionPOSTProjectionScenariosItem projectionScenarios
-                            |> Decoder.ProjectionPOSTProjectionScenarios
+                        Scns.toApi Decoder.BoomPOSTProjectionScenariosItem projectionScenarios
+                            |> Decoder.BoomPOSTProjectionScenarios
                     }
 
         _ ->
@@ -90,7 +90,7 @@ submitJob model =
                 { method = "POST"
                 , headers = [ Http.header "Accept" "application/json", Http.header "Content-Type" "text/plain" ]
                 , url = apiRoot ++ "sdmProject"
-                , body = Http.jsonBody <| Encoder.encodeProjectionPOST <| postData
+                , body = Http.jsonBody <| Encoder.encodeBoomPOST <| postData
                 , expect = Http.expectString
                 , timeout = Nothing
                 , withCredentials = False

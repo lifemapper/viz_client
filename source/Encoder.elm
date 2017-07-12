@@ -4,43 +4,43 @@ import Decoder exposing (..)
 import Json.Encode exposing (..)
 
 
-encodeProjectionPOST : ProjectionPOST -> Value
-encodeProjectionPOST (ProjectionPOST { projectionScenarios, modelScenario, occurrenceSets, algorithms }) =
-    [ ( "projectionScenarios", encodeProjectionPOSTProjectionScenarios projectionScenarios )
-    , ( "modelScenario", encodeProjectionPOSTModelScenario modelScenario )
-    , ( "occurrenceSets", encodeProjectionPOSTOccurrenceSets occurrenceSets )
-    , ( "algorithms", encodeProjectionPOSTAlgorithms algorithms )
+encodeBoomPOST : BoomPOST -> Value
+encodeBoomPOST (BoomPOST { projectionScenarios, modelScenario, occurrenceSets, algorithms }) =
+    [ ( "projectionScenarios", encodeBoomPOSTProjectionScenarios projectionScenarios )
+    , ( "modelScenario", encodeBoomPOSTModelScenario modelScenario )
+    , ( "occurrenceSets", encodeBoomPOSTOccurrenceSets occurrenceSets )
+    , ( "algorithms", encodeBoomPOSTAlgorithms algorithms )
     ]
         |> object
 
 
-encodeProjectionPOSTProjectionScenarios : ProjectionPOSTProjectionScenarios -> Value
-encodeProjectionPOSTProjectionScenarios (ProjectionPOSTProjectionScenarios ss) =
-    list <| List.map encodeProjectionPOSTProjectionScenariosItem ss
+encodeBoomPOSTProjectionScenarios : BoomPOSTProjectionScenarios -> Value
+encodeBoomPOSTProjectionScenarios (BoomPOSTProjectionScenarios ss) =
+    list <| List.map encodeBoomPOSTProjectionScenariosItem ss
 
 
-encodeProjectionPOSTProjectionScenariosItem : ProjectionPOSTProjectionScenariosItem -> Value
-encodeProjectionPOSTProjectionScenariosItem (ProjectionPOSTProjectionScenariosItem { scenarioCode }) =
+encodeBoomPOSTProjectionScenariosItem : BoomPOSTProjectionScenariosItem -> Value
+encodeBoomPOSTProjectionScenariosItem (BoomPOSTProjectionScenariosItem { scenarioCode }) =
     object [ ( "scenarioCode", scenarioCode |> Maybe.map string |> Maybe.withDefault null ) ]
 
 
-encodeProjectionPOSTModelScenario : ProjectionPOSTModelScenario -> Value
-encodeProjectionPOSTModelScenario (ProjectionPOSTModelScenario { scenarioCode }) =
+encodeBoomPOSTModelScenario : BoomPOSTModelScenario -> Value
+encodeBoomPOSTModelScenario (BoomPOSTModelScenario { scenarioCode }) =
     object [ ( "scenarioCode", scenarioCode |> Maybe.map string |> Maybe.withDefault null ) ]
 
 
-encodeProjectionPOSTOccurrenceSets : ProjectionPOSTOccurrenceSets -> Value
-encodeProjectionPOSTOccurrenceSets (ProjectionPOSTOccurrenceSets os) =
-    list <| List.map encodeProjectionPOSTOccurrenceSetsItem os
+encodeBoomPOSTOccurrenceSets : BoomPOSTOccurrenceSets -> Value
+encodeBoomPOSTOccurrenceSets (BoomPOSTOccurrenceSets os) =
+    list <| List.map encodeBoomPOSTOccurrenceSetsItem os
 
 
-encodeProjectionPOSTOccurrenceSetsItem : ProjectionPOSTOccurrenceSetsItem -> Value
-encodeProjectionPOSTOccurrenceSetsItem (ProjectionPOSTOccurrenceSetsItem { occurrenceSetId }) =
+encodeBoomPOSTOccurrenceSetsItem : BoomPOSTOccurrenceSetsItem -> Value
+encodeBoomPOSTOccurrenceSetsItem (BoomPOSTOccurrenceSetsItem { occurrenceSetId }) =
     object [ ( "occurrenceSetId", occurrenceSetId |> Maybe.map int |> Maybe.withDefault null ) ]
 
 
-encodeProjectionPOSTAlgorithms : ProjectionPOSTAlgorithms -> Value
-encodeProjectionPOSTAlgorithms (ProjectionPOSTAlgorithms algs) =
+encodeBoomPOSTAlgorithms : BoomPOSTAlgorithms -> Value
+encodeBoomPOSTAlgorithms (BoomPOSTAlgorithms algs) =
     list <| List.map encodeAlgorithm algs
 
 
