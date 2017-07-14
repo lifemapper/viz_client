@@ -2,16 +2,13 @@ module ScenariosList
     exposing
         ( Model
         , Msg
-        , getScenarios
+        , getPackages
         , init
         , update
-        , loading
-        , observedScenarios
-        , metadataToAtom
         )
 
+import List.Extra as List
 import Http
-import List.Extra exposing (find)
 import Constants exposing (apiRoot)
 import Decoder
     exposing
@@ -22,103 +19,90 @@ import Decoder
         , decodeScenario
         , Scenario(..)
         , ScenarioRecord
+        , decodeScenarioPackage
+        , ScenarioPackage(..)
+        , ScenarioPackageRecord
         )
 
 
 type alias Model =
-    { atoms : List AtomObjectRecord
-    , metadatas : List ScenarioRecord
+    { packageList : List AtomObjectRecord
+    , packages : List ScenarioPackageRecord
     }
 
 
-observedScenarios : Model -> List ScenarioRecord
-observedScenarios { metadatas } =
-    metadatas |> List.filter (.code >> Maybe.map (String.startsWith "observed") >> Maybe.withDefault False)
-
-
-loading : Model -> ( Int, Int )
-loading { atoms, metadatas } =
-    ( List.length metadatas, List.length atoms )
-
-
-metadataToAtom : Model -> ScenarioRecord -> Maybe AtomObjectRecord
-metadataToAtom model metadata =
-    model.atoms
-        |> find (.id >> (==) metadata.id)
-
-
 type Msg
-    = GotScenarioList (Result Http.Error AtomList)
-    | AddMetadata ScenarioRecord
+    = GotPackageList (List AtomObjectRecord)
+    | GotPackage ScenarioPackageRecord
     | Nop
 
 
 init : Model
 init =
-    { atoms = []
-    , metadatas = []
+    { packageList = []
+    , packages = []
     }
 
 
-getScenarios : (Msg -> msg) -> Cmd msg
-getScenarios msgMap =
+getPackages : (Msg -> msg) -> Cmd msg
+getPackages msgMap =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = apiRoot ++ "scenario"
+        , url = apiRoot ++ "scenpackage"
         , body = Http.emptyBody
         , expect = Http.expectJson decodeAtomList
         , timeout = Nothing
         , withCredentials = False
         }
-        |> Http.send GotScenarioList
+        |> Http.send gotPackageList
         |> Cmd.map msgMap
 
 
-getMetadata : Int -> Cmd Msg
-getMetadata id =
+gotPackageList : Result Http.Error AtomList -> Msg
+gotPackageList result =
+    case result of
+        Ok (AtomList atoms) ->
+            atoms |> List.map (\(AtomObject o) -> o) |> List.uniqueBy .id |> GotPackageList
+
+        Err err ->
+            Debug.log "Loading scenario package list failed" err
+                |> always Nop
+
+
+getPackage : Int -> Cmd Msg
+getPackage id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = apiRoot ++ "scenario/" ++ (toString id)
+        , url = apiRoot ++ "scenpackage/" ++ (toString id)
         , body = Http.emptyBody
-        , expect = Http.expectJson decodeScenario
+        , expect = Http.expectJson decodeScenarioPackage
         , timeout = Nothing
         , withCredentials = False
         }
-        |> Http.send gotMetadata
+        |> Http.send gotPackage
 
 
-gotMetadata : Result Http.Error Scenario -> Msg
-gotMetadata result =
+gotPackage : Result Http.Error ScenarioPackage -> Msg
+gotPackage result =
     case result of
-        Ok (Scenario s) ->
-            AddMetadata s
+        Ok (ScenarioPackage p) ->
+            GotPackage p
 
         Err err ->
-            Nop |> Debug.log (toString err)
-
-
-getMetadatas : List AtomObjectRecord -> Cmd Msg
-getMetadatas atoms =
-    atoms |> List.map (.id >> getMetadata) |> Cmd.batch
+            Debug.log "Loading scenario package failed" err
+                |> always Nop
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GotScenarioList (Ok (AtomList atoms)) ->
-            let
-                atomRecords =
-                    atoms |> List.map (\(AtomObject o) -> o)
-            in
-                ( { model | atoms = atomRecords }, getMetadatas atomRecords )
+        GotPackageList atoms ->
+            ( { model | packageList = atoms }, atoms |> List.map (.id >> getPackage) |> Cmd.batch )
 
-        GotScenarioList (Err err) ->
-            Debug.log (toString err) ( model, Cmd.none )
-
-        AddMetadata scenario ->
-            ( { model | metadatas = scenario :: model.metadatas }, Cmd.none )
+        GotPackage p ->
+            ( { model | packages = p :: model.packages }, Cmd.none )
 
         Nop ->
             ( model, Cmd.none )

@@ -6,12 +6,12 @@ module ScenariosView
         , update
         , view
         , toApi
-        , Mode(..)
         , problems
         , subscriptions
         )
 
 import List.Extra exposing (remove)
+import Maybe.Extra as Maybe exposing ((?))
 import Decoder
     exposing
         ( AtomObjectRecord
@@ -21,224 +21,208 @@ import Decoder
         , decodeScenario
         , Scenario(..)
         , ScenarioRecord
+        , ScenarioPackageRecord
+        , ScenarioPackageScenarios(..)
+        , ScenarioMetadata(..)
         , MapLayers(..)
         , MapLayersItem(..)
+        , BoomPOSTModelScenario(..)
+        , BoomPOSTProjectionScenarios(..)
+        , BoomPOSTProjectionScenariosItem(..)
         )
 import Material
 import Material.List as L
+import Material.Grid as Grid
+import Material.Card as Card
+import Material.Elevation as Elevation
 import Material.Options as Options
 import Material.Typography as Typo
 import Material.Toggles as Toggles
-import Material.Progress as Loading
-import Material.Helpers exposing (lift)
 import Html exposing (Html)
-import Html.Events
-import Helpers exposing (Index)
-import MapCard
+import Helpers exposing (Index, undefined)
 import ScenariosList as SL
-
-
-type Mode
-    = ModelScenario
-    | ProjectionScenarios
 
 
 type alias Model =
     { mdl : Material.Model
-    , mode : Mode
-    , mapScenario : Maybe ScenarioRecord
-    , mapCard : MapCard.Model
-    , selectedScenarios : List ScenarioRecord
+    , package : Maybe ScenarioPackageRecord
+    , projectionScenarios : List ScenarioRecord
+    , modelScenario : Maybe ScenarioRecord
     }
 
 
-toApi :
-    ({ scenarioId : Maybe Int, scenarioCode : Maybe String } -> scenarioType)
-    -> Model
-    -> List scenarioType
-toApi toScenarioPOST { selectedScenarios } =
-    selectedScenarios
-        |> List.map (\s -> toScenarioPOST { scenarioId = Just s.id, scenarioCode = s.code })
+type alias BoomPOSTScenarios =
+    { modelScenario : BoomPOSTModelScenario, projectionScenarios : BoomPOSTProjectionScenarios }
+
+
+toApi : Model -> Result String BoomPOSTScenarios
+toApi { modelScenario, projectionScenarios } =
+    Result.map2 BoomPOSTScenarios
+        (modelScenario
+            |> Maybe.map (\s -> BoomPOSTModelScenario { scenarioId = Just s.id, scenarioCode = s.code })
+            |> Result.fromMaybe "No Model Scenario Selected"
+        )
+        (projectionScenarios
+            |> List.map (\s -> BoomPOSTProjectionScenariosItem { scenarioId = Just s.id, scenarioCode = s.code })
+            |> BoomPOSTProjectionScenarios
+            |> Ok
+        )
 
 
 type Msg
     = Mdl (Material.Msg Msg)
-    | MapCardMsg MapCard.Msg
-    | MapScenario ScenarioRecord
-    | SelectScenario ScenarioRecord
-    | UnselectScenario ScenarioRecord
+    | SelectModelScenario ScenarioPackageRecord ScenarioRecord
+    | SelectProjectionScenario ScenarioPackageRecord ScenarioRecord
+    | UnselectProjectionScenario ScenarioRecord
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
-        liftedMapCardUpdate =
-            lift
-                .mapCard
-                (\m x -> { m | mapCard = x })
-                MapCardMsg
-                MapCard.update
-    in
-        case msg of
-            Mdl msg_ ->
-                Material.update Mdl msg_ model
+    case msg of
+        Mdl msg_ ->
+            Material.update Mdl msg_ model
 
-            MapCardMsg msg_ ->
-                liftedMapCardUpdate msg_ model
-
-            MapScenario s ->
-                updateMap { model | mapScenario = (Just s) }
-
-            SelectScenario s ->
-                let
-                    selectedScenarios =
-                        case model.mode of
-                            ProjectionScenarios ->
-                                s :: model.selectedScenarios
-
-                            ModelScenario ->
-                                [ s ]
-                in
-                    updateMap { model | selectedScenarios = selectedScenarios, mapScenario = (Just s) }
-
-            UnselectScenario id ->
-                ( { model | selectedScenarios = remove id model.selectedScenarios }, Cmd.none )
-
-
-setMap : Maybe MapCard.MapInfo -> Model -> ( Model, Cmd Msg )
-setMap =
-    MapCard.setMap .mapCard (\m x -> { m | mapCard = x }) MapCardMsg
-
-
-updateMap : Model -> ( Model, Cmd Msg )
-updateMap model =
-    let
-        mapInfo =
-            model.mapScenario
-                |> Maybe.andThen (\{ map } -> map)
-                |> Maybe.map
-                    (\(Decoder.Map { endpoint, mapName, layers }) ->
-                        let
-                            (MapLayers ls) =
-                                layers
-
-                            layerNames =
-                                List.map (\(MapLayersItem l) -> l.layerName) ls
-                        in
-                            { endPoint = endpoint, mapName = mapName, layers = layerNames }
-                    )
-    in
-        setMap mapInfo model
-
-
-scenarioTitle : SL.Model -> ScenarioRecord -> String
-scenarioTitle scenarioList s =
-    SL.metadataToAtom scenarioList s
-        |> Maybe.map (Just << .name)
-        |> Maybe.withDefault s.code
-        |> Maybe.withDefault (toString s.id)
-
-
-scenariosList : Index -> SL.Model -> Model -> Html Msg
-scenariosList index scenarioList model =
-    let
-        title =
-            case model.mode of
-                ModelScenario ->
-                    "Choose Model Scenario"
-
-                ProjectionScenarios ->
-                    "Choose Projection Scenarios"
-
-        availableScenarios =
-            case model.mode of
-                ModelScenario ->
-                    SL.observedScenarios scenarioList
-
-                ProjectionScenarios ->
-                    scenarioList.metadatas
-
-        makeScenTitle =
-            scenarioTitle scenarioList
-
-        ( loaded, toLoad ) =
-            SL.loading scenarioList
-
-        loading =
-            if loaded < toLoad then
-                [ Loading.progress (toFloat loaded / toFloat toLoad * 100) ]
+        SelectModelScenario p s ->
+            if Just p == model.package then
+                { model | modelScenario = Just s } ! []
             else
-                []
-    in
-        Options.div [ Options.css "margin" "20px" ] <|
-            List.concat
-                [ [ Options.styled Html.p [ Typo.title ] [ Html.text title ] ]
-                , loading
-                , [ L.ul [] <| List.indexedMap (scenarioLI model index makeScenTitle) availableScenarios ]
-                ]
+                { model | modelScenario = Just s, projectionScenarios = [], package = Just p } ! []
 
-
-scenarioLI : Model -> Index -> (ScenarioRecord -> String) -> Int -> ScenarioRecord -> Html Msg
-scenarioLI model index title i s =
-    let
-        iconName =
-            if Just s.id == Maybe.map .id model.mapScenario then
-                "visibility"
+        SelectProjectionScenario p s ->
+            if Just p == model.package then
+                { model | projectionScenarios = (s :: model.projectionScenarios) } ! []
             else
-                "visibility_off"
+                { model | projectionScenarios = [ s ], modelScenario = Nothing, package = Just p } ! []
 
-        selected =
-            List.member s model.selectedScenarios
+        UnselectProjectionScenario id ->
+            ( { model | projectionScenarios = remove id model.projectionScenarios }, Cmd.none )
 
-        ( toggle, icon ) =
-            case model.mode of
-                ModelScenario ->
-                    ( Toggles.radio, [] )
 
-                ProjectionScenarios ->
-                    ( Toggles.checkbox
-                    , if selected then
-                        [ L.icon iconName [ Options.attribute <| Html.Events.onClick (MapScenario s) ] ]
-                      else
-                        [ Options.span [ Options.css "width" "24px" ] [] ]
-                    )
+type alias ScenarioLiFunc =
+    Int -> Scenario -> Html Msg
+
+
+scenarioTitle : Scenario -> String
+scenarioTitle (Scenario scenario) =
+    Maybe.or
+        (scenario.metadata |> Maybe.andThen (\(ScenarioMetadata md) -> md.title))
+        scenario.code
+        |> Maybe.withDefault (toString scenario.id)
+
+
+listScenarios : ScenarioLiFunc -> ScenarioPackageScenarios -> Html Msg
+listScenarios liFunc (ScenarioPackageScenarios scenarios) =
+    scenarios
+        |> List.sortBy scenarioTitle
+        |> List.indexedMap liFunc
+        |> L.ul []
+
+
+modelScenarioLI : Index -> Model -> ScenarioPackageRecord -> Maybe ScenarioRecord -> ScenarioLiFunc
+modelScenarioLI index model package currentlySelected i (Scenario s) =
+    let
+        isSelected =
+            Just s == currentlySelected
+
+        onToggle =
+            if isSelected then
+                Options.nop
+            else
+                Options.onToggle (SelectModelScenario package s)
     in
         L.li []
-            [ L.content
-                []
-                [ Html.text <| title s ]
-            , L.content2 [ Options.css "flex-flow" "row" ]
-                (toggle Mdl
+            [ L.content [] [ Html.text <| scenarioTitle (Scenario s) ]
+            , L.content2 []
+                [ Toggles.radio Mdl
                     (i :: index)
                     model.mdl
-                    [ Toggles.value selected
-                    , Toggles.group (toString index) |> Options.when (model.mode == ModelScenario)
-                    , Options.onToggle (SelectScenario s) |> Options.when (not selected)
-                    , Options.onToggle (UnselectScenario s) |> Options.when (selected && model.mode /= ModelScenario)
+                    [ Toggles.value isSelected
+                    , Toggles.group (toString index)
+                    , onToggle
                     ]
                     []
-                    :: icon
-                )
+                ]
+            ]
+
+
+projectionScenarioLI : Index -> Model -> ScenarioPackageRecord -> List ScenarioRecord -> ScenarioLiFunc
+projectionScenarioLI index model package currentlySelected i (Scenario s) =
+    let
+        isSelected =
+            List.member s currentlySelected
+
+        toggle =
+            if isSelected then
+                UnselectProjectionScenario s
+            else
+                SelectProjectionScenario package s
+    in
+        L.li []
+            [ L.content [] [ Html.text <| scenarioTitle (Scenario s) ]
+            , L.content2 []
+                [ Toggles.checkbox Mdl
+                    (i :: index)
+                    model.mdl
+                    [ Toggles.value isSelected
+                    , Options.onToggle toggle
+                    ]
+                    []
+                ]
+            ]
+
+
+observedFilter : ScenarioPackageScenarios -> ScenarioPackageScenarios
+observedFilter (ScenarioPackageScenarios scenarios) =
+    scenarios
+        |> List.filter (\(Scenario s) -> Maybe.map (String.startsWith "observed") s.code ? False)
+        |> ScenarioPackageScenarios
+
+
+packageCard : Index -> Model -> ScenarioPackageRecord -> Html Msg
+packageCard index model package =
+    let
+        isSelected =
+            model.package == Just package
+
+        modelLI =
+            if isSelected then
+                modelScenarioLI (0 :: index) model package model.modelScenario
+            else
+                modelScenarioLI (0 :: index) model package Nothing
+
+        projLI =
+            if isSelected then
+                projectionScenarioLI (1 :: index) model package model.projectionScenarios
+            else
+                projectionScenarioLI (1 :: index) model package []
+    in
+        Card.view
+            [ Options.css "width" "100%"
+            , if isSelected then
+                Elevation.e8
+              else
+                Elevation.e2
+            ]
+            [ Card.title [ Card.border ] [ Card.head [] [ Html.text <| "Package: " ++ (package.name ? "") ] ]
+            , Card.text []
+                [ Options.div [ Typo.subhead ] [ Html.text "Choose Model Layers" ]
+                , listScenarios modelLI (observedFilter package.scenarios)
+                , Options.div [ Typo.subhead ] [ Html.text "Choose Projection Layers" ]
+                , listScenarios projLI package.scenarios
+                ]
             ]
 
 
 view : Index -> SL.Model -> Model -> Html Msg
-view index scenarioList model =
-    let
-        mapCardTitle =
-            model.mapScenario
-                |> Maybe.map (scenarioTitle scenarioList)
-                |> Maybe.withDefault "Map"
-    in
-        Options.div [ Options.css "display" "flex" ]
-            [ scenariosList index scenarioList model
-            , MapCard.view index mapCardTitle model.mapCard |> Html.map MapCardMsg
-            ]
+view index sl model =
+    sl.packages
+        |> List.indexedMap (\i package -> Grid.cell [ Grid.size Grid.All 4 ] [ packageCard (i :: index) model package ])
+        |> Grid.grid []
 
 
 problems : Model -> Maybe String
 problems model =
-    case model.selectedScenarios of
+    case model.projectionScenarios of
         [] ->
             Just "No scenarios selected."
 
@@ -246,16 +230,15 @@ problems model =
             Nothing
 
 
-init : Mode -> Model
-init mode =
+init : Model
+init =
     { mdl = Material.model
-    , mode = mode
-    , mapScenario = Nothing
-    , mapCard = MapCard.init ("leaflet-map-scenarios-" ++ (toString mode))
-    , selectedScenarios = []
+    , package = Nothing
+    , modelScenario = Nothing
+    , projectionScenarios = []
     }
 
 
 subscriptions : (Msg -> msg) -> Sub msg
 subscriptions liftMsg =
-    MapCard.subscriptions (MapCardMsg >> liftMsg)
+    Sub.none

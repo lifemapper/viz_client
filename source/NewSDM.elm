@@ -21,20 +21,16 @@ import Decoder
 import Encoder
 
 
--- MODEL
-
-
 type Tab
     = Algorithms
     | OccurrenceSets
-    | ModelScenario
-    | ProjScenarios
+    | Scenarios
     | PostProjection
 
 
 tabs : List Tab
 tabs =
-    [ OccurrenceSets, Algorithms, ModelScenario, ProjScenarios, PostProjection ]
+    [ OccurrenceSets, Algorithms, Scenarios, PostProjection ]
 
 
 tabIndex : Tab -> Int
@@ -52,8 +48,7 @@ type WorkFlowState
 type alias Model =
     { mdl : Material.Model
     , selectedTab : Tab
-    , modelScenario : Scns.Model
-    , projectionScenarios : Scns.Model
+    , scenarios : Scns.Model
     , algorithmsModel : Algs.Model
     , occurrenceSets : Occs.Model
     , availableScenarios : SL.Model
@@ -62,24 +57,17 @@ type alias Model =
 
 
 toApi : Model -> Result String Decoder.BoomPOST
-toApi { algorithmsModel, occurrenceSets, modelScenario, projectionScenarios } =
-    case Scns.toApi Decoder.BoomPOSTModelScenario modelScenario of
-        [] ->
-            Err "No Model Scenario Selected"
-
-        [ modelScenario ] ->
-            Ok <|
+toApi { algorithmsModel, occurrenceSets, scenarios } =
+    Scns.toApi scenarios
+        |> Result.map
+            (\{ modelScenario, projectionScenarios } ->
                 Decoder.BoomPOST
                     { algorithms = Algs.toApi algorithmsModel
                     , occurrenceSets = Occs.toApi occurrenceSets
                     , modelScenario = modelScenario
-                    , projectionScenarios =
-                        Scns.toApi Decoder.BoomPOSTProjectionScenariosItem projectionScenarios
-                            |> Decoder.BoomPOSTProjectionScenarios
+                    , projectionScenarios = projectionScenarios
                     }
-
-        _ ->
-            Err "Multiple Model Scenarios Selected"
+            )
 
 
 submitJob : Model -> Cmd Msg
@@ -105,8 +93,7 @@ init : Model
 init =
     { mdl = Material.model
     , selectedTab = OccurrenceSets
-    , modelScenario = Scns.init Scns.ModelScenario
-    , projectionScenarios = Scns.init Scns.ProjectionScenarios
+    , scenarios = Scns.init
     , algorithmsModel = Algs.init
     , occurrenceSets = Occs.init
     , availableScenarios = SL.init
@@ -120,8 +107,7 @@ type Msg
     | SubmitJob
     | JobSubmitted (Result Http.Error String)
     | Restart
-    | ProjScnsMsg Scns.Msg
-    | MdlScnMsg Scns.Msg
+    | ScnsMsg Scns.Msg
     | AlgsMsg Algs.Msg
     | OccsMsg Occs.Msg
     | SLMsg SL.Msg
@@ -147,20 +133,11 @@ update msg model =
         Restart ->
             ( { init | availableScenarios = model.availableScenarios }, Cmd.none )
 
-        ProjScnsMsg msg_ ->
+        ScnsMsg msg_ ->
             lift
-                .projectionScenarios
-                (\m x -> { m | projectionScenarios = x })
-                ProjScnsMsg
-                Scns.update
-                msg_
-                model
-
-        MdlScnMsg msg_ ->
-            lift
-                .modelScenario
-                (\m x -> { m | modelScenario = x })
-                MdlScnMsg
+                .scenarios
+                (\m x -> { m | scenarios = x })
+                ScnsMsg
                 Scns.update
                 msg_
                 model
@@ -206,11 +183,8 @@ tabTitle tab =
             OccurrenceSets ->
                 "Species Data"
 
-            ModelScenario ->
-                "Model Input Layers"
-
-            ProjScenarios ->
-                "Projection Input Layers"
+            Scenarios ->
+                "Input Layers"
 
             PostProjection ->
                 "Submit Project"
@@ -257,11 +231,8 @@ mainView model =
                 OccurrenceSets ->
                     model.occurrenceSets |> Occs.view [] |> Html.map OccsMsg
 
-                ModelScenario ->
-                    model.modelScenario |> Scns.view [ 0 ] model.availableScenarios |> Html.map MdlScnMsg
-
-                ProjScenarios ->
-                    model.projectionScenarios |> Scns.view [ 0 ] model.availableScenarios |> Html.map ProjScnsMsg
+                Scenarios ->
+                    model.scenarios |> Scns.view [ 0 ] model.availableScenarios |> Html.map ScnsMsg
 
                 PostProjection ->
                     Options.div [ Options.css "padding" "20px" ]
@@ -318,8 +289,7 @@ tasks : List ( Tab, Model -> Maybe String )
 tasks =
     [ ( OccurrenceSets, (.occurrenceSets >> Occs.problems) )
     , ( Algorithms, (.algorithmsModel >> Algs.problems) )
-    , ( ModelScenario, (.modelScenario >> Scns.problems) )
-    , ( ProjScenarios, (.projectionScenarios >> Scns.problems) )
+    , ( Scenarios, (.scenarios >> Scns.problems) )
     ]
 
 
@@ -354,13 +324,12 @@ page =
 
 initCmd : (Msg -> msg) -> Cmd msg
 initCmd map =
-    SL.getScenarios SLMsg |> Cmd.map map
+    SL.getPackages SLMsg |> Cmd.map map
 
 
 subscriptions : (Msg -> msg) -> Sub msg
 subscriptions liftMsg =
     Sub.batch
         [ Occs.subscriptions (OccsMsg >> liftMsg)
-        , Scns.subscriptions (MdlScnMsg >> liftMsg)
-        , Scns.subscriptions (ProjScnsMsg >> liftMsg)
+        , Scns.subscriptions (ScnsMsg >> liftMsg)
         ]

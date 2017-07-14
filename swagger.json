@@ -2178,7 +2178,7 @@
           "type": "string"
         },
         "metadata": {
-          "type": "object"
+          "$ref": "#/definitions/ScenarioMetadata"
         },
         "map": {
           "$ref": "#/definitions/Map"
@@ -2200,6 +2200,26 @@
         },
         "envTypeId": {
           "type": "string"
+        }
+      }
+    },
+    "ScenarioMetadata": {
+      "type": "object",
+      "properties": {
+        "author": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
