@@ -216,18 +216,24 @@ packageCard index model package =
 view : Index -> SL.Model -> Model -> Html Msg
 view index sl model =
     sl.packages
+        |> List.sortBy .id -- just so the packages appear in a consistent order between page loads
         |> List.indexedMap (\i package -> Grid.cell [ Grid.size Grid.All 4 ] [ packageCard (i :: index) model package ])
         |> Grid.grid []
 
 
 problems : Model -> Maybe String
 problems model =
-    case model.projectionScenarios of
-        [] ->
-            Just "No scenarios selected."
-
-        _ ->
+    Maybe.or
+        (if model.modelScenario == Nothing then
+            Just "No model layers selected."
+         else
             Nothing
+        )
+        (if model.projectionScenarios == [] then
+            Just "No projection layers selected."
+         else
+            Nothing
+        )
 
 
 init : Model
