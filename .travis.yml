@@ -6,7 +6,7 @@ node_js:
   - "4.0"
 
 install:
-  - npm install -g elm@0.18.0 ahultgren/swagger-elm elm-format
+  - npm install -g elm@0.18.0 ahultgren/swagger-elm@0.3.0 avh4/elm-format@0.5.2
 
 script:
   - make
