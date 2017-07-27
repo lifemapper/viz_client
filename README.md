@@ -1,5 +1,6 @@
 # rutabaga
 
+[![Build Status](https://travis-ci.org/lifemapper/rutabaga.svg?branch=master)](https://travis-ci.org/lifemapper/rutabaga)
 
 ## Build dependencies
 
