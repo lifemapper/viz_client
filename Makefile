@@ -1,9 +1,15 @@
+ELMFLAGS = --yes --warn
+
+all: sdm.tar.gz
+
+debug: ELMFLAGS += --debug
+debug: sdm.tar.gz
 
 sdm.tar.gz: sdm/elm.js sdm/*
 	tar -zcvf sdm.tar.gz sdm
 
 sdm/elm.js: source/Decoder.elm source/*
-	elm-make source/Main.elm --yes --warn --output=sdm/elm.js
+	elm-make source/Main.elm $(ELMFLAGS) --output=sdm/elm.js
 
 source/Decoder.elm: swagger.json source/Decoder.elm.patch
 	cat swagger.json | swagger-to-elm | elm-format --stdin > source/Decoder.elm.generated
@@ -13,4 +19,4 @@ source/Decoder.elm: swagger.json source/Decoder.elm.patch
 clean:
 	rm -f sdm.tar.gz sdm/elm.js source/Decoder.elm
 
-.PHONY: clean
+.PHONY: all clean
