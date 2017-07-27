@@ -5,8 +5,14 @@ language: node_js
 node_js:
   - "4.0"
 
+cache:
+  directories:
+    - elm-stuff/packages
+
 install:
-  - npm install -g elm@0.18.0 ahultgren/swagger-elm@0.3.0 avh4/elm-format@0.5.2
+  - npm install -g elm@0.18.0
+  - npm install -g ahultgren/swagger-elm@#v0.3.0
+  - npm install -g elm-format@0.5.2
 
 script:
   - make
