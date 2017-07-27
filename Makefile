@@ -5,7 +5,7 @@ sdm.tar.gz: source/Decoder.elm
 	rm -rf sdm
 	mkdir -p sdm
 	elm-make source/Main.elm --yes --warn --output=sdm/elm.js
-	cp index.html main.js fixes.css sdm
+	cp index.html main.js fixes.css favicon.ico sdm
 	tar -zcvf sdm.tar.gz sdm
 
 source/Decoder.elm: swagger.json source/Decoder.elm.patch
