@@ -3,7 +3,7 @@ sudo: false
 language: node_js
 
 node_js:
-  - "4.0"
+  - '4.0'
 
 cache:
   directories:
@@ -27,3 +27,11 @@ install:
 
 script:
   - libsysconfcpus/bin/sysconfcpus -n 2 make
+
+deploy:
+  provider: releases
+  api_key:
+    secure: C9QuwcAutBX+2Cafc+lqzEECmLgAvoifI2qwfTDmcqaUdzRRn6wYRqwBoV0+zKbqF9A6drK6gWGFSrGGxVmPu03TzDdZ502CI5DZ8PGEKc3pb224oRL0dyTuwFqlHM1dnfSu8iMArqidBo5sCGHUFHs/VW68LGaSF4DiVvY5OZu1K2zUxpYuvgSSDACLnF2bJKzy0olbFutrvEnBQcLYkJ6NVfBTERqOGMFGDcXQY4XoJTMumuhXCD7AMfgNzkb8ftF6brCAN5K60NL1INI3/2+7hx+yh4vBTnI5nzBOjOuhwkNrqoF1neFGb6h5y24FaVlTi6gOGJElTTtHoOXjpwPYFLw8o5SD7vplJQ2vDlna7Q0+35cA0fettGLg33u32u2mXL2M1p4UyWyt5sTly0ShT4OYqRHEJPTBkEdPmZ1ED3HReMnADefLCHLAcdmvmb+pW6qxbxT8SxYnIjlW2Mwx0dYZGeK74bMgVOD3tgDxujh56KcQ9LCF8M+ZC4Fssy3YxlQ2VC9tACFByn1ooX1IkOC4NMFZ2fIphuo4MceXhO1AA5EP+9HFh3eYGKOaqnzt+8ZIWjZ5yLPoZzi6DZxFnNYnS4e4r42YluckOMCPb/hB+JQE3BzU+EYYjb0Ag3pLpu+Lf23iKKLJYdvJPEm0ccqknysfcwq10FVdfH0=
+  file: sdm.tar.gz
+  on:
+    repo: lifemapper/rutabaga
