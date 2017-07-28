@@ -9,7 +9,6 @@ import Material.Typography as Typo
 import Http
 import Html exposing (Html)
 import Page exposing (Page)
-import Constants exposing (apiRoot)
 import Decoder
     exposing
         ( ProjectionRecord
@@ -22,6 +21,7 @@ import Decoder
 import MapCard
 import AlgorithmView as Alg
 import Helpers exposing (chain)
+import ProgramFlags exposing (Flags)
 
 
 type Tab
@@ -56,11 +56,12 @@ type alias Model =
     , projectionScenario : Maybe ScenarioRecord
     , state : State
     , selectedTab : Tab
+    , programFlags : Flags
     }
 
 
-init : Model
-init =
+init : Flags -> Model
+init flags =
     { mdl = Material.model
     , state = Loading
     , selectedTab = Map
@@ -69,6 +70,7 @@ init =
     , occurrenceSet = Nothing
     , modelScenario = Nothing
     , projectionScenario = Nothing
+    , programFlags = flags
     }
 
 
@@ -104,7 +106,7 @@ update msg model =
     in
         case msg of
             LoadMetadata id ->
-                ( { model | state = Loading }, loadMetadata id )
+                ( { model | state = Loading }, loadMetadata model.programFlags id )
 
             SetState state ->
                 updateState state model
@@ -290,8 +292,8 @@ gotScenario andThen result =
             Debug.log "Failed to load scenario" err |> always Nop
 
 
-loadMetadata : Int -> Cmd Msg
-loadMetadata id =
+loadMetadata : Flags -> Int -> Cmd Msg
+loadMetadata { apiRoot } id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]

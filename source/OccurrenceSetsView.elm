@@ -1,6 +1,6 @@
 module OccurrenceSetsView exposing (Model, toApi, Msg, update, view, init, subscriptions, problems)
 
-import Constants exposing (apiRoot)
+import ProgramFlags exposing (Flags)
 import Decoder
     exposing
         ( AtomObjectRecord
@@ -29,6 +29,7 @@ type alias Model =
     , mappedSet : Maybe OccurrenceSetRecord
     , mapCard : MapCard.Model
     , mdl : Material.Model
+    , programFlags : Flags
     }
 
 
@@ -80,7 +81,7 @@ update msg model =
                 ( { model | occurrenceSets = removeAt i model.occurrenceSets }, Cmd.none )
 
             MapOccurrences id ->
-                ( model, getMetadataAndMap id )
+                ( model, getMetadataAndMap model.programFlags id )
 
             SetMapped o ->
                 updateMap { model | mappedSet = o }
@@ -97,7 +98,7 @@ addSelected msg model =
     case msg of
         OccurrenceSetChooser.Select object ->
             ( { model | occurrenceSets = model.occurrenceSets ++ [ object ] }
-            , getMetadataAndMap object.id
+            , getMetadataAndMap model.programFlags object.id
             )
 
         msg ->
@@ -123,12 +124,12 @@ updateMap model =
         setMap mapInfo model
 
 
-getMetadataAndMap : Int -> Cmd Msg
-getMetadataAndMap id =
+getMetadataAndMap : Flags -> Int -> Cmd Msg
+getMetadataAndMap flags id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = apiRoot ++ "occurrence/" ++ (toString id)
+        , url = flags.apiRoot ++ "occurrence/" ++ (toString id)
         , body = Http.emptyBody
         , expect = Http.expectJson decodeOccurrenceSet
         , timeout = Nothing
@@ -148,13 +149,14 @@ gotMetadata result =
                 |> Debug.log (toString err)
 
 
-init : Model
-init =
+init : Flags -> Model
+init flags =
     { occurrenceSets = []
     , mappedSet = Nothing
-    , chooser = OccurrenceSetChooser.init
+    , chooser = OccurrenceSetChooser.init flags
     , mapCard = MapCard.init "leaflet-map-occurrence-sets"
     , mdl = Material.model
+    , programFlags = flags
     }
 
 

@@ -1,6 +1,5 @@
 module NewSDM exposing (Model, page, init, initCmd, update, Msg, subscriptions)
 
-import Constants exposing (apiRoot)
 import List.Extra exposing (elemIndex, getAt)
 import Html exposing (Html)
 import Http
@@ -19,6 +18,7 @@ import Page exposing (Page)
 import ScenariosList as SL
 import Decoder
 import Encoder
+import ProgramFlags exposing (Flags)
 
 
 type Tab
@@ -53,6 +53,7 @@ type alias Model =
     , occurrenceSets : Occs.Model
     , availableScenarios : SL.Model
     , workFlowState : WorkFlowState
+    , programFlags : Flags
     }
 
 
@@ -77,7 +78,7 @@ submitJob model =
             Http.request
                 { method = "POST"
                 , headers = [ Http.header "Accept" "application/json", Http.header "Content-Type" "text/plain" ]
-                , url = apiRoot ++ "sdmProject"
+                , url = model.programFlags.apiRoot ++ "sdmProject"
                 , body = Http.jsonBody <| Encoder.encodeBoomPOST <| postData
                 , expect = Http.expectString
                 , timeout = Nothing
@@ -89,15 +90,16 @@ submitJob model =
             Debug.log "Can't post SDM." msg |> always Cmd.none
 
 
-init : Model
-init =
+init : Flags -> Model
+init flags =
     { mdl = Material.model
     , selectedTab = OccurrenceSets
     , scenarios = Scns.init
     , algorithmsModel = Algs.init
-    , occurrenceSets = Occs.init
-    , availableScenarios = SL.init
+    , occurrenceSets = Occs.init flags
+    , availableScenarios = SL.init flags
     , workFlowState = Defining
+    , programFlags = flags
     }
 
 
@@ -131,7 +133,11 @@ update msg model =
                 |> always ( { model | workFlowState = SubmissionFailed }, Cmd.none )
 
         Restart ->
-            ( { init | availableScenarios = model.availableScenarios }, Cmd.none )
+            let
+                newModel =
+                    init model.programFlags
+            in
+                ( { newModel | availableScenarios = model.availableScenarios }, Cmd.none )
 
         ScnsMsg msg_ ->
             lift
@@ -322,9 +328,9 @@ page =
     }
 
 
-initCmd : (Msg -> msg) -> Cmd msg
-initCmd map =
-    SL.getPackages SLMsg |> Cmd.map map
+initCmd : Flags -> (Msg -> msg) -> Cmd msg
+initCmd flags map =
+    SL.getPackages flags SLMsg |> Cmd.map map
 
 
 subscriptions : (Msg -> msg) -> Sub msg

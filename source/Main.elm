@@ -1,6 +1,5 @@
 module Main exposing (..)
 
-import Constants exposing (apiRoot)
 import Time
 import Material
 import Material.Layout as Layout
@@ -14,6 +13,7 @@ import Http
 import Page
 import SDMProjection
 import NewSDM
+import ProgramFlags exposing (Flags)
 import Decoder
     exposing
         ( AtomObjectRecord
@@ -42,16 +42,18 @@ type alias Model =
     , sdmProjections : List AtomObjectRecord
     , sdmProjection : SDMProjection.Model
     , newSDM : NewSDM.Model
+    , flags : Flags
     }
 
 
-init : Model
-init =
+init : Flags -> Model
+init flags =
     { mdl = Material.model
     , page = NewSDM
     , sdmProjections = []
-    , sdmProjection = SDMProjection.init
-    , newSDM = NewSDM.init
+    , sdmProjection = SDMProjection.init flags
+    , newSDM = NewSDM.init flags
+    , flags = flags
     }
 
 
@@ -112,7 +114,7 @@ update msg model =
                 model ! [ Nav.newUrl "#new" ]
 
             Tick _ ->
-                ( model, getSDMProjections )
+                ( model, getSDMProjections model.flags )
 
             GotSDMProjections projections ->
                 ( { model | sdmProjections = projections }, Cmd.none )
@@ -121,8 +123,8 @@ update msg model =
                 ( model, Cmd.none )
 
 
-getSDMProjections : Cmd Msg
-getSDMProjections =
+getSDMProjections : Flags -> Cmd Msg
+getSDMProjections { apiRoot } =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
@@ -194,28 +196,38 @@ view model =
             }
 
 
-start : Location -> ( Model, Cmd Msg )
-start loc =
+start : Flags -> Location -> ( Model, Cmd Msg )
+start flags loc =
     let
         ( model, msg ) =
-            update (UrlChange loc) init
+            update (UrlChange loc) (init flags)
     in
-        model ! [ Material.init Mdl, NewSDM.initCmd NewSDMMsg, getSDMProjections, msg ]
+        model
+            ! [ Material.init Mdl
+              , NewSDM.initCmd flags NewSDMMsg
+              , getSDMProjections flags
+              , msg
+              ]
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Material.subscriptions Mdl model
-        , Time.every (5 * Time.second) Tick
         , SDMProjection.subscriptions SDMProjectionMsg
         , NewSDM.subscriptions NewSDMMsg
+        , case model.flags.completedPollingSeconds of
+            Just secs ->
+                Time.every (secs * Time.second) Tick
+
+            Nothing ->
+                Sub.none
         ]
 
 
-main : Program Never Model Msg
+main : Program Flags Model Msg
 main =
-    Nav.program
+    Nav.programWithFlags
         UrlChange
         { init = start
         , view = view

@@ -1,7 +1,7 @@
 module OccurrenceSetChooser exposing (Model, Msg(Select), update, view, init)
 
 import Decoder exposing (AtomObjectRecord, AtomList(..), decodeAtomList, AtomObject(..))
-import Constants exposing (apiRoot, minimumOccurrencePoints)
+import ProgramFlags exposing (Flags)
 import Json.Decode as Decode
 import Char
 import Helpers exposing (Index)
@@ -22,6 +22,7 @@ type alias Model =
     , searchResults : List AtomObjectRecord
     , highlight : Maybe Int
     , mdl : Material.Model
+    , programFlags : Flags
     }
 
 
@@ -48,7 +49,7 @@ update msg model =
                         text =
                             String.cons (Char.toUpper c) rest
                     in
-                        ( { model | searchText = text }, getOccurrenceSets text )
+                        ( { model | searchText = text }, getOccurrenceSets model.programFlags text )
 
                 Nothing ->
                     ( { model | searchText = text }, Cmd.none )
@@ -100,12 +101,12 @@ highlightUp model =
         |> Maybe.map (min <| (List.length model.searchResults) - 1)
 
 
-getOccurrenceSets : String -> Cmd Msg
-getOccurrenceSets searchText =
+getOccurrenceSets : Flags -> String -> Cmd Msg
+getOccurrenceSets flags searchText =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = searchUrl searchText
+        , url = searchUrl flags searchText
         , body = Http.emptyBody
         , expect = Http.expectJson decodeAtomList
         , timeout = Nothing
@@ -114,8 +115,8 @@ getOccurrenceSets searchText =
         |> Http.send GotOccurrenceSets
 
 
-searchUrl : String -> String
-searchUrl searchText =
+searchUrl : Flags -> String -> String
+searchUrl { apiRoot, minimumOccurrencePoints } searchText =
     apiRoot
         ++ "occurrence"
         ++ (Q.empty
@@ -187,6 +188,11 @@ view index model =
         ]
 
 
-init : Model
-init =
-    { searchText = "", searchResults = [], highlight = Nothing, mdl = Material.model }
+init : Flags -> Model
+init flags =
+    { searchText = ""
+    , searchResults = []
+    , highlight = Nothing
+    , mdl = Material.model
+    , programFlags = flags
+    }

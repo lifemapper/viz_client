@@ -9,7 +9,7 @@ module ScenariosList
 
 import List.Extra as List
 import Http
-import Constants exposing (apiRoot)
+import ProgramFlags exposing (Flags)
 import Decoder
     exposing
         ( AtomObjectRecord
@@ -28,6 +28,7 @@ import Decoder
 type alias Model =
     { packageList : List AtomObjectRecord
     , packages : List ScenarioPackageRecord
+    , programFlags : Flags
     }
 
 
@@ -37,15 +38,16 @@ type Msg
     | Nop
 
 
-init : Model
-init =
+init : Flags -> Model
+init flags =
     { packageList = []
     , packages = []
+    , programFlags = flags
     }
 
 
-getPackages : (Msg -> msg) -> Cmd msg
-getPackages msgMap =
+getPackages : Flags -> (Msg -> msg) -> Cmd msg
+getPackages { apiRoot } msgMap =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
@@ -70,8 +72,8 @@ gotPackageList result =
                 |> always Nop
 
 
-getPackage : Int -> Cmd Msg
-getPackage id =
+getPackage : Flags -> Int -> Cmd Msg
+getPackage { apiRoot } id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
@@ -99,7 +101,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotPackageList atoms ->
-            ( { model | packageList = atoms }, atoms |> List.map (.id >> getPackage) |> Cmd.batch )
+            ( { model | packageList = atoms }, atoms |> List.map (.id >> getPackage model.programFlags) |> Cmd.batch )
 
         GotPackage p ->
             ( { model | packages = p :: model.packages }, Cmd.none )
