@@ -13,6 +13,7 @@ import Http
 import Page
 import SDMProjection
 import NewSDM
+import SDMResults
 import ProgramFlags exposing (Flags)
 import Decoder
     exposing
@@ -26,6 +27,7 @@ import Decoder
 type SDMPage
     = NewSDM
     | SDMProjection Int
+    | SDMResults Int
 
 
 route : Url.Parser (SDMPage -> a) a
@@ -33,6 +35,7 @@ route =
     Url.oneOf
         [ Url.map NewSDM (Url.s "new")
         , Url.map SDMProjection (Url.s "projection" </> Url.int)
+        , Url.map SDMResults (Url.s "results" </> Url.int)
         ]
 
 
@@ -42,6 +45,7 @@ type alias Model =
     , sdmProjections : List AtomObjectRecord
     , sdmProjection : SDMProjection.Model
     , newSDM : NewSDM.Model
+    , results : SDMResults.Model
     , flags : Flags
     }
 
@@ -53,6 +57,7 @@ init flags =
     , sdmProjections = []
     , sdmProjection = SDMProjection.init flags
     , newSDM = NewSDM.init flags
+    , results = SDMResults.init flags
     , flags = flags
     }
 
@@ -61,6 +66,7 @@ type Msg
     = Mdl (Material.Msg Msg)
     | NewSDMMsg NewSDM.Msg
     | SDMProjectionMsg SDMProjection.Msg
+    | SDMResultsMsg SDMResults.Msg
     | GotSDMProjections (List AtomObjectRecord)
     | UrlChange Location
     | OpenExisting Int
@@ -85,6 +91,13 @@ update msg model =
                 (\m x -> { m | sdmProjection = x })
                 SDMProjectionMsg
                 SDMProjection.update
+
+        liftedSDMResultsUpdate =
+            lift
+                .results
+                (\m x -> { m | results = x })
+                SDMResultsMsg
+                SDMResults.update
     in
         case msg of
             Mdl msg_ ->
@@ -96,6 +109,9 @@ update msg model =
             SDMProjectionMsg msg_ ->
                 liftedSDMProjectionUpdate msg_ model
 
+            SDMResultsMsg msg_ ->
+                liftedSDMResultsUpdate msg_ model
+
             UrlChange loc ->
                 case Debug.log "path" (Url.parseHash route loc) of
                     Nothing ->
@@ -106,6 +122,9 @@ update msg model =
 
                     Just (SDMProjection id) ->
                         liftedSDMProjectionUpdate (SDMProjection.LoadMetadata id) { model | page = SDMProjection id }
+
+                    Just (SDMResults id) ->
+                        liftedSDMResultsUpdate (SDMResults.LoadProjections id) { model | page = SDMResults id }
 
             OpenExisting id ->
                 model ! [ Nav.newUrl ("#projection/" ++ toString id) ]
@@ -180,6 +199,9 @@ view model =
 
                 SDMProjection id ->
                     Page.lift SDMProjection.page .sdmProjection SDMProjectionMsg
+
+                SDMResults id ->
+                    Page.lift SDMResults.page .results SDMResultsMsg
     in
         Layout.render Mdl
             model.mdl
