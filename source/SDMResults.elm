@@ -46,7 +46,9 @@ update msg model =
             ( model, Cmd.none )
 
         LoadProjections gridsetId ->
-            ( model, loadProjections model.programFlags gridsetId )
+            ( { model | projectionsToLoad = Nothing, projections = [], maps = [] }
+            , loadProjections model.programFlags gridsetId
+            )
 
         GotProjectionAtoms atoms ->
             ( { model | projectionsToLoad = Just (List.length atoms) }
