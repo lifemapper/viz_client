@@ -238,6 +238,7 @@ subscriptions model =
         [ Material.subscriptions Mdl model
         , SDMProjection.subscriptions SDMProjectionMsg
         , NewSDM.subscriptions NewSDMMsg
+        , SDMResults.subscriptions SDMResultsMsg model.results
         , case model.flags.completedPollingSeconds of
             Just secs ->
                 Time.every (secs * Time.second) Tick
