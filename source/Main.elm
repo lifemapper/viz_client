@@ -114,9 +114,6 @@ update msg model =
 
             UrlChange loc ->
                 case Debug.log "path" (Url.parseHash route loc) of
-                    Nothing ->
-                        ( model, Cmd.none )
-
                     Just NewSDM ->
                         ( { model | page = NewSDM }, Cmd.none )
 
@@ -125,6 +122,9 @@ update msg model =
 
                     Just (SDMResults id) ->
                         liftedSDMResultsUpdate (SDMResults.LoadProjections id) { model | page = SDMResults id }
+
+                    Nothing ->
+                        ( model, Cmd.none )
 
             OpenExisting id ->
                 model ! [ Nav.newUrl ("#projection/" ++ toString id) ]
@@ -236,9 +236,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Material.subscriptions Mdl model
-        , SDMProjection.subscriptions SDMProjectionMsg
         , NewSDM.subscriptions NewSDMMsg
-        , SDMResults.subscriptions SDMResultsMsg model.results
         , case model.flags.completedPollingSeconds of
             Just secs ->
                 Time.every (secs * Time.second) Tick

@@ -6,27 +6,24 @@ var maps = {};
 var mapLayers = {};
 
 
-app.ports.setLeafletMap.subscribe(function(leafletMap) {
-    var map = maps[leafletMap.id];
+function configureMap(element) {
+    var map = maps[element._leaflet_id];
     if (map == null) return;
+    console.log("updating leaflet id", element._leaflet_id);
 
-    var layer = mapLayers[leafletMap.id];
+    var layer = mapLayers[element._leaflet_id];
     layer == null || map.removeLayer(layer);
 
-    var wmsInfo = leafletMap.state.wmsLayer;
+    var wmsInfo = JSON.parse(element.dataset.leaflet);
 
-    mapLayers[leafletMap.id] = wmsInfo && L.tileLayer.wms(wmsInfo.endPoint, {
+    mapLayers[element._leaflet_id] = wmsInfo && L.tileLayer.wms(wmsInfo.endPoint, {
         mapName: wmsInfo.mapName,
         format: 'image/png',
         version: '1.1.0',
         transparent: true,
         layers: wmsInfo.layers.join(',')
     }).addTo(map);
-
-    var view = leafletMap.state.view;
-
-    map.setView({lat: view[0], lng: view[1]}, view[2], {animate: false});
-});
+}
 
 
 var observer = new MutationObserver(function(mutations) {
@@ -36,19 +33,11 @@ var observer = new MutationObserver(function(mutations) {
 
             var elements = n.getElementsByClassName("leaflet-map");
             Array.prototype.forEach.call(elements, function(element) {
-                var id = element.id;
-                console.log("adding map to ", id);
-                if (maps[id] == null) {
-                    maps[id] = L.map(id, {crs: L.CRS.EPSG4326})
-                        .setView([0, 0], 1)
-                        .on('moveend', function(event) {
-                            var center = maps[id].getCenter();
-                            var zoom = maps[id].getZoom();
-
-                            app.ports.leafletViewChanged.send([id, [center.lat, center.lng, zoom]]);
-                        });
-                    app.ports.leafletRequestState.send(id);
-                }
+                var map = L.map(element, {crs: L.CRS.EPSG4326})
+                    .setView([0, 0], 1);
+                maps[element._leaflet_id] = map;
+                console.log("added leaflet id", element._leaflet_id);
+                configureMap(element);
             });
         });
 
@@ -57,17 +46,26 @@ var observer = new MutationObserver(function(mutations) {
 
             var elements = n.getElementsByClassName("leaflet-map");
             Array.prototype.forEach.call(elements, function(element) {
-                var id = element.id;
-                if (maps[id] != null) {
-                    console.log("removing map from ", id);
-                    maps[id].remove();
-                    maps[id] = null;
-                    mapLayers[id] = null;
+                if (element._leaflet_id != null) {
+                    console.log("removing map with leaflet id", element._leaflet_id);
+                    maps[element._leaflet_id].remove();
+                    maps[element._leaflet_id] = null;
+                    mapLayers[element._leaflet_id] = null;
                 }
             });
         });
+
+        if (m.type == "attributes") {
+            configureMap(m.target);
+        }
     });
 });
 
-observer.observe(document.body, { subtree: true, childList: true });
+observer.observe(document.body, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ["data-leaflet"],
+    attributeOldValue: true
+});
 

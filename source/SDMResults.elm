@@ -1,4 +1,4 @@
-module SDMResults exposing (Model, init, update, page, Msg(LoadProjections), subscriptions)
+module SDMResults exposing (Model, init, update, page, Msg(LoadProjections))
 
 import List.Extra as List
 import Html exposing (Html)
@@ -9,6 +9,7 @@ import Page exposing (Page)
 import MapCard
 import Material
 import Material.Options as Options
+import Leaflet exposing (WMSInfo)
 
 
 type alias Model =
@@ -41,24 +42,8 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        Nop ->
-            ( model, Cmd.none )
-
-        LoadProjections gridsetId ->
-            ( { model | projectionsToLoad = Nothing, projections = [], maps = [] }
-            , loadProjections model.programFlags gridsetId
-            )
-
-        GotProjectionAtoms atoms ->
-            ( { model | projectionsToLoad = Just (List.length atoms) }
-            , atoms |> List.map (loadMetadata model.programFlags) |> Cmd.batch
-            )
-
-        GotProjection p ->
-            initMap p model
-
-        MapCardMsg i msg_ ->
+    let
+        liftedMapCardUpdate i msg_ model =
             List.getAt i model.maps
                 |> Maybe.map (MapCard.update msg_)
                 |> Maybe.andThen
@@ -67,30 +52,44 @@ update msg model =
                             |> Maybe.map (\maps -> ( { model | maps = maps }, Cmd.map (MapCardMsg i) cmd ))
                     )
                 |> Maybe.withDefault ( model, Cmd.none )
-
-        Mdl msg_ ->
-            Material.update Mdl msg_ model
-
-
-initMap : Decoder.ProjectionRecord -> Model -> ( Model, Cmd Msg )
-initMap projection model =
-    let
-        map =
-            MapCard.init ("projection-" ++ (toString projection.id))
-
-        mapInfo =
-            projection.map
-                |> Maybe.map
-                    (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
-                        { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
-                    )
     in
-        MapCard.setMap
-            (always map)
-            (\m x -> { m | projections = projection :: m.projections, maps = x :: m.maps })
-            (MapCardMsg (List.length model.maps))
-            mapInfo
-            model
+        case msg of
+            Nop ->
+                ( model, Cmd.none )
+
+            LoadProjections gridsetId ->
+                ( { model | projectionsToLoad = Nothing, projections = [], maps = [] }
+                , loadProjections model.programFlags gridsetId
+                )
+
+            GotProjectionAtoms atoms ->
+                ( { model | projectionsToLoad = Just (List.length atoms) }
+                , atoms |> List.map (loadMetadata model.programFlags) |> Cmd.batch
+                )
+
+            GotProjection p ->
+                let
+                    newMap =
+                        MapCard.init (getWmsInfo p)
+                in
+                    ( { model | projections = p :: model.projections, maps = newMap :: model.maps }
+                    , Cmd.none
+                    )
+
+            MapCardMsg i msg_ ->
+                liftedMapCardUpdate i msg_ model
+
+            Mdl msg_ ->
+                Material.update Mdl msg_ model
+
+
+getWmsInfo : Decoder.ProjectionRecord -> Maybe WMSInfo
+getWmsInfo =
+    .map
+        >> Maybe.map
+            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+                { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+            )
 
 
 loadProjections : Flags -> Int -> Cmd Msg
@@ -164,11 +163,3 @@ page =
     , selectTab = always Nop
     , tabTitles = always []
     }
-
-
-subscriptions : (Msg -> msg) -> Model -> Sub msg
-subscriptions liftMsg model =
-    model.maps
-        |> List.indexedMap (\i map -> MapCard.subscriptions (MapCardMsg i))
-        |> Sub.batch
-        |> Sub.map liftMsg

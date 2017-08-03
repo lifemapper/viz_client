@@ -1,4 +1,4 @@
-module OccurrenceSetsView exposing (Model, toApi, Msg, update, view, init, subscriptions, problems)
+module OccurrenceSetsView exposing (Model, toApi, Msg, update, view, init, problems)
 
 import ProgramFlags exposing (Flags)
 import Decoder
@@ -10,6 +10,7 @@ import Decoder
         , SingleLayerMap(..)
         )
 import OccurrenceSetChooser
+import Leaflet
 import Material
 import Material.Options as Options
 import Material.Typography as Typo
@@ -105,9 +106,14 @@ addSelected msg model =
             ( model, Cmd.none )
 
 
-setMap : Maybe MapCard.MapInfo -> Model -> ( Model, Cmd Msg )
-setMap =
-    MapCard.setMap .mapCard (\m x -> { m | mapCard = x }) MapCardMsg
+setMap : Maybe Leaflet.WMSInfo -> Model -> ( Model, Cmd Msg )
+setMap wmsInfo =
+    Helpers.lift
+        .mapCard
+        (\m x -> { m | mapCard = x })
+        MapCardMsg
+        MapCard.update
+        (MapCard.SetMap wmsInfo)
 
 
 updateMap : Model -> ( Model, Cmd Msg )
@@ -154,7 +160,7 @@ init flags =
     { occurrenceSets = []
     , mappedSet = Nothing
     , chooser = OccurrenceSetChooser.init flags
-    , mapCard = MapCard.init "leaflet-map-occurrence-sets"
+    , mapCard = MapCard.init Nothing
     , mdl = Material.model
     , programFlags = flags
     }
@@ -212,8 +218,3 @@ problems model =
 
         _ ->
             Nothing
-
-
-subscriptions : (Msg -> msg) -> Sub msg
-subscriptions liftMsg =
-    MapCard.subscriptions (MapCardMsg >> liftMsg)

@@ -1,4 +1,4 @@
-module SDMProjection exposing (Model, update, page, init, Msg(LoadMetadata), subscriptions)
+module SDMProjection exposing (Model, update, page, init, Msg(LoadMetadata))
 
 import List.Extra exposing (elemIndex, getAt)
 import Material
@@ -6,9 +6,11 @@ import Material.Options as Options
 import Material.Helpers as Helpers
 import Material.Spinner as Loading
 import Material.Typography as Typo
+import Material.Helpers exposing (lift)
 import Http
 import Html exposing (Html)
 import Page exposing (Page)
+import Leaflet
 import Decoder
     exposing
         ( ProjectionRecord
@@ -65,7 +67,7 @@ init flags =
     { mdl = Material.model
     , state = Loading
     , selectedTab = Map
-    , mapCard = MapCard.init "leaflet-map-projection"
+    , mapCard = MapCard.init Nothing
     , algorithm = Alg.init Alg.exampleAlgorithm True
     , occurrenceSet = Nothing
     , modelScenario = Nothing
@@ -139,9 +141,14 @@ update msg model =
                 liftedAlgUpdate msg_ model
 
 
-setMap : Maybe MapCard.MapInfo -> Model -> ( Model, Cmd Msg )
-setMap =
-    MapCard.setMap .mapCard (\m x -> { m | mapCard = x }) MapCardMsg
+setMap : Maybe Leaflet.WMSInfo -> Model -> ( Model, Cmd Msg )
+setMap wmsInfo =
+    lift
+        .mapCard
+        (\m x -> { m | mapCard = x })
+        MapCardMsg
+        MapCard.update
+        (MapCard.SetMap wmsInfo)
 
 
 updateMap : Model -> ( Model, Cmd Msg )
@@ -390,8 +397,3 @@ page =
     , selectTab = (\i -> tabs |> getAt i |> Maybe.withDefault Map |> SelectTab)
     , tabTitles = always <| List.map (tabTitle >> Html.text) tabs
     }
-
-
-subscriptions : (Msg -> msg) -> Sub msg
-subscriptions liftMsg =
-    MapCard.subscriptions (MapCardMsg >> liftMsg)

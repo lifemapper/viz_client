@@ -335,7 +335,4 @@ initCmd flags map =
 
 subscriptions : (Msg -> msg) -> Sub msg
 subscriptions liftMsg =
-    Sub.batch
-        [ Occs.subscriptions (OccsMsg >> liftMsg)
-        , Scns.subscriptions (ScnsMsg >> liftMsg)
-        ]
+    Scns.subscriptions (ScnsMsg >> liftMsg)
