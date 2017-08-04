@@ -6,17 +6,22 @@ import Http
 import Decoder
 import ProgramFlags exposing (Flags)
 import Page exposing (Page)
-import MapCard
+import MapCardMultiple as MapCard
 import Material
 import Material.Options as Options
-import Leaflet exposing (WMSInfo)
+
+
+type alias ProjectionInfo =
+    { record : Decoder.ProjectionRecord
+    , mapCard : MapCard.Model
+    , occurrenceRecord : Decoder.OccurrenceSetRecord
+    }
 
 
 type alias Model =
     { programFlags : Flags
     , projectionsToLoad : Maybe Int
-    , projections : List Decoder.ProjectionRecord
-    , maps : List MapCard.Model
+    , projections : List ProjectionInfo
     , mdl : Material.Model
     }
 
@@ -26,7 +31,6 @@ init flags =
     { programFlags = flags
     , projectionsToLoad = Nothing
     , projections = []
-    , maps = []
     , mdl = Material.model
     }
 
@@ -35,6 +39,7 @@ type Msg
     = LoadProjections Int
     | GotProjectionAtoms (List Decoder.AtomObjectRecord)
     | GotProjection Decoder.ProjectionRecord
+    | NewProjectionInfo ProjectionInfo
     | MapCardMsg Int MapCard.Msg
     | Nop
     | Mdl (Material.Msg Msg)
@@ -44,12 +49,18 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         liftedMapCardUpdate i msg_ model =
-            List.getAt i model.maps
-                |> Maybe.map (MapCard.update msg_)
+            List.getAt i model.projections
                 |> Maybe.andThen
-                    (\( map_, cmd ) ->
-                        List.setAt i map_ model.maps
-                            |> Maybe.map (\maps -> ( { model | maps = maps }, Cmd.map (MapCardMsg i) cmd ))
+                    (\projection ->
+                        let
+                            ( mapCard_, cmd ) =
+                                MapCard.update msg_ projection.mapCard
+
+                            updated =
+                                { projection | mapCard = mapCard_ }
+                        in
+                            List.setAt i updated model.projections
+                                |> Maybe.map (\ps -> ( { model | projections = ps }, Cmd.map (MapCardMsg i) cmd ))
                     )
                 |> Maybe.withDefault ( model, Cmd.none )
     in
@@ -58,7 +69,7 @@ update msg model =
                 ( model, Cmd.none )
 
             LoadProjections gridsetId ->
-                ( { model | projectionsToLoad = Nothing, projections = [], maps = [] }
+                ( { model | projectionsToLoad = Nothing, projections = [] }
                 , loadProjections model.programFlags gridsetId
                 )
 
@@ -67,14 +78,11 @@ update msg model =
                 , atoms |> List.map (loadMetadata model.programFlags) |> Cmd.batch
                 )
 
-            GotProjection p ->
-                let
-                    newMap =
-                        MapCard.init (getWmsInfo p)
-                in
-                    ( { model | projections = p :: model.projections, maps = newMap :: model.maps }
-                    , Cmd.none
-                    )
+            GotProjection record ->
+                ( model, loadOccurrenceSet record )
+
+            NewProjectionInfo newInfo ->
+                ( { model | projections = newInfo :: model.projections }, Cmd.none )
 
             MapCardMsg i msg_ ->
                 liftedMapCardUpdate i msg_ model
@@ -83,13 +91,57 @@ update msg model =
                 Material.update Mdl msg_ model
 
 
-getWmsInfo : Decoder.ProjectionRecord -> Maybe WMSInfo
-getWmsInfo =
-    .map
-        >> Maybe.map
-            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
-                { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
-            )
+loadOccurrenceSet : Decoder.ProjectionRecord -> Cmd Msg
+loadOccurrenceSet record =
+    case record.occurrenceSet |> Maybe.andThen (\(Decoder.ObjectRef o) -> o.metadataUrl) of
+        Just url ->
+            Http.request
+                { method = "GET"
+                , headers = [ Http.header "Accept" "application/json" ]
+                , url = url
+                , body = Http.emptyBody
+                , expect = Http.expectJson Decoder.decodeOccurrenceSet
+                , timeout = Nothing
+                , withCredentials = False
+                }
+                |> Http.send (gotOccurrenceSet record)
+
+        Nothing ->
+            Cmd.none
+
+
+gotOccurrenceSet : Decoder.ProjectionRecord -> Result Http.Error Decoder.OccurrenceSet -> Msg
+gotOccurrenceSet record result =
+    case result of
+        Ok (Decoder.OccurrenceSet occurrenceRecord) ->
+            NewProjectionInfo
+                { record = record
+                , mapCard = getWmsInfo record occurrenceRecord |> MapCard.init
+                , occurrenceRecord = occurrenceRecord
+                }
+
+        Err err ->
+            Debug.log "Error fetching occurrence set" (toString err) |> always Nop
+
+
+getWmsInfo : Decoder.ProjectionRecord -> Decoder.OccurrenceSetRecord -> List MapCard.NamedMap
+getWmsInfo projectionRecord occurrenceRecord =
+    List.filterMap identity
+        [ projectionRecord.map
+            |> Maybe.map
+                (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+                    { name = "Projection"
+                    , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                    }
+                )
+        , occurrenceRecord.map
+            |> Maybe.map
+                (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+                    { name = "Occurrences"
+                    , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                    }
+                )
+        ]
 
 
 loadProjections : Flags -> Int -> Cmd Msg
@@ -142,7 +194,7 @@ gotMetadata result =
 
 view : Model -> Html Msg
 view =
-    .maps
+    .projections
         >> List.indexedMap viewMap
         >> (Options.div
                 [ Options.css "display" "flex"
@@ -151,9 +203,10 @@ view =
            )
 
 
-viewMap : Int -> MapCard.Model -> Html Msg
-viewMap i map =
-    MapCard.view [ i ] "Map" map |> Html.map (MapCardMsg i)
+viewMap : Int -> ProjectionInfo -> Html Msg
+viewMap i { record, mapCard } =
+    MapCard.view [ i ] (record.speciesName |> Maybe.withDefault (toString record.id)) mapCard
+        |> Html.map (MapCardMsg i)
 
 
 page : Page Model Msg
