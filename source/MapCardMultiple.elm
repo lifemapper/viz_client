@@ -21,14 +21,15 @@ type alias NamedMap =
 
 type alias Model =
     { available : List NamedMap
-    , showing : Maybe NamedMap
+    , showing : List NamedMap
     , mdl : Material.Model
     }
 
 
 type Msg
     = Mdl (Material.Msg Msg)
-    | SetShowing (Maybe NamedMap)
+    | SetShowing NamedMap
+    | SetNotShowing NamedMap
     | SetAvailable (List NamedMap)
 
 
@@ -39,17 +40,23 @@ update msg model =
             Material.update Mdl msg_ model
 
         SetAvailable available ->
-            ( { model | available = available, showing = List.head available }, Cmd.none )
+            ( { model | available = available, showing = available }, Cmd.none )
 
         SetShowing show ->
-            ( { model | showing = show }, Cmd.none )
+            ( { model | showing = show :: model.showing }, Cmd.none )
+
+        SetNotShowing notShow ->
+            ( { model | showing = List.remove notShow model.showing }, Cmd.none )
 
 
-selectLayers : Int -> WMSInfo -> WMSInfo
-selectLayers i mapInfo =
+selectLayers : Bool -> Int -> WMSInfo -> WMSInfo
+selectLayers includeBMNG i mapInfo =
     { mapInfo
         | layers =
-            "bmng" :: (mapInfo.layers |> List.getAt i |> Maybe.toList)
+            if includeBMNG then
+                "bmng" :: (mapInfo.layers |> List.getAt i |> Maybe.toList)
+            else
+                (mapInfo.layers |> List.getAt i |> Maybe.toList)
     }
 
 
@@ -62,14 +69,26 @@ view index title model =
             else
                 Options.span [ Options.css "width" "40px" ] []
 
+        currentlyShowing namedMap =
+            (List.member namedMap model.showing)
+
+        onSelect namedMap =
+            if currentlyShowing namedMap then
+                SetNotShowing namedMap
+            else
+                SetShowing namedMap
+
         menuItem namedMap =
-            Menu.item [ Menu.onSelect (SetShowing <| Just namedMap) ]
-                [ checkmark (Just namedMap == model.showing)
+            Menu.item [ Menu.onSelect (onSelect namedMap) ]
+                [ checkmark (currentlyShowing namedMap)
                 , Html.text namedMap.name
                 ]
 
         leafletDiv =
-            model.showing |> Maybe.map .wmsInfo |> Maybe.map (selectLayers 0) |> Leaflet.view
+            model.available
+                |> List.filter (\m -> List.member m model.showing)
+                |> List.indexedMap (\i m -> m.wmsInfo |> selectLayers (i == 0) 0)
+                |> Leaflet.view
     in
         Card.view
             [ Elevation.e2
@@ -93,6 +112,6 @@ view index title model =
 init : List NamedMap -> Model
 init available =
     { available = available
-    , showing = List.head available
+    , showing = available
     , mdl = Material.model
     }

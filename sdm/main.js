@@ -11,18 +11,22 @@ function configureMap(element) {
     if (map == null) return;
     console.log("updating leaflet id", element._leaflet_id);
 
-    var layer = mapLayers[element._leaflet_id];
-    layer == null || map.removeLayer(layer);
+    var layers = mapLayers[element._leaflet_id];
+    if (layers != null) {
+        layers.forEach(function(layer) {  map.removeLayer(layer); });
+    }
 
-    var wmsInfo = JSON.parse(element.dataset.leaflet);
+    var wmsInfos = JSON.parse(element.dataset.leaflet);
 
-    mapLayers[element._leaflet_id] = wmsInfo && L.tileLayer.wms(wmsInfo.endPoint, {
-        mapName: wmsInfo.mapName,
-        format: 'image/png',
-        version: '1.1.0',
-        transparent: true,
-        layers: wmsInfo.layers.join(',')
-    }).addTo(map);
+    mapLayers[element._leaflet_id] = wmsInfos.map(function(wmsInfo) {
+        return L.tileLayer.wms(wmsInfo.endPoint, {
+            mapName: wmsInfo.mapName,
+            format: 'image/png',
+            version: '1.1.0',
+            transparent: true,
+            layers: wmsInfo.layers.join(',')
+        }).addTo(map);
+    });
 }
 
 

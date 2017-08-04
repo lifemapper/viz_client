@@ -12,9 +12,9 @@ type alias WMSInfo =
     }
 
 
-serialize : Maybe WMSInfo -> String
+serialize : List WMSInfo -> String
 serialize =
-    Maybe.map
+    List.map
         (\info ->
             object
                 [ ( "mapName", string info.mapName )
@@ -22,11 +22,11 @@ serialize =
                 , ( "layers", info.layers |> List.map string |> list )
                 ]
         )
-        >> Maybe.withDefault null
+        >> list
         >> encode 0
 
 
-view : Maybe WMSInfo -> Html msg
+view : List WMSInfo -> Html msg
 view wmsInfo =
     Options.div
         [ Options.cs "leaflet-map"
