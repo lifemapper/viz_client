@@ -11,6 +11,8 @@ import Page exposing (Page)
 import MapCardMultiple as MapCard
 import Material
 import Material.Options as Options
+import Material.Typography as Typo
+import Material.Spinner as Loading
 
 
 type alias ProjectionInfo =
@@ -246,8 +248,20 @@ view { state } =
                         ]
                    )
 
-        _ ->
+        Quiescent ->
             Options.div [] []
+
+        WaitingForListToPopulate _ ->
+            Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                [ Html.text "Waiting for projections..."
+                , Html.p [] [ Loading.spinner [ Loading.active True ] ]
+                ]
+
+        LoadingProjections _ ->
+            Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                [ Html.text "Loading projections..."
+                , Html.p [] [ Loading.spinner [ Loading.active True ] ]
+                ]
 
 
 viewMap : Int -> ProjectionInfo -> Html Msg
