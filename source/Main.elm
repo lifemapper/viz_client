@@ -189,19 +189,24 @@ drawer model =
     ]
 
 
+pageImplementation : SDMPage -> Page.Page Model Msg
+pageImplementation p =
+    case p of
+        NewSDM ->
+            Page.lift NewSDM.page .newSDM NewSDMMsg
+
+        SDMProjection id ->
+            Page.lift SDMProjection.page .sdmProjection SDMProjectionMsg
+
+        SDMResults id ->
+            Page.lift SDMResults.page .results SDMResultsMsg
+
+
 view : Model -> Html Msg
 view model =
     let
         page =
-            case model.page of
-                NewSDM ->
-                    Page.lift NewSDM.page .newSDM NewSDMMsg
-
-                SDMProjection id ->
-                    Page.lift SDMProjection.page .sdmProjection SDMProjectionMsg
-
-                SDMResults id ->
-                    Page.lift SDMResults.page .results SDMResultsMsg
+            pageImplementation model.page
     in
         Layout.render Mdl
             model.mdl
@@ -232,12 +237,19 @@ start flags loc =
               ]
 
 
+subPageSubs : Model -> Sub Msg
+subPageSubs model =
+    [ NewSDM, SDMProjection 0, SDMResults 0]
+        |> List.map (pageImplementation >> .subscriptions)
+        |> List.map (\subs -> subs model)
+        |> Sub.batch
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Material.subscriptions Mdl model
-        , NewSDM.subscriptions NewSDMMsg
-        , SDMResults.subscriptions model.results |> Sub.map SDMResultsMsg
+        , subPageSubs model
         , case model.flags.completedPollingSeconds of
             Just secs ->
                 Time.every (secs * Time.second) Tick

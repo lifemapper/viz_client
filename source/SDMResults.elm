@@ -1,4 +1,4 @@
-module SDMResults exposing (Model, init, update, page, Msg(LoadProjections), subscriptions)
+module SDMResults exposing (Model, init, update, page, Msg(LoadProjections))
 
 import List.Extra as List
 import Time
@@ -262,6 +262,7 @@ page =
     , selectedTab = always 0
     , selectTab = always Nop
     , tabTitles = always []
+    , subscriptions = subscriptions
     }
 
 

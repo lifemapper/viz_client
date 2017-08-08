@@ -396,4 +396,5 @@ page =
     , selectedTab = .selectedTab >> tabIndex
     , selectTab = (\i -> tabs |> getAt i |> Maybe.withDefault Map |> SelectTab)
     , tabTitles = always <| List.map (tabTitle >> Html.text) tabs
+    , subscriptions = always Sub.none
     }

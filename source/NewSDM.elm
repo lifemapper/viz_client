@@ -1,4 +1,4 @@
-module NewSDM exposing (Model, page, init, initCmd, update, Msg, subscriptions)
+module NewSDM exposing (Model, page, init, initCmd, update, Msg)
 
 import List.Extra exposing (elemIndex, getAt)
 import Html exposing (Html)
@@ -312,14 +312,10 @@ page =
     , selectedTab = selectedTab
     , selectTab = selectTab
     , tabTitles = tabTitles
+    , subscriptions = always (Scns.subscriptions ScnsMsg)
     }
 
 
 initCmd : Flags -> (Msg -> msg) -> Cmd msg
 initCmd flags map =
     SL.getPackages flags SLMsg |> Cmd.map map
-
-
-subscriptions : (Msg -> msg) -> Sub msg
-subscriptions liftMsg =
-    Scns.subscriptions (ScnsMsg >> liftMsg)
