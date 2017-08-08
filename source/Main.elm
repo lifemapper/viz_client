@@ -237,6 +237,7 @@ subscriptions model =
     Sub.batch
         [ Material.subscriptions Mdl model
         , NewSDM.subscriptions NewSDMMsg
+        , SDMResults.subscriptions model.results |> Sub.map SDMResultsMsg
         , case model.flags.completedPollingSeconds of
             Just secs ->
                 Time.every (secs * Time.second) Tick

@@ -1,6 +1,8 @@
-module SDMResults exposing (Model, init, update, page, Msg(LoadProjections))
+module SDMResults exposing (Model, init, update, page, Msg(LoadProjections), subscriptions)
 
 import List.Extra as List
+import Time
+import Dict exposing (Dict)
 import Html exposing (Html)
 import Http
 import Decoder
@@ -18,10 +20,22 @@ type alias ProjectionInfo =
     }
 
 
+type alias LoadingInfo =
+    { toLoad : List Decoder.AtomObjectRecord
+    , currentlyLoaded : Dict Int ProjectionInfo
+    }
+
+
+type State
+    = Quiescent
+    | WaitingForListToPopulate Int
+    | LoadingProjections LoadingInfo
+    | AllProjectionsLoaded (List ProjectionInfo)
+
+
 type alias Model =
     { programFlags : Flags
-    , projectionsToLoad : Maybe Int
-    , projections : List ProjectionInfo
+    , state : State
     , mdl : Material.Model
     }
 
@@ -29,15 +43,14 @@ type alias Model =
 init : Flags -> Model
 init flags =
     { programFlags = flags
-    , projectionsToLoad = Nothing
-    , projections = []
+    , state = Quiescent
     , mdl = Material.model
     }
 
 
 type Msg
     = LoadProjections Int
-    | GotProjectionAtoms (List Decoder.AtomObjectRecord)
+    | GotProjectionAtoms Int (List Decoder.AtomObjectRecord)
     | GotProjection Decoder.ProjectionRecord
     | NewProjectionInfo ProjectionInfo
     | MapCardMsg Int MapCard.Msg
@@ -49,40 +62,69 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         liftedMapCardUpdate i msg_ model =
-            List.getAt i model.projections
-                |> Maybe.andThen
-                    (\projection ->
-                        let
-                            ( mapCard_, cmd ) =
-                                MapCard.update msg_ projection.mapCard
+            case model.state of
+                AllProjectionsLoaded projections ->
+                    List.getAt i projections
+                        |> Maybe.andThen
+                            (\projection ->
+                                let
+                                    ( mapCard_, cmd ) =
+                                        MapCard.update msg_ projection.mapCard
 
-                            updated =
-                                { projection | mapCard = mapCard_ }
-                        in
-                            List.setAt i updated model.projections
-                                |> Maybe.map (\ps -> ( { model | projections = ps }, Cmd.map (MapCardMsg i) cmd ))
-                    )
-                |> Maybe.withDefault ( model, Cmd.none )
+                                    updated =
+                                        { projection | mapCard = mapCard_ }
+                                in
+                                    List.setAt i updated projections
+                                        |> Maybe.map
+                                            (\ps ->
+                                                ( { model | state = AllProjectionsLoaded ps }
+                                                , Cmd.map (MapCardMsg i) cmd
+                                                )
+                                            )
+                            )
+                        |> Maybe.withDefault ( model, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
     in
         case msg of
             Nop ->
                 ( model, Cmd.none )
 
             LoadProjections gridsetId ->
-                ( { model | projectionsToLoad = Nothing, projections = [] }
-                , loadProjections model.programFlags gridsetId
-                )
+                ( { model | state = WaitingForListToPopulate gridsetId }, loadProjections model.programFlags gridsetId )
 
-            GotProjectionAtoms atoms ->
-                ( { model | projectionsToLoad = Just (List.length atoms) }
-                , atoms |> List.map (loadMetadata model.programFlags) |> Cmd.batch
-                )
+            GotProjectionAtoms gridSetId atoms ->
+                if List.length atoms == 0 then
+                    ( { model | state = WaitingForListToPopulate gridSetId }, Cmd.none )
+                else
+                    let
+                        loadingInfo =
+                            { toLoad = atoms, currentlyLoaded = Dict.empty }
+                    in
+                        ( { model | state = LoadingProjections loadingInfo }
+                        , atoms |> List.map (loadMetadata model.programFlags loadingInfo) |> Cmd.batch
+                        )
 
             GotProjection record ->
                 ( model, loadOccurrenceSet record )
 
             NewProjectionInfo newInfo ->
-                ( { model | projections = newInfo :: model.projections }, Cmd.none )
+                case model.state of
+                    LoadingProjections loadingInfo ->
+                        let
+                            currentlyLoaded =
+                                Dict.insert newInfo.record.id newInfo loadingInfo.currentlyLoaded
+                        in
+                            if Dict.size currentlyLoaded == List.length loadingInfo.toLoad then
+                                ( { model | state = AllProjectionsLoaded <| Dict.values currentlyLoaded }, Cmd.none )
+                            else
+                                ( { model | state = LoadingProjections { loadingInfo | currentlyLoaded = currentlyLoaded } }
+                                , Cmd.none
+                                )
+
+                    _ ->
+                        ( model, Cmd.none )
 
             MapCardMsg i msg_ ->
                 liftedMapCardUpdate i msg_ model
@@ -155,21 +197,21 @@ loadProjections { apiRoot } id =
         , timeout = Nothing
         , withCredentials = False
         }
-        |> Http.send gotProjectionAtoms
+        |> Http.send (gotProjectionAtoms id)
 
 
-gotProjectionAtoms : Result Http.Error Decoder.AtomList -> Msg
-gotProjectionAtoms result =
+gotProjectionAtoms : Int -> Result Http.Error Decoder.AtomList -> Msg
+gotProjectionAtoms id result =
     case result of
         Ok (Decoder.AtomList atoms) ->
-            atoms |> List.map (\(Decoder.AtomObject o) -> o) |> GotProjectionAtoms
+            atoms |> List.map (\(Decoder.AtomObject o) -> o) |> GotProjectionAtoms id
 
         Err err ->
             Debug.log "Error fetching projections" (toString err) |> always Nop
 
 
-loadMetadata : Flags -> Decoder.AtomObjectRecord -> Cmd Msg
-loadMetadata { apiRoot } { id } =
+loadMetadata : Flags -> LoadingInfo -> Decoder.AtomObjectRecord -> Cmd Msg
+loadMetadata { apiRoot } loadingInfo { id } =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
@@ -179,11 +221,11 @@ loadMetadata { apiRoot } { id } =
         , timeout = Nothing
         , withCredentials = False
         }
-        |> Http.send gotMetadata
+        |> Http.send (gotMetadata loadingInfo)
 
 
-gotMetadata : Result Http.Error Decoder.Projection -> Msg
-gotMetadata result =
+gotMetadata : LoadingInfo -> Result Http.Error Decoder.Projection -> Msg
+gotMetadata loadingInfo result =
     case result of
         Ok (Decoder.Projection p) ->
             GotProjection p
@@ -193,14 +235,19 @@ gotMetadata result =
 
 
 view : Model -> Html Msg
-view =
-    .projections
-        >> List.indexedMap viewMap
-        >> (Options.div
-                [ Options.css "display" "flex"
-                , Options.css "justify-content" "space-around"
-                ]
-           )
+view { state } =
+    case state of
+        AllProjectionsLoaded projections ->
+            projections
+                |> List.indexedMap viewMap
+                |> (Options.div
+                        [ Options.css "display" "flex"
+                        , Options.css "justify-content" "space-around"
+                        ]
+                   )
+
+        _ ->
+            Options.div [] []
 
 
 viewMap : Int -> ProjectionInfo -> Html Msg
@@ -216,3 +263,13 @@ page =
     , selectTab = always Nop
     , tabTitles = always []
     }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.state of
+        WaitingForListToPopulate gridsetId ->
+            Time.every (5 * Time.second) (always <| LoadProjections gridsetId)
+
+        _ ->
+            Sub.none
