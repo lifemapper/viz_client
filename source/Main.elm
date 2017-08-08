@@ -180,7 +180,10 @@ drawer model =
 
         GridSetsList list ->
             list
-                |> List.map (\{ name, id } -> Layout.link [ Options.onClick (OpenExisting id) ] [ Html.text name ])
+                |> List.map
+                    (\{ modificationTime, id } ->
+                        Layout.link [ Options.onClick (OpenExisting id) ] [ Html.text modificationTime ]
+                    )
                 |> Layout.navigation []
     ]
 
