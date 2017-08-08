@@ -170,10 +170,14 @@ gotSDMProjections result =
             Debug.log "Error fetching existing SDMs" (toString err) |> always Nop
 
 
-header : Model -> List (Html Msg)
-header model =
+header : String -> List (Html Msg)
+header title =
     [ Layout.row []
-        [ Layout.title [] [ Html.text "Lifemapper SDM" ] ]
+        [ Layout.title []
+            [ Html.text "Lifemapper SDM | "
+            , Options.span [ Typo.subhead ] [ Html.text title ]
+            ]
+        ]
     ]
 
 
@@ -216,7 +220,7 @@ view model =
             , Layout.selectedTab (page.selectedTab model)
             , Layout.onSelectTab page.selectTab
             ]
-            { header = header model
+            { header = header page.title
             , drawer = drawer model
             , tabs = ( page.tabTitles model, [] )
             , main = [ page.view model ]
@@ -239,7 +243,7 @@ start flags loc =
 
 subPageSubs : Model -> Sub Msg
 subPageSubs model =
-    [ NewSDM, SDMProjection 0, SDMResults 0]
+    [ NewSDM, SDMProjection 0, SDMResults 0 ]
         |> List.map (pageImplementation >> .subscriptions)
         |> List.map (\subs -> subs model)
         |> Sub.batch

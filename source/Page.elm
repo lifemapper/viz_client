@@ -9,6 +9,7 @@ type alias Page model msg =
     , selectTab : Int -> msg
     , tabTitles : model -> List (Html msg)
     , subscriptions : model -> Sub msg
+    , title : String
     }
 
 
@@ -19,4 +20,5 @@ lift subpage model2Submodel submsg2Msg =
     , selectTab = subpage.selectTab >> submsg2Msg
     , tabTitles = model2Submodel >> subpage.tabTitles >> List.map (Html.map submsg2Msg)
     , subscriptions = model2Submodel >> subpage.subscriptions >> Sub.map submsg2Msg
+    , title = subpage.title
     }

@@ -263,6 +263,7 @@ page =
     , selectTab = always Nop
     , tabTitles = always []
     , subscriptions = subscriptions
+    , title = "Projection Results"
     }
 
 

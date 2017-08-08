@@ -313,6 +313,7 @@ page =
     , selectTab = selectTab
     , tabTitles = tabTitles
     , subscriptions = always (Scns.subscriptions ScnsMsg)
+    , title = "New Project"
     }
 
 
