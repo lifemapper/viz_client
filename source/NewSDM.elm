@@ -19,6 +19,7 @@ import ScenariosList as SL
 import Decoder
 import Encoder
 import ProgramFlags exposing (Flags)
+import Navigation as Nav
 
 
 type Tab
@@ -41,7 +42,6 @@ tabIndex tab =
 type WorkFlowState
     = Defining
     | Submitting
-    | Submitted
     | SubmissionFailed
 
 
@@ -80,7 +80,7 @@ submitJob model =
                 , headers = [ Http.header "Accept" "application/json", Http.header "Content-Type" "text/plain" ]
                 , url = model.programFlags.apiRoot ++ "sdmProject"
                 , body = Http.jsonBody <| Encoder.encodeBoomPOST <| postData
-                , expect = Http.expectString
+                , expect = Http.expectJson Decoder.decodeAtomObject
                 , timeout = Nothing
                 , withCredentials = False
                 }
@@ -107,7 +107,7 @@ type Msg
     = Mdl (Material.Msg Msg)
     | SelectTab Tab
     | SubmitJob
-    | JobSubmitted (Result Http.Error String)
+    | JobSubmitted (Result Http.Error Decoder.AtomObject)
     | Restart
     | ScnsMsg Scns.Msg
     | AlgsMsg Algs.Msg
@@ -124,9 +124,8 @@ update msg model =
         SubmitJob ->
             ( { model | workFlowState = Submitting }, submitJob model )
 
-        JobSubmitted (Ok result) ->
-            Debug.log "submitted" (toString result)
-                |> always ( { model | workFlowState = Submitted }, Cmd.none )
+        JobSubmitted (Ok (Decoder.AtomObject results)) ->
+            model ! [ Nav.newUrl ("#results/" ++ toString results.id) ]
 
         JobSubmitted (Err err) ->
             Debug.log "submission failed" (toString err)
@@ -199,18 +198,6 @@ tabTitle tab =
 mainView : Model -> Html Msg
 mainView model =
     case model.workFlowState of
-        Submitted ->
-            Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text "Job was successfully submitted."
-                , Html.p []
-                    [ Button.render Mdl
-                        [ 0 ]
-                        model.mdl
-                        [ Button.raised, Options.onClick Restart ]
-                        [ Html.text "OK" ]
-                    ]
-                ]
-
         SubmissionFailed ->
             Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
                 [ Html.text "There was a problem submitting the job."
