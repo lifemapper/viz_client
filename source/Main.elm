@@ -119,7 +119,7 @@ update msg model =
                 model ! [ Nav.newUrl "#new" ]
 
             Tick _ ->
-                ( model, getSDMProjections model.flags )
+                ( model, getGridSets model.flags )
 
             GotGridSets gridsets ->
                 ( { model | gridsets = GridSetsList gridsets }, Cmd.none )
@@ -128,8 +128,8 @@ update msg model =
                 ( model, Cmd.none )
 
 
-getSDMProjections : Flags -> Cmd Msg
-getSDMProjections { apiRoot } =
+getGridSets : Flags -> Cmd Msg
+getGridSets { apiRoot } =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
@@ -224,7 +224,7 @@ start flags loc =
         model
             ! [ Material.init Mdl
               , NewSDM.initCmd flags NewSDMMsg
-              , getSDMProjections flags
+              , getGridSets flags
               , msg
               ]
 
