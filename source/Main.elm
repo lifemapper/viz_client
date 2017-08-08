@@ -11,7 +11,6 @@ import Navigation as Nav exposing (Location)
 import UrlParser as Url exposing ((</>))
 import Http
 import Page
-import SDMProjection
 import NewSDM
 import SDMResults
 import ProgramFlags exposing (Flags)
@@ -26,7 +25,6 @@ import Decoder
 
 type SDMPage
     = NewSDM
-    | SDMProjection Int
     | SDMResults Int
 
 
@@ -34,7 +32,6 @@ route : Url.Parser (SDMPage -> a) a
 route =
     Url.oneOf
         [ Url.map NewSDM (Url.s "new")
-        , Url.map SDMProjection (Url.s "projection" </> Url.int)
         , Url.map SDMResults (Url.s "results" </> Url.int)
         ]
 
@@ -48,7 +45,6 @@ type alias Model =
     { mdl : Material.Model
     , page : SDMPage
     , gridsets : GridSets
-    , sdmProjection : SDMProjection.Model
     , newSDM : NewSDM.Model
     , results : SDMResults.Model
     , flags : Flags
@@ -60,7 +56,6 @@ init flags =
     { mdl = Material.model
     , page = NewSDM
     , gridsets = GridSetsLoading
-    , sdmProjection = SDMProjection.init flags
     , newSDM = NewSDM.init flags
     , results = SDMResults.init flags
     , flags = flags
@@ -70,7 +65,6 @@ init flags =
 type Msg
     = Mdl (Material.Msg Msg)
     | NewSDMMsg NewSDM.Msg
-    | SDMProjectionMsg SDMProjection.Msg
     | SDMResultsMsg SDMResults.Msg
     | GotGridSets (List AtomObjectRecord)
     | UrlChange Location
@@ -90,13 +84,6 @@ update msg model =
                 NewSDMMsg
                 NewSDM.update
 
-        liftedSDMProjectionUpdate =
-            lift
-                .sdmProjection
-                (\m x -> { m | sdmProjection = x })
-                SDMProjectionMsg
-                SDMProjection.update
-
         liftedSDMResultsUpdate =
             lift
                 .results
@@ -111,9 +98,6 @@ update msg model =
             NewSDMMsg msg_ ->
                 liftedNewSDMUpdate msg_ model
 
-            SDMProjectionMsg msg_ ->
-                liftedSDMProjectionUpdate msg_ model
-
             SDMResultsMsg msg_ ->
                 liftedSDMResultsUpdate msg_ model
 
@@ -121,9 +105,6 @@ update msg model =
                 case Debug.log "path" (Url.parseHash route loc) of
                     Just NewSDM ->
                         ( { model | page = NewSDM }, Cmd.none )
-
-                    Just (SDMProjection id) ->
-                        liftedSDMProjectionUpdate (SDMProjection.LoadMetadata id) { model | page = SDMProjection id }
 
                     Just (SDMResults id) ->
                         liftedSDMResultsUpdate (SDMResults.LoadProjections id) { model | page = SDMResults id }
@@ -209,9 +190,6 @@ pageImplementation p =
         NewSDM ->
             Page.lift NewSDM.page .newSDM NewSDMMsg
 
-        SDMProjection id ->
-            Page.lift SDMProjection.page .sdmProjection SDMProjectionMsg
-
         SDMResults id ->
             Page.lift SDMResults.page .results SDMResultsMsg
 
@@ -253,7 +231,7 @@ start flags loc =
 
 subPageSubs : Model -> Sub Msg
 subPageSubs model =
-    [ NewSDM, SDMProjection 0, SDMResults 0 ]
+    [ NewSDM, SDMResults 0 ]
         |> List.map (pageImplementation >> .subscriptions)
         |> List.map (\subs -> subs model)
         |> Sub.batch
