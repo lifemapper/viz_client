@@ -6,6 +6,7 @@ import Material.Layout as Layout
 import Material.Typography as Typo
 import Material.Options as Options
 import Material.Helpers exposing (lift)
+import Material.Spinner as Loading
 import Html exposing (Html)
 import Navigation as Nav exposing (Location)
 import UrlParser as Url exposing ((</>))
@@ -175,7 +176,7 @@ drawer model =
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
     , case model.gridsets of
         GridSetsLoading ->
-            Html.text "Loading..."
+            Layout.row [] [ Loading.spinner [ Loading.active True ] ]
 
         GridSetsList list ->
             list
