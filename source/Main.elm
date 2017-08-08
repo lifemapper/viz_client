@@ -39,10 +39,15 @@ route =
         ]
 
 
+type GridSets
+    = GridSetsLoading
+    | GridSetsList (List AtomObjectRecord)
+
+
 type alias Model =
     { mdl : Material.Model
     , page : SDMPage
-    , sdmProjections : List AtomObjectRecord
+    , gridsets : GridSets
     , sdmProjection : SDMProjection.Model
     , newSDM : NewSDM.Model
     , results : SDMResults.Model
@@ -54,7 +59,7 @@ init : Flags -> Model
 init flags =
     { mdl = Material.model
     , page = NewSDM
-    , sdmProjections = []
+    , gridsets = GridSetsLoading
     , sdmProjection = SDMProjection.init flags
     , newSDM = NewSDM.init flags
     , results = SDMResults.init flags
@@ -67,7 +72,7 @@ type Msg
     | NewSDMMsg NewSDM.Msg
     | SDMProjectionMsg SDMProjection.Msg
     | SDMResultsMsg SDMResults.Msg
-    | GotSDMProjections (List AtomObjectRecord)
+    | GotGridSets (List AtomObjectRecord)
     | UrlChange Location
     | OpenExisting Int
     | OpenNew
@@ -127,7 +132,7 @@ update msg model =
                         ( model, Cmd.none )
 
             OpenExisting id ->
-                model ! [ Nav.newUrl ("#projection/" ++ toString id) ]
+                model ! [ Nav.newUrl ("#results/" ++ toString id) ]
 
             OpenNew ->
                 model ! [ Nav.newUrl "#new" ]
@@ -135,8 +140,8 @@ update msg model =
             Tick _ ->
                 ( model, getSDMProjections model.flags )
 
-            GotSDMProjections projections ->
-                ( { model | sdmProjections = projections }, Cmd.none )
+            GotGridSets gridsets ->
+                ( { model | gridsets = GridSetsList gridsets }, Cmd.none )
 
             Nop ->
                 ( model, Cmd.none )
@@ -147,27 +152,27 @@ getSDMProjections { apiRoot } =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = apiRoot ++ "sdmProject?status=300"
+        , url = apiRoot ++ "gridset?user=anon"
         , body = Http.emptyBody
         , expect = Http.expectJson decodeAtomList
         , timeout = Nothing
         , withCredentials = False
         }
-        |> Http.send gotSDMProjections
+        |> Http.send gotGridSets
 
 
-gotSDMProjections : Result Http.Error AtomList -> Msg
-gotSDMProjections result =
+gotGridSets : Result Http.Error AtomList -> Msg
+gotGridSets result =
     case result of
         Ok (AtomList atoms) ->
             atoms
                 |> List.map (\(AtomObject o) -> o)
                 |> List.sortBy .modificationTime
                 |> List.reverse
-                |> GotSDMProjections
+                |> GotGridSets
 
         Err err ->
-            Debug.log "Error fetching existing SDMs" (toString err) |> always Nop
+            Debug.log "Error fetching gridsets" (toString err) |> always Nop
 
 
 header : String -> List (Html Msg)
@@ -187,9 +192,14 @@ drawer model =
     , Layout.navigation []
         [ Layout.link [ Options.onClick OpenNew ] [ Html.text "New SDM Project" ] ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
-    , model.sdmProjections
-        |> List.map (\{ name, id } -> Layout.link [ Options.onClick (OpenExisting id) ] [ Html.text name ])
-        |> Layout.navigation []
+    , case model.gridsets of
+        GridSetsLoading ->
+            Html.text "Loading..."
+
+        GridSetsList list ->
+            list
+                |> List.map (\{ name, id } -> Layout.link [ Options.onClick (OpenExisting id) ] [ Html.text name ])
+                |> Layout.navigation []
     ]
 
 
