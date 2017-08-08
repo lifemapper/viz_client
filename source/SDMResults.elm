@@ -244,7 +244,8 @@ view { state } =
                 |> List.indexedMap viewMap
                 |> (Options.div
                         [ Options.css "display" "flex"
-                        , Options.css "justify-content" "space-around"
+                        , Options.css "flex-wrap" "wrap"
+                        , Options.css "justify-content" "space-between"
                         ]
                    )
 
