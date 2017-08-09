@@ -1,4 +1,4 @@
-module SDMResults exposing (Model, init, update, page, Msg(LoadProjections))
+module SDMResults exposing (Model, init, update, page, Msg)
 
 import List.Extra as List
 import Time
@@ -29,8 +29,7 @@ type alias LoadingInfo =
 
 
 type State
-    = Quiescent
-    | WaitingForListToPopulate Int
+    = WaitingForListToPopulate Int
     | LoadingProjections LoadingInfo
     | AllProjectionsLoaded (List ProjectionInfo)
 
@@ -42,10 +41,10 @@ type alias Model =
     }
 
 
-init : Flags -> Model
-init flags =
+init : Flags -> Int -> Model
+init flags gridsetId =
     { programFlags = flags
-    , state = Quiescent
+    , state = WaitingForListToPopulate gridsetId
     , mdl = Material.model
     }
 
@@ -238,31 +237,28 @@ gotMetadata loadingInfo result =
 
 view : Model -> Html Msg
 view { state } =
-    case state of
-        AllProjectionsLoaded projections ->
-            projections
-                |> List.indexedMap viewMap
-                |> (Options.div
-                        [ Options.css "display" "flex"
-                        , Options.css "flex-wrap" "wrap"
-                        , Options.css "justify-content" "space-between"
-                        ]
-                   )
+    let
+        loading message =
+            Options.div
+                [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                [ Html.text message, Html.p [] [ Loading.spinner [ Loading.active True ] ] ]
+    in
+        case state of
+            WaitingForListToPopulate _ ->
+                loading "Waiting for projections..."
 
-        Quiescent ->
-            Options.div [] []
+            LoadingProjections _ ->
+                loading "Loading projections..."
 
-        WaitingForListToPopulate _ ->
-            Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text "Waiting for projections..."
-                , Html.p [] [ Loading.spinner [ Loading.active True ] ]
-                ]
-
-        LoadingProjections _ ->
-            Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text "Loading projections..."
-                , Html.p [] [ Loading.spinner [ Loading.active True ] ]
-                ]
+            AllProjectionsLoaded projections ->
+                projections
+                    |> List.indexedMap viewMap
+                    |> (Options.div
+                            [ Options.css "display" "flex"
+                            , Options.css "flex-wrap" "wrap"
+                            , Options.css "justify-content" "space-between"
+                            ]
+                       )
 
 
 viewMap : Int -> ProjectionInfo -> Html Msg

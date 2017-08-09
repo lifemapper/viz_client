@@ -25,16 +25,35 @@ import Decoder
 
 
 type SDMPage
-    = NewSDM
-    | SDMResults Int
+    = NewSDM NewSDM.Model
+    | SDMResults SDMResults.Model
+    | PageNotFound
 
 
-route : Url.Parser (SDMPage -> a) a
-route =
-    Url.oneOf
-        [ Url.map NewSDM (Url.s "new")
-        , Url.map SDMResults (Url.s "results" </> Url.int)
-        ]
+initResultsPage : Flags -> Int -> ( SDMPage, Cmd Msg )
+initResultsPage flags gridsetId =
+    ( SDMResults.init flags gridsetId |> SDMResults, Cmd.none )
+
+
+initNewSDMPage : Flags -> ( SDMPage, Cmd Msg )
+initNewSDMPage flags =
+    let
+        ( model_, msg_ ) =
+            NewSDM.init flags
+    in
+        ( NewSDM model_, Cmd.map NewSDMMsg msg_ )
+
+
+location2Page : Flags -> Location -> Maybe ( SDMPage, Cmd Msg )
+location2Page flags location =
+    let
+        route =
+            Url.oneOf
+                [ Url.map (initNewSDMPage flags) Url.top
+                , Url.map (initResultsPage flags) (Url.s "results" </> Url.int)
+                ]
+    in
+        Url.parseHash route location
 
 
 type GridSets
@@ -46,20 +65,7 @@ type alias Model =
     { mdl : Material.Model
     , page : SDMPage
     , gridsets : GridSets
-    , newSDM : NewSDM.Model
-    , results : SDMResults.Model
     , flags : Flags
-    }
-
-
-init : Flags -> Model
-init flags =
-    { mdl = Material.model
-    , page = NewSDM
-    , gridsets = GridSetsLoading
-    , newSDM = NewSDM.init flags
-    , results = SDMResults.init flags
-    , flags = flags
     }
 
 
@@ -79,18 +85,28 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         liftedNewSDMUpdate =
-            lift
-                .newSDM
-                (\m x -> { m | newSDM = x })
-                NewSDMMsg
-                NewSDM.update
+            case model.page of
+                NewSDM model_ ->
+                    lift
+                        (always model_)
+                        (\m x -> { m | page = NewSDM x })
+                        NewSDMMsg
+                        NewSDM.update
+
+                _ ->
+                    \msg_ model -> ( model, Cmd.none )
 
         liftedSDMResultsUpdate =
-            lift
-                .results
-                (\m x -> { m | results = x })
-                SDMResultsMsg
-                SDMResults.update
+            case model.page of
+                SDMResults results ->
+                    lift
+                        (always results)
+                        (\m x -> { m | page = SDMResults x })
+                        SDMResultsMsg
+                        SDMResults.update
+
+                _ ->
+                    \msg_ model -> ( model, Cmd.none )
     in
         case msg of
             Mdl msg_ ->
@@ -102,22 +118,16 @@ update msg model =
             SDMResultsMsg msg_ ->
                 liftedSDMResultsUpdate msg_ model
 
-            UrlChange loc ->
-                case Debug.log "path" (Url.parseHash route loc) of
-                    Just NewSDM ->
-                        ( { model | page = NewSDM }, Cmd.none )
-
-                    Just (SDMResults id) ->
-                        liftedSDMResultsUpdate (SDMResults.LoadProjections id) { model | page = SDMResults id }
-
-                    Nothing ->
-                        ( model, Cmd.none )
+            UrlChange location ->
+                location2Page model.flags location
+                    |> Maybe.withDefault ( PageNotFound, Cmd.none )
+                    |> \( page, msg ) -> ( { model | page = page }, msg )
 
             OpenExisting id ->
                 model ! [ Nav.newUrl ("#results/" ++ toString id) ]
 
             OpenNew ->
-                model ! [ Nav.newUrl "#new" ]
+                model ! [ Nav.newUrl "#" ]
 
             Tick _ ->
                 ( model, getGridSets model.flags )
@@ -191,11 +201,20 @@ drawer model =
 pageImplementation : SDMPage -> Page.Page Model Msg
 pageImplementation p =
     case p of
-        NewSDM ->
-            Page.lift NewSDM.page .newSDM NewSDMMsg
+        NewSDM model_ ->
+            Page.lift NewSDM.page (always model_) NewSDMMsg
 
-        SDMResults id ->
-            Page.lift SDMResults.page .results SDMResultsMsg
+        SDMResults model_ ->
+            Page.lift SDMResults.page (always model_) SDMResultsMsg
+
+        PageNotFound ->
+            { view = always <| Options.div [] []
+            , selectedTab = always 0
+            , selectTab = always Nop
+            , tabTitles = always []
+            , subscriptions = always Sub.none
+            , title = "Page Not Found"
+            }
 
 
 view : Model -> Html Msg
@@ -220,32 +239,26 @@ view model =
 
 
 start : Flags -> Location -> ( Model, Cmd Msg )
-start flags loc =
-    let
-        ( model, msg ) =
-            update (UrlChange loc) (init flags)
-    in
-        model
-            ! [ Material.init Mdl
-              , NewSDM.initCmd flags NewSDMMsg
-              , getGridSets flags
-              , msg
-              ]
-
-
-subPageSubs : Model -> Sub Msg
-subPageSubs model =
-    [ NewSDM, SDMResults 0 ]
-        |> List.map (pageImplementation >> .subscriptions)
-        |> List.map (\subs -> subs model)
-        |> Sub.batch
+start flags location =
+    location2Page flags location
+        |> Maybe.withDefault ( PageNotFound, Cmd.none )
+        |> \( page, msg ) ->
+            { mdl = Material.model
+            , page = page
+            , gridsets = GridSetsLoading
+            , flags = flags
+            }
+                ! [ Material.init Mdl
+                  , getGridSets flags
+                  , msg
+                  ]
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Material.subscriptions Mdl model
-        , subPageSubs model
+        , (pageImplementation model.page).subscriptions model
         , case model.flags.completedPollingSeconds of
             Just secs ->
                 Time.every (secs * Time.second) Tick

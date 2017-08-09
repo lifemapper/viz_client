@@ -1,4 +1,4 @@
-module NewSDM exposing (Model, page, init, initCmd, update, Msg)
+module NewSDM exposing (Model, page, init, update, Msg)
 
 import List.Extra exposing (elemIndex, getAt)
 import Html exposing (Html)
@@ -90,17 +90,19 @@ submitJob model =
             Debug.log "Can't post SDM." msg |> always Cmd.none
 
 
-init : Flags -> Model
+init : Flags -> ( Model, Cmd Msg )
 init flags =
-    { mdl = Material.model
-    , selectedTab = OccurrenceSets
-    , scenarios = Scns.init
-    , algorithmsModel = Algs.init
-    , occurrenceSets = Occs.init flags
-    , availableScenarios = SL.init flags
-    , workFlowState = Defining
-    , programFlags = flags
-    }
+    ( { mdl = Material.model
+      , selectedTab = OccurrenceSets
+      , scenarios = Scns.init
+      , algorithmsModel = Algs.init
+      , occurrenceSets = Occs.init flags
+      , availableScenarios = SL.init flags
+      , workFlowState = Defining
+      , programFlags = flags
+      }
+    , SL.getPackages flags SLMsg
+    )
 
 
 type Msg
@@ -132,11 +134,7 @@ update msg model =
                 |> always ( { model | workFlowState = SubmissionFailed }, Cmd.none )
 
         Restart ->
-            let
-                newModel =
-                    init model.programFlags
-            in
-                ( { newModel | availableScenarios = model.availableScenarios }, Cmd.none )
+            init model.programFlags
 
         ScnsMsg msg_ ->
             lift
@@ -315,8 +313,3 @@ page =
     , subscriptions = always (Scns.subscriptions ScnsMsg)
     , title = "New Project"
     }
-
-
-initCmd : Flags -> (Msg -> msg) -> Cmd msg
-initCmd flags map =
-    SL.getPackages flags SLMsg |> Cmd.map map

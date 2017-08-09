@@ -101,7 +101,9 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotPackageList atoms ->
-            ( { model | packageList = atoms }, atoms |> List.map (.id >> getPackage model.programFlags) |> Cmd.batch )
+            ( { model | packageList = atoms, packages = [] }
+            , atoms |> List.map (.id >> getPackage model.programFlags) |> Cmd.batch
+            )
 
         GotPackage p ->
             ( { model | packages = p :: model.packages }, Cmd.none )
