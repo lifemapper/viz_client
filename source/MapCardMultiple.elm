@@ -92,18 +92,19 @@ view index title model =
     in
         Card.view
             [ Elevation.e2
-            , Options.css "width" "800px"
-            , Options.css "margin" "20px"
+            , Options.css "width" "100%"
             ]
             [ Card.title [ Card.border ]
-                [ Card.head [] [ Html.text title ]
-                ]
+                [ Card.head [] [ Html.text title ] ]
             , Card.menu [ Options.cs "map-layers-menu" ]
                 [ Menu.render Mdl
                     (-1 :: index)
                     model.mdl
                     [ Menu.bottomRight ]
                     (model.available |> List.map menuItem)
+                ]
+            , Card.text []
+                [ Html.text "Foobar"
                 ]
             , Card.text [ Options.css "padding" "0", Options.css "width" "100%" ] [ leafletDiv ]
             ]

@@ -31,9 +31,11 @@ view wmsInfo =
     Options.div
         [ Options.cs "leaflet-map"
         , Options.data "leaflet" (serialize wmsInfo)
-        , Options.css "width" "800px"
-        , Options.css "height" "600px"
+        , Options.css "width" "100%"
+        , Options.css "height" "510px"
         , Options.css "margin-left" "auto"
         , Options.css "margin-right" "auto"
+        , Options.css "margin-top" "10px"
+        , Options.css "margin-bottom" "10px"
         ]
         []

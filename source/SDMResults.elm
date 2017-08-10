@@ -1,6 +1,7 @@
 module SDMResults exposing (Model, init, update, page, Msg)
 
 import List.Extra as List
+import Maybe.Extra as Maybe
 import Time
 import Dict exposing (Dict)
 import Html exposing (Html)
@@ -13,11 +14,11 @@ import Material
 import Material.Options as Options
 import Material.Typography as Typo
 import Material.Spinner as Loading
+import Material.Grid as Grid
 
 
 type alias ProjectionInfo =
     { record : Decoder.ProjectionRecord
-    , mapCard : MapCard.Model
     , occurrenceRecord : Decoder.OccurrenceSetRecord
     }
 
@@ -31,7 +32,8 @@ type alias LoadingInfo =
 type State
     = WaitingForListToPopulate Int
     | LoadingProjections LoadingInfo
-    | AllProjectionsLoaded (List ProjectionInfo)
+    | DisplaySeparate (List ( ProjectionInfo, MapCard.Model ))
+    | DisplayGrouped (List ( List ProjectionInfo, MapCard.Model ))
 
 
 type alias Model =
@@ -59,31 +61,36 @@ type Msg
     | Mdl (Material.Msg Msg)
 
 
+updateMapCard : Int -> MapCard.Msg -> List ( a, MapCard.Model ) -> (List ( a, MapCard.Model ) -> State) -> Model -> ( Model, Cmd Msg )
+updateMapCard i msg_ display update model =
+    List.getAt i display
+        |> Maybe.andThen
+            (\( a, mapCard ) ->
+                let
+                    ( mapCard_, cmd ) =
+                        MapCard.update msg_ mapCard
+                in
+                    List.setAt i ( a, mapCard_ ) display
+                        |> Maybe.map
+                            (\display ->
+                                ( { model | state = update display }
+                                , Cmd.map (MapCardMsg i) cmd
+                                )
+                            )
+            )
+        |> Maybe.withDefault ( model, Cmd.none )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
         liftedMapCardUpdate i msg_ model =
             case model.state of
-                AllProjectionsLoaded projections ->
-                    List.getAt i projections
-                        |> Maybe.andThen
-                            (\projection ->
-                                let
-                                    ( mapCard_, cmd ) =
-                                        MapCard.update msg_ projection.mapCard
+                DisplaySeparate display ->
+                    updateMapCard i msg_ display DisplaySeparate model
 
-                                    updated =
-                                        { projection | mapCard = mapCard_ }
-                                in
-                                    List.setAt i updated projections
-                                        |> Maybe.map
-                                            (\ps ->
-                                                ( { model | state = AllProjectionsLoaded ps }
-                                                , Cmd.map (MapCardMsg i) cmd
-                                                )
-                                            )
-                            )
-                        |> Maybe.withDefault ( model, Cmd.none )
+                DisplayGrouped display ->
+                    updateMapCard i msg_ display DisplayGrouped model
 
                 _ ->
                     ( model, Cmd.none )
@@ -118,7 +125,7 @@ update msg model =
                                 Dict.insert newInfo.record.id newInfo loadingInfo.currentlyLoaded
                         in
                             if Dict.size currentlyLoaded == List.length loadingInfo.toLoad then
-                                ( { model | state = AllProjectionsLoaded <| Dict.values currentlyLoaded }, Cmd.none )
+                                ( { model | state = Dict.values currentlyLoaded |> displayGrouped }, Cmd.none )
                             else
                                 ( { model | state = LoadingProjections { loadingInfo | currentlyLoaded = currentlyLoaded } }
                                 , Cmd.none
@@ -132,6 +139,49 @@ update msg model =
 
             Mdl msg_ ->
                 Material.update Mdl msg_ model
+
+
+displayGrouped : List ProjectionInfo -> State
+displayGrouped infos =
+    infos
+        |> List.sortBy (.record >> .squid >> Maybe.withDefault "")
+        |> List.groupWhile (\x y -> x.record.squid == y.record.squid)
+        |> List.map (\group -> ( group, makeGroupedMap group ))
+        |> DisplayGrouped
+
+
+makeGroupedMap : List ProjectionInfo -> MapCard.Model
+makeGroupedMap projections =
+    case projections of
+        [] ->
+            MapCard.init []
+
+        first :: _ ->
+            MapCard.init
+                ((List.filterMap makeProjectionMap projections) ++ ( makeOccurrenceMap first ))
+
+
+makeOccurrenceMap : ProjectionInfo -> List MapCard.NamedMap
+makeOccurrenceMap { occurrenceRecord } =
+    occurrenceRecord.map
+        |> Maybe.map
+            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+                { name = "Occurrences"
+                , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                }
+            )
+        |> Maybe.toList
+
+
+makeProjectionMap : ProjectionInfo -> Maybe MapCard.NamedMap
+makeProjectionMap { record } =
+    record.map
+        |> Maybe.map
+            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+                { name = "Projection"
+                , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                }
+            )
 
 
 loadOccurrenceSet : Decoder.ProjectionRecord -> Cmd Msg
@@ -158,33 +208,14 @@ gotOccurrenceSet record result =
     case result of
         Ok (Decoder.OccurrenceSet occurrenceRecord) ->
             NewProjectionInfo
-                { record = record
-                , mapCard = getWmsInfo record occurrenceRecord |> MapCard.init
+                { record =
+                    record
+                    -- , mapCard = getWmsInfo record occurrenceRecord |> MapCard.init
                 , occurrenceRecord = occurrenceRecord
                 }
 
         Err err ->
             Debug.log "Error fetching occurrence set" (toString err) |> always Nop
-
-
-getWmsInfo : Decoder.ProjectionRecord -> Decoder.OccurrenceSetRecord -> List MapCard.NamedMap
-getWmsInfo projectionRecord occurrenceRecord =
-    List.filterMap identity
-        [ projectionRecord.map
-            |> Maybe.map
-                (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
-                    { name = "Projection"
-                    , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
-                    }
-                )
-        , occurrenceRecord.map
-            |> Maybe.map
-                (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
-                    { name = "Occurrences"
-                    , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
-                    }
-                )
-        ]
 
 
 loadProjections : Flags -> Int -> Cmd Msg
@@ -250,21 +281,36 @@ view { state } =
             LoadingProjections _ ->
                 loading "Loading projections..."
 
-            AllProjectionsLoaded projections ->
-                projections
-                    |> List.indexedMap viewMap
-                    |> (Options.div
-                            [ Options.css "display" "flex"
-                            , Options.css "flex-wrap" "wrap"
-                            , Options.css "justify-content" "space-between"
-                            ]
-                       )
+            DisplaySeparate display ->
+                display
+                    |> List.indexedMap viewSeparate
+                    |> Grid.grid []
+
+            DisplayGrouped display ->
+                display
+                    |> List.indexedMap viewGrouped
+                    |> Grid.grid []
 
 
-viewMap : Int -> ProjectionInfo -> Html Msg
-viewMap i { record, mapCard } =
-    MapCard.view [ i ] (record.speciesName |> Maybe.withDefault (toString record.id)) mapCard
-        |> Html.map (MapCardMsg i)
+viewSeparate : Int -> ( ProjectionInfo, MapCard.Model ) -> Grid.Cell Msg
+viewSeparate i ( { record }, mapCard ) =
+    Grid.cell []
+        [ MapCard.view [ i ] (record.speciesName |> Maybe.withDefault (toString record.id)) mapCard
+            |> Html.map (MapCardMsg i)
+        ]
+
+
+viewGrouped : Int -> ( List ProjectionInfo, MapCard.Model ) -> Grid.Cell Msg
+viewGrouped i ( projections, mapCard ) =
+    case projections of
+        [] ->
+            Grid.cell [] []
+
+        { record } :: _ ->
+            Grid.cell []
+                [ MapCard.view [ i ] (record.speciesName |> Maybe.withDefault (toString record.id)) mapCard
+                    |> Html.map (MapCardMsg i)
+                ]
 
 
 page : Page Model Msg
