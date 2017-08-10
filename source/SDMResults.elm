@@ -56,6 +56,7 @@ type Msg
     | GotProjectionAtoms Int (List Decoder.AtomObjectRecord)
     | GotProjection Decoder.ProjectionRecord
     | NewProjectionInfo ProjectionInfo
+    | SetDisplayGrouped Bool
     | MapCardMsg Int MapCard.Msg
     | Nop
     | Mdl (Material.Msg Msg)
@@ -125,11 +126,27 @@ update msg model =
                                 Dict.insert newInfo.record.id newInfo loadingInfo.currentlyLoaded
                         in
                             if Dict.size currentlyLoaded == List.length loadingInfo.toLoad then
-                                ( { model | state = Dict.values currentlyLoaded |> displayGrouped }, Cmd.none )
+                                ( { model | state = Dict.values currentlyLoaded |> displaySeparate }, Cmd.none )
                             else
                                 ( { model | state = LoadingProjections { loadingInfo | currentlyLoaded = currentlyLoaded } }
                                 , Cmd.none
                                 )
+
+                    _ ->
+                        ( model, Cmd.none )
+
+            SetDisplayGrouped True ->
+                case model.state of
+                    DisplaySeparate display ->
+                        ( { model | state = display |> List.map Tuple.first |> displayGrouped }, Cmd.none )
+
+                    _ ->
+                        ( model, Cmd.none )
+
+            SetDisplayGrouped False ->
+                case model.state of
+                    DisplayGrouped display ->
+                        ( { model | state = display |> List.concatMap Tuple.first |> displaySeparate }, Cmd.none )
 
                     _ ->
                         ( model, Cmd.none )
@@ -139,6 +156,19 @@ update msg model =
 
             Mdl msg_ ->
                 Material.update Mdl msg_ model
+
+
+displaySeparate : List ProjectionInfo -> State
+displaySeparate infos =
+    infos
+        |> List.map (\info -> ( info, makeSeparateMap info ))
+        |> DisplaySeparate
+
+
+makeSeparateMap : ProjectionInfo -> MapCard.Model
+makeSeparateMap info =
+    MapCard.init
+        ((makeProjectionMap info |> Maybe.toList) ++ (makeOccurrenceMap info))
 
 
 displayGrouped : List ProjectionInfo -> State
@@ -316,12 +346,44 @@ viewGrouped i ( projections, mapCard ) =
                 ]
 
 
+selectedTab : Model -> Int
+selectedTab model =
+    case model.state of
+        DisplayGrouped _ ->
+            1
+
+        _ ->
+            0
+
+
+selectTab : Int -> Msg
+selectTab i =
+    SetDisplayGrouped (i == 1)
+
+
+tabTitles : Model -> List (Html Msg)
+tabTitles model =
+    let
+        titles =
+            List.map Html.text [ "Ungrouped", "Group by species" ]
+    in
+        case model.state of
+            DisplayGrouped _ ->
+                titles
+
+            DisplaySeparate _ ->
+                titles
+
+            _ ->
+                []
+
+
 page : Page Model Msg
 page =
     { view = view
-    , selectedTab = always 0
-    , selectTab = always Nop
-    , tabTitles = always []
+    , selectedTab = selectedTab
+    , selectTab = selectTab
+    , tabTitles = tabTitles
     , subscriptions = subscriptions
     , title = "Projection Results"
     }
