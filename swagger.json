@@ -27,7 +27,7 @@
             "$ref": "#/parameters/Limit"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/EnvCode"
@@ -182,7 +182,7 @@
         "description": "The environmental layers count service endpoint provides a service for\nreturning the number of environmental layers that match a set of query\nparameters.\n",
         "parameters": [
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/EnvCode"
@@ -304,7 +304,7 @@
             "$ref": "#/parameters/PointMin"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/ProjectScenarioCode"
@@ -372,7 +372,7 @@
             "$ref": "#/parameters/PointMin"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/ProjectScenarioCode"
@@ -427,7 +427,7 @@
             "$ref": "#/parameters/Limit"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/AfterTime"
@@ -464,7 +464,7 @@
         "description": "The grid sets endpoint provides a service counting how many Lifemapper \ngrid sets match a set of query parameters.\n",
         "parameters": [
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/AfterTime"
@@ -526,7 +526,7 @@
             "$ref": "#/parameters/PathGridsetId"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/AfterTime"
@@ -584,7 +584,7 @@
             "$ref": "#/parameters/PathGridsetId"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/AfterTime"
@@ -701,7 +701,7 @@
             "$ref": "#/parameters/Limit"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/Squid"
@@ -841,7 +841,7 @@
         "description": "The layers endpoint provides a service counting how many Lifemapper \nlayers match a set of query parameters.\n",
         "parameters": [
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/Squid"
@@ -935,7 +935,7 @@
             "$ref": "#/parameters/Limit"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/MinimumNumberOfPoints"
@@ -994,7 +994,7 @@
           }
         ],
         "tags": [
-          "Occurrence layer"
+          "Occurrence Layer"
         ],
         "responses": {
           "202": {
@@ -1014,7 +1014,7 @@
         "summary": "Get a count of occurrence layers that match your criteria",
         "parameters": [
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/MinimumNumberOfPoints"
@@ -1126,7 +1126,7 @@
             "$ref": "#/parameters/Limit"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/DisplayName"
@@ -1220,7 +1220,7 @@
         "summary": "Get a count of projections that match your criteria",
         "parameters": [
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/DisplayName"
@@ -1347,7 +1347,7 @@
             "$ref": "#/parameters/Limit"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/BeforeTime"
@@ -1414,7 +1414,7 @@
         "summary": "Get the number of scenarios that match your criteria",
         "parameters": [
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/BeforeTime"
@@ -1497,6 +1497,99 @@
         }
       }
     },
+    "/scenpackage": {
+      "get": {
+        "summary": "Get a list of scenario packages that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Offset"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          },
+          {
+            "$ref": "#/parameters/UrlUser"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/ScenarioId"
+          }
+        ],
+        "tags": [
+          "Scenario Package"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of scenario packages matching the criteria",
+            "schema": {
+              "$ref": "#/definitions/AtomList"
+            }
+          }
+        }
+      }
+    },
+    "/scenpackage/count": {
+      "get": {
+        "summary": "Get the number of scenario packages that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/UrlUser"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/ScenarioId"
+          }
+        ],
+        "tags": [
+          "Scenario Package"
+        ],
+        "responses": {
+          "200": {
+            "description": "The number of scenario packages matching the criteria",
+            "schema": {
+              "$ref": "#/definitions/ObjectCount"
+            }
+          }
+        }
+      }
+    },
+    "/scenpackage/{scenarioPackageId}": {
+      "get": {
+        "summary": "Get a scenario package",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathScenarioPackageId"
+          }
+        ],
+        "tags": [
+          "Scenario Package"
+        ],
+        "responses": {
+          "200": {
+            "description": "The scenario package in the specified format",
+            "schema": {
+              "$ref": "#/definitions/ScenarioPackage"
+            }
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to access a scenario package"
+          },
+          "404": {
+            "description": "Error status returned when the requested scenario package does not exist"
+          }
+        }
+      }
+    },
     "/shapegrid": {
       "get": {
         "summary": "Get a list of shapegrids that match your criteria",
@@ -1508,7 +1601,7 @@
             "$ref": "#/parameters/Limit"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/CellSides"
@@ -1544,7 +1637,7 @@
         "summary": "Get the number of shapegrids that match your criteria",
         "parameters": [
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/CellSides"
@@ -1635,7 +1728,7 @@
             "$ref": "#/parameters/Limit"
           },
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/TreeName"
@@ -1705,7 +1798,7 @@
         "summary": "Get the number of trees that match your criteria",
         "parameters": [
           {
-            "$ref": "#/parameters/Public"
+            "$ref": "#/parameters/UrlUser"
           },
           {
             "$ref": "#/parameters/TreeName"
@@ -2062,7 +2155,7 @@
           "type": "string"
         },
         "metadata": {
-          "type": "object"
+          "$ref": "#/definitions/ProjectionMetadata"
         },
         "map": {
           "$ref": "#/definitions/SingleLayerMap"
@@ -2087,6 +2180,26 @@
         },
         "occurrenceSet": {
           "$ref": "#/definitions/ObjectRef"
+        }
+      }
+    },
+    "ProjectionMetadata": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "isDiscrete": {
+          "type": "boolean"
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -2236,17 +2349,26 @@
         "id": {
           "type": "integer"
         },
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "etag": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
         "scenarios": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Scenario"
           }
-        },
-        "url": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
         },
         "user": {
           "type": "string"
@@ -2588,6 +2710,13 @@
       "required": true,
       "type": "integer"
     },
+    "PathScenarioPackageId": {
+      "name": "scenarioPackageId",
+      "in": "path",
+      "description": "The id of the scenario package",
+      "required": true,
+      "type": "integer"
+    },
     "PathShapegridId": {
       "name": "shapegridId",
       "in": "path",
@@ -2885,20 +3014,6 @@
       "required": false,
       "type": "integer"
     },
-    "Public": {
-      "name": "public",
-      "in": "query",
-      "description": "If this is 1, return public objects, else return only private content if this is 0",
-      "required": false,
-      "type": "integer",
-      "format": "int2",
-      "minimum": 0,
-      "maximum": 1,
-      "enum": [
-        0,
-        1
-      ]
-    },
     "ScenarioCode": {
       "name": "scenarioCode",
       "in": "query",
@@ -2989,6 +3104,13 @@
       "name": "treeName",
       "in": "query",
       "description": "If provided, return or count trees with this name",
+      "required": false,
+      "type": "string"
+    },
+    "UrlUser": {
+      "name": "user",
+      "in": "query",
+      "description": "If this is 'public' return public objects, if it is 'anon', return anonymous objects, else return user objects",
       "required": false,
       "type": "string"
     }
