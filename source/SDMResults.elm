@@ -158,7 +158,7 @@ makeGroupedMap projections =
 
         first :: _ ->
             MapCard.init
-                ((List.filterMap makeProjectionMap projections) ++ ( makeOccurrenceMap first ))
+                ((List.filterMap makeProjectionMap projections) ++ (makeOccurrenceMap first))
 
 
 makeOccurrenceMap : ProjectionInfo -> List MapCard.NamedMap
@@ -178,7 +178,10 @@ makeProjectionMap { record } =
     record.map
         |> Maybe.map
             (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
-                { name = "Projection"
+                { name =
+                    record.metadata
+                        |> Maybe.andThen (\(Decoder.ProjectionMetadata { title }) -> title)
+                        |> Maybe.withDefault "Projection"
                 , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
                 }
             )

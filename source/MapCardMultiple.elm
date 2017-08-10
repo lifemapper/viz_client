@@ -5,9 +5,8 @@ import List.Extra as List
 import Material
 import Material.Options as Options
 import Material.Card as Card
-import Material.Menu as Menu
 import Material.Elevation as Elevation
-import Material.Icon as Icon
+import Material.List as L
 import Html exposing (Html)
 import Helpers exposing (Index)
 import Leaflet exposing (WMSInfo)
@@ -22,6 +21,7 @@ type alias NamedMap =
 type alias Model =
     { available : List NamedMap
     , showing : List NamedMap
+    , expanded : Bool
     , mdl : Material.Model
     }
 
@@ -31,6 +31,7 @@ type Msg
     | SetShowing NamedMap
     | SetNotShowing NamedMap
     | SetAvailable (List NamedMap)
+    | SetExpanded Bool
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -48,6 +49,9 @@ update msg model =
         SetNotShowing notShow ->
             ( { model | showing = List.remove notShow model.showing }, Cmd.none )
 
+        SetExpanded expanded ->
+            ( { model | expanded = expanded }, Cmd.none )
+
 
 selectLayers : Bool -> Int -> WMSInfo -> WMSInfo
 selectLayers includeBMNG i mapInfo =
@@ -60,30 +64,29 @@ selectLayers includeBMNG i mapInfo =
     }
 
 
+layerLi : Model -> Index -> Int -> NamedMap -> Html Msg
+layerLi model index i map =
+    let
+        ( iconName, onClick ) =
+            if List.member map model.showing then
+                ( "check_box", SetNotShowing map )
+            else
+                ( "check_box_outline_blank", SetShowing map )
+
+        icon =
+            L.icon iconName [ Options.onClick onClick ]
+    in
+        L.li [] [ L.content [] [ icon, Html.text map.name ] ]
+
+
+layersList : Index -> Model -> Html Msg
+layersList index model =
+    L.ul [] <| List.indexedMap (layerLi model index) <| List.reverse model.available
+
+
 view : Index -> String -> Model -> Html Msg
 view index title model =
     let
-        checkmark x =
-            if x then
-                Icon.view "check" [ Options.css "width" "40px" ]
-            else
-                Options.span [ Options.css "width" "40px" ] []
-
-        currentlyShowing namedMap =
-            (List.member namedMap model.showing)
-
-        onSelect namedMap =
-            if currentlyShowing namedMap then
-                SetNotShowing namedMap
-            else
-                SetShowing namedMap
-
-        menuItem namedMap =
-            Menu.item [ Menu.onSelect (onSelect namedMap) ]
-                [ checkmark (currentlyShowing namedMap)
-                , Html.text namedMap.name
-                ]
-
         leafletDiv =
             model.available
                 |> List.filter (\m -> List.member m model.showing)
@@ -94,18 +97,10 @@ view index title model =
             [ Elevation.e2
             , Options.css "width" "100%"
             ]
-            [ Card.title [ Card.border ]
+            [ Card.title [ Card.border, Options.onClick <| SetExpanded (not model.expanded) ]
                 [ Card.head [] [ Html.text title ] ]
-            , Card.menu [ Options.cs "map-layers-menu" ]
-                [ Menu.render Mdl
-                    (-1 :: index)
-                    model.mdl
-                    [ Menu.bottomRight ]
-                    (model.available |> List.map menuItem)
-                ]
-            , Card.text []
-                [ Html.text "Foobar"
-                ]
+            , Card.text [ Options.css "display" "none" |> Options.when (not model.expanded) ]
+                [ layersList index model ]
             , Card.text [ Options.css "padding" "0", Options.css "width" "100%" ] [ leafletDiv ]
             ]
 
@@ -114,5 +109,6 @@ init : List NamedMap -> Model
 init available =
     { available = available
     , showing = available
+    , expanded = False
     , mdl = Material.model
     }
