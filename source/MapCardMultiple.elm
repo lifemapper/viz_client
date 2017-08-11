@@ -97,7 +97,7 @@ view index title model =
             [ Elevation.e2
             , Options.css "width" "100%"
             ]
-            [ Card.title [ Card.border, Options.onClick <| SetExpanded (not model.expanded) ]
+            [ Card.title [ Options.onClick <| SetExpanded (not model.expanded) ]
                 [ Card.head [] [ Html.text title ] ]
             , Card.text [ Options.css "display" "none" |> Options.when (not model.expanded) ]
                 [ layersList index model ]

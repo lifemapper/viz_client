@@ -203,15 +203,19 @@ makeOccurrenceMap { occurrenceRecord } =
         |> Maybe.toList
 
 
+projectionTitle : Decoder.ProjectionRecord -> String
+projectionTitle record =
+    record.metadata
+        |> Maybe.andThen (\(Decoder.ProjectionMetadata { title }) -> title)
+        |> Maybe.withDefault "Projection"
+
+
 makeProjectionMap : ProjectionInfo -> Maybe MapCard.NamedMap
 makeProjectionMap { record } =
     record.map
         |> Maybe.map
             (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
-                { name =
-                    record.metadata
-                        |> Maybe.andThen (\(Decoder.ProjectionMetadata { title }) -> title)
-                        |> Maybe.withDefault "Projection"
+                { name = projectionTitle record
                 , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
                 }
             )
@@ -240,12 +244,7 @@ gotOccurrenceSet : Decoder.ProjectionRecord -> Result Http.Error Decoder.Occurre
 gotOccurrenceSet record result =
     case result of
         Ok (Decoder.OccurrenceSet occurrenceRecord) ->
-            NewProjectionInfo
-                { record =
-                    record
-                    -- , mapCard = getWmsInfo record occurrenceRecord |> MapCard.init
-                , occurrenceRecord = occurrenceRecord
-                }
+            NewProjectionInfo { record = record, occurrenceRecord = occurrenceRecord }
 
         Err err ->
             Debug.log "Error fetching occurrence set" (toString err) |> always Nop
@@ -328,7 +327,7 @@ view { state } =
 viewSeparate : Int -> ( ProjectionInfo, MapCard.Model ) -> Grid.Cell Msg
 viewSeparate i ( { record }, mapCard ) =
     Grid.cell []
-        [ MapCard.view [ i ] (record.speciesName |> Maybe.withDefault (toString record.id)) mapCard
+        [ MapCard.view [ i ] (projectionTitle record) mapCard
             |> Html.map (MapCardMsg i)
         ]
 
