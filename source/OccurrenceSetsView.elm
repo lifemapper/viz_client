@@ -17,7 +17,6 @@ import Material.Typography as Typo
 import Material.List as L
 import Material.Helpers as Helpers
 import Html exposing (Html)
-import Html.Events
 import Http
 import List.Extra exposing (removeAt)
 import Helpers exposing (Index, chain)
@@ -176,12 +175,12 @@ occurrenceSetLI model index i o =
                 "visibility_off"
 
         icon =
-            L.icon iconName [ Options.attribute <| Html.Events.onClick (MapOccurrences o.id) ]
+            L.icon iconName [ Options.onClick (MapOccurrences o.id) ]
     in
         L.li []
             [ L.content [] [ Html.text o.name ]
             , L.content2 [ Options.css "flex-flow" "row" ]
-                [ L.icon "delete" [ Options.attribute <| Html.Events.onClick (Remove i) ]
+                [ L.icon "delete" [ Options.onClick (Remove i) ]
                 , icon
                 ]
             ]
