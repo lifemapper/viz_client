@@ -2,6 +2,7 @@ module Leaflet exposing (view, WMSInfo)
 
 import Html exposing (Html)
 import Material.Options as Options
+import Material.Elevation as Elevation
 import Json.Encode exposing (..)
 
 
@@ -31,11 +32,8 @@ view wmsInfo =
     Options.div
         [ Options.cs "leaflet-map"
         , Options.data "leaflet" (serialize wmsInfo)
-        , Options.css "width" "100%"
         , Options.css "height" "510px"
-        , Options.css "margin-left" "auto"
-        , Options.css "margin-right" "auto"
-        , Options.css "margin-top" "10px"
-        , Options.css "margin-bottom" "10px"
+        , Options.css "margin" "10px"
+        , Elevation.e4
         ]
         []
