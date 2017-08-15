@@ -36,3 +36,4 @@ deploy:
   skip_cleanup: true
   on:
     repo: lifemapper/rutabaga
+    tags: true
