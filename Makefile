@@ -6,7 +6,7 @@ debug: ELMFLAGS += --debug
 debug: sdm.tar.gz
 
 sdm.tar.gz: sdm/elm.js sdm/*
-	tar -zcvf sdm.tar.gz sdm
+	tar -zcvf sdm.tar.gz --exclude=sdmFlagsOverride.js sdm
 
 sdm/elm.js: source/Decoder.elm source/*
 	elm-make source/Main.elm $(ELMFLAGS) --output=sdm/elm.js
