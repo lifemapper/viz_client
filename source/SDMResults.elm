@@ -332,14 +332,19 @@ viewSeparate i ( { record }, mapCard ) =
         ]
 
 
+cardSize : Int
+cardSize =
+    4
+
+
 viewGrouped : Int -> ( List ProjectionInfo, MapCard.Model ) -> Grid.Cell Msg
 viewGrouped i ( projections, mapCard ) =
     case projections of
         [] ->
-            Grid.cell [] []
+            Grid.cell [ Grid.size Grid.All cardSize ] []
 
         { record } :: _ ->
-            Grid.cell []
+            Grid.cell [ Grid.size Grid.All cardSize ]
                 [ MapCard.view [ i ] (record.speciesName |> Maybe.withDefault (toString record.id)) mapCard
                     |> Html.map (MapCardMsg i)
                 ]

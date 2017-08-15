@@ -7,6 +7,7 @@ import Material.Typography as Typo
 import Material.Options as Options
 import Material.Helpers exposing (lift)
 import Material.Spinner as Loading
+import Material.Color as Color
 import Html exposing (Html)
 import Navigation as Nav exposing (Location)
 import UrlParser as Url exposing ((</>))
@@ -26,13 +27,13 @@ import Decoder
 
 type SDMPage
     = NewSDM NewSDM.Model
-    | SDMResults SDMResults.Model
+    | SDMResults Int SDMResults.Model
     | PageNotFound
 
 
 initResultsPage : Flags -> Int -> ( SDMPage, Cmd Msg )
 initResultsPage flags gridsetId =
-    ( SDMResults.init flags gridsetId |> SDMResults, Cmd.none )
+    ( SDMResults.init flags gridsetId |> SDMResults gridsetId, Cmd.none )
 
 
 initNewSDMPage : Flags -> ( SDMPage, Cmd Msg )
@@ -98,10 +99,10 @@ update msg model =
 
         liftedSDMResultsUpdate =
             case model.page of
-                SDMResults results ->
+                SDMResults id results ->
                     lift
                         (always results)
-                        (\m x -> { m | page = SDMResults x })
+                        (\m x -> { m | page = SDMResults id x })
                         SDMResultsMsg
                         SDMResults.update
 
@@ -178,23 +179,50 @@ header title =
     ]
 
 
+newLink : Model -> Html Msg
+newLink model =
+    let
+        selected =
+            case model.page of
+                NewSDM _ ->
+                    Color.background (Color.color Color.Grey Color.S300)
+
+                _ ->
+                    Options.nop
+    in
+        Layout.link [ Options.onClick OpenNew, Options.css "cursor" "pointer", selected ]
+            [ Html.text "New SDM Project" ]
+
+
+resultsLink : Model -> AtomObjectRecord -> Html Msg
+resultsLink model { modificationTime, id } =
+    let
+        selected =
+            case model.page of
+                SDMResults gridsetId _ ->
+                    if gridsetId == id then
+                        Color.background (Color.color Color.Grey Color.S300)
+                    else
+                        Options.nop
+
+                _ ->
+                    Options.nop
+    in
+        Layout.link [ Options.onClick (OpenExisting id), Options.css "cursor" "pointer", selected ]
+            [ Html.text modificationTime ]
+
+
 drawer : Model -> List (Html Msg)
 drawer model =
     [ Layout.title [] [ Html.text "Lifemapper SDM" ]
-    , Layout.navigation []
-        [ Layout.link [ Options.onClick OpenNew ] [ Html.text "New SDM Project" ] ]
+    , Layout.navigation [] [ newLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
     , case model.gridsets of
         GridSetsLoading ->
             Layout.row [] [ Loading.spinner [ Loading.active True ] ]
 
         GridSetsList list ->
-            list
-                |> List.map
-                    (\{ modificationTime, id } ->
-                        Layout.link [ Options.onClick (OpenExisting id) ] [ Html.text modificationTime ]
-                    )
-                |> Layout.navigation []
+            list |> List.map (resultsLink model) |> Layout.navigation []
     ]
 
 
@@ -204,7 +232,7 @@ pageImplementation p =
         NewSDM model_ ->
             Page.lift NewSDM.page (always model_) NewSDMMsg
 
-        SDMResults model_ ->
+        SDMResults _ model_ ->
             Page.lift SDMResults.page (always model_) SDMResultsMsg
 
         PageNotFound ->
