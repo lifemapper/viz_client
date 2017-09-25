@@ -15,6 +15,7 @@ import Http
 import Page
 import NewSDM
 import SDMResults
+import NewOccurrenceSet
 import ProgramFlags exposing (Flags)
 import Decoder
     exposing
@@ -28,6 +29,7 @@ import Decoder
 type SDMPage
     = NewSDM NewSDM.Model
     | SDMResults Int SDMResults.Model
+    | NewOccurrenceSet NewOccurrenceSet.Model
     | PageNotFound
 
 
@@ -45,6 +47,15 @@ initNewSDMPage flags =
         ( NewSDM model_, Cmd.map NewSDMMsg msg_ )
 
 
+initNewOccurrenceSetPage : Flags -> ( SDMPage, Cmd Msg )
+initNewOccurrenceSetPage flags =
+    let
+        ( model_, msg_ ) =
+            NewOccurrenceSet.init
+    in
+        ( NewOccurrenceSet model_, Cmd.none )
+
+
 location2Page : Flags -> Location -> Maybe ( SDMPage, Cmd Msg )
 location2Page flags location =
     let
@@ -52,6 +63,7 @@ location2Page flags location =
             Url.oneOf
                 [ Url.map (initNewSDMPage flags) Url.top
                 , Url.map (initResultsPage flags) (Url.s "results" </> Url.int)
+                , Url.map (initNewOccurrenceSetPage flags) (Url.s "new-species-data")
                 ]
     in
         Url.parseHash route location
@@ -74,10 +86,12 @@ type Msg
     = Mdl (Material.Msg Msg)
     | NewSDMMsg NewSDM.Msg
     | SDMResultsMsg SDMResults.Msg
+    | NewOccurrenceSetMsg NewOccurrenceSet.Msg
     | GotGridSets (List AtomObjectRecord)
     | UrlChange Location
     | OpenExisting Int
     | OpenNew
+    | OpenNewOccurrenceSet
     | Tick Time.Time
     | Nop
 
@@ -108,6 +122,18 @@ update msg model =
 
                 _ ->
                     \msg_ model -> ( model, Cmd.none )
+
+        liftedNewOccurrenceSetUpdate =
+            case model.page of
+                NewOccurrenceSet model_ ->
+                    lift
+                        (always model_)
+                        (\m x -> { m | page = NewOccurrenceSet x })
+                        NewOccurrenceSetMsg
+                        NewOccurrenceSet.update
+
+                _ ->
+                    \msg_ model -> ( model, Cmd.none )
     in
         case msg of
             Mdl msg_ ->
@@ -119,6 +145,9 @@ update msg model =
             SDMResultsMsg msg_ ->
                 liftedSDMResultsUpdate msg_ model
 
+            NewOccurrenceSetMsg msg_ ->
+                liftedNewOccurrenceSetUpdate msg_ model
+
             UrlChange location ->
                 location2Page model.flags location
                     |> Maybe.withDefault ( PageNotFound, Cmd.none )
@@ -129,6 +158,9 @@ update msg model =
 
             OpenNew ->
                 model ! [ Nav.newUrl "#" ]
+
+            OpenNewOccurrenceSet ->
+                model ! [ Nav.newUrl "#new-species-data/" ]
 
             Tick _ ->
                 ( model, getGridSets model.flags )
@@ -194,6 +226,21 @@ newLink model =
             [ Html.text "New SDM Project" ]
 
 
+newOccurrenceSetLink : Model -> Html Msg
+newOccurrenceSetLink model =
+    let
+        selected =
+            case model.page of
+                NewOccurrenceSet _ ->
+                    Color.background (Color.color Color.Grey Color.S300)
+
+                _ ->
+                    Options.nop
+    in
+        Layout.link [ Options.onClick OpenNewOccurrenceSet, Options.css "cursor" "pointer", selected ]
+            [ Html.text "New Species Data" ]
+
+
 resultsLink : Model -> AtomObjectRecord -> Html Msg
 resultsLink model { modificationTime, id } =
     let
@@ -216,6 +263,7 @@ drawer : Model -> List (Html Msg)
 drawer model =
     [ Layout.title [] [ Html.text "Lifemapper SDM" ]
     , Layout.navigation [] [ newLink model ]
+    , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
     , case model.gridsets of
         GridSetsLoading ->
@@ -234,6 +282,9 @@ pageImplementation p =
 
         SDMResults _ model_ ->
             Page.lift SDMResults.page (always model_) SDMResultsMsg
+
+        NewOccurrenceSet model_ ->
+            Page.lift NewOccurrenceSet.page (always model_) NewOccurrenceSetMsg
 
         PageNotFound ->
             { view = always <| Options.div [] []

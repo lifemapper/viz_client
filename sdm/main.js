@@ -2,6 +2,21 @@
 
 var app = Elm.Main.fullscreen(sdmFlags);
 
+app.ports.fileSelected.subscribe(function(id) {
+    var node = document.getElementById(id);
+    var reader = new FileReader();
+
+    var file = node.files[0];
+
+    reader.onload = (function(event) {
+        app.ports.fileContentRead.send({contents: event.target.result, filename: file.name});
+    });
+
+    reader.readAsText(file);
+});
+
+
+
 var maps = {};
 var mapLayers = {};
 
