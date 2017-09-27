@@ -4,9 +4,14 @@ import DecodeTree exposing (..)
 import Json.Decode exposing (decodeString)
 
 
-tree : Result String Tree
+tree : Tree
 tree =
-    decodeString treeDecoder treeJson
+    case decodeString treeDecoder treeJson of
+        Ok tree ->
+            tree
+
+        Err e ->
+            Debug.crash e
 
 
 treeJson : String

@@ -11,6 +11,9 @@ sdm.tar.gz: sdm/elm.js sdm/*
 sdm/elm.js: source/Decoder.elm source/*
 	elm-make source/Main.elm $(ELMFLAGS) --output=sdm/elm.js
 
+mcpa/elm.js: source/Decoder.elm source/*
+	elm-make source/McpaMain.elm $(ELMFLAGS) --output=mcpa/elm.js
+
 source/Decoder.elm: swagger.json source/Decoder.elm.patch
 	cat swagger.json | swagger-to-elm | elm-format --stdin > source/Decoder.elm.generated
 	patch -o source/Decoder.elm -i source/Decoder.elm.patch source/Decoder.elm.generated
