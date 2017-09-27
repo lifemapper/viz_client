@@ -6,7 +6,7 @@ import Json.Decode exposing (Decoder, int, string, float, maybe, list, lazy, fie
 type alias TreeData =
     { pathId : Maybe Int
     , length : Maybe Float
-    , name : Maybe String
+    , name : String
     , mx : Maybe Int
     }
 
@@ -22,13 +22,27 @@ type Tree
     | Leaf TreeData
 
 
+removeUnderscore : Decoder (Maybe String) -> Decoder String
+removeUnderscore =
+    Json.Decode.map
+        (Maybe.withDefault ""
+            >> String.map
+                (\c ->
+                    if c == '_' then
+                        ' '
+                    else
+                        c
+                )
+        )
+
+
 treeDecoder : Decoder Tree
 treeDecoder =
     Json.Decode.map2 TreeRecord
         (Json.Decode.map4 TreeData
             (maybe <| field "pathId" int)
             (maybe <| field "length" float)
-            (maybe <| field "name" string)
+            (removeUnderscore <| maybe <| field "name" string)
             (maybe <| field "mx" int)
         )
         (field "children" (lazy (\_ -> (list treeDecoder))))
