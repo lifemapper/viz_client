@@ -99,30 +99,42 @@ view model =
             , viewBox "-0.5 -0.5 1 1"
             , Html.Attributes.style [ ( "background", "lightblue" ), ( "font-family", "sans-serif" ) ]
             ]
-            [ line [ x1 "0", x2 "0", y1 "0.5", y2 "0", stroke "darkolivegreen", strokeWidth "0.014" ] []
-            , drawTree (getTree model)
-            ]
+            [ drawTree <| getTree model ]
         ]
 
 
 drawTree : Tree -> Svg msg
 drawTree tree =
-    case tree of
-        Leaf data ->
-            g []
-                [ ellipse [ cx "0", cy "0", rx "0.2", ry "0.3", fill "green", stroke "lightgreen", strokeWidth "0.005" ] []
-                , text_ [ x "0", y "0", textAnchor "middle", fontSize "0.05", transform "rotate(-90)", fill "white" ]
-                    [ text data.name ]
-                ]
+    g []
+        (line [ x1 "0", x2 "0", y1 "0.5", y2 "0", stroke "darkolivegreen", strokeWidth "0.014" ] []
+            :: drawTree_ 0 tree
+        )
 
-        Node data left right ->
-            g []
-                [ line [ x1 "-0.25", x2 "0.25", y1 "0", y2 "0", stroke "darkolivegreen", strokeWidth "0.01" ] []
-                , g [ transform "translate(-0.25, 0) scale(0.7) rotate(-90)" ]
-                    [ drawTree left ]
-                , g [ transform "translate(0.25, 0) scale(0.7) rotate(90)" ]
-                    [ drawTree right ]
-                ]
+
+drawTree_ : Int -> Tree -> List (Svg msg)
+drawTree_ depth tree =
+    let
+        descend depth =
+            case tree of
+                Leaf data ->
+                    [ ellipse [ cx "0", cy "0", rx "0.2", ry "0.3", fill "green", stroke "lightgreen", strokeWidth "0.005" ]
+                        []
+                    , text_ [ x "0", y "0", textAnchor "middle", fontSize "0.05", transform "rotate(-90)", fill "white" ]
+                        [ text data.name ]
+                    ]
+
+                Node data left right ->
+                    [ line [ x1 "-0.25", x2 "0.25", y1 "0", y2 "0", stroke "darkolivegreen", strokeWidth "0.01" ] []
+                    , g [ transform "translate(-0.25, 0) scale(0.7) rotate(-90)" ]
+                        (drawTree_ depth left)
+                    , g [ transform "translate(0.25, 0) scale(0.7) rotate(90)" ]
+                        (drawTree_ depth right)
+                    ]
+    in
+        if depth < 10 then
+            descend (depth + 1)
+        else
+            []
 
 
 main : Program Never Model Msg
