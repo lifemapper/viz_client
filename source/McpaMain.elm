@@ -92,10 +92,10 @@ update msg model =
                 KeyUp "ArrowDown" ->
                     case zipper of
                         ( _, Left _ _ _ ) ->
-                            ( StartAnimation AnimateUpLeft (up zipper), Cmd.none )
+                            ( StartAnimation AnimateUpLeft zipper, Cmd.none )
 
                         ( _, Right _ _ _ ) ->
-                            ( StartAnimation AnimateUpRight (up zipper), Cmd.none )
+                            ( StartAnimation AnimateUpRight zipper, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
@@ -125,10 +125,10 @@ update msg model =
                     else
                         case dir of
                             AnimateUpLeft ->
-                                ( Static zipper, Cmd.none )
+                                ( Static (up zipper), Cmd.none )
 
                             AnimateUpRight ->
-                                ( Static zipper, Cmd.none )
+                                ( Static (up zipper), Cmd.none )
 
                             AnimateLeft ->
                                 ( Static (left zipper), Cmd.none )
@@ -226,7 +226,7 @@ view model =
                             ++ "translate("
                             ++ (toString translate)
                             ++ ", 0) "
-                        , zipper
+                        , up zipper
                         )
 
                 Animating AnimateUpRight time animation zipper ->
@@ -252,7 +252,7 @@ view model =
                             ++ "translate("
                             ++ (toString translate)
                             ++ ", 0) "
-                        , zipper
+                        , up zipper
                         )
     in
         Html.div
