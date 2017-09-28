@@ -9,7 +9,7 @@ import Svg.Attributes exposing (..)
 import ExampleTree
 import DecodeTree exposing (Tree(..), TreeData)
 import Time exposing (Time)
-import Animation exposing (Animation)
+import Animation as A exposing (Animation)
 import AnimationFrame
 
 
@@ -111,17 +111,21 @@ update msg model =
 
         StartAnimation dir zipper ->
             case msg of
-                CurrentTick time_ ->
-                    ( Animating dir time_ (Animation.animation time_ |> Animation.duration (1 * Time.second)) zipper, Cmd.none )
+                CurrentTick time ->
+                    let
+                        animation =
+                            A.animation time |> A.duration (0.2 * Time.second)
+                    in
+                        ( Animating dir time animation zipper, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
-        Animating dir time animation zipper ->
+        Animating dir _ animation zipper ->
             case msg of
-                CurrentTick time_ ->
-                    if Animation.isRunning time_ animation then
-                        ( Animating dir time_ animation zipper, Cmd.none )
+                CurrentTick time ->
+                    if A.isRunning time animation then
+                        ( Animating dir time animation zipper, Cmd.none )
                     else
                         case dir of
                             AnimateUpLeft ->
@@ -140,120 +144,75 @@ update msg model =
                     ( model, Cmd.none )
 
 
+type Transform
+    = Translate Float
+    | Scale Float
+    | Rotate Float
+
+
+transformToAttr : Transform -> String
+transformToAttr t =
+    case t of
+        Translate x ->
+            "translate(" ++ (toString x) ++ ", 0)"
+
+        Scale x ->
+            "scale(" ++ (toString x) ++ ")"
+
+        Rotate x ->
+            "rotate(" ++ (toString x) ++ ")"
+
+
 view : Model -> Html.Html Msg
 view model =
     let
-        ( transform, zipper ) =
+        ( transforms, zipper ) =
             case model of
                 Static zipper ->
-                    ( "", zipper )
+                    ( [], zipper )
 
                 StartAnimation _ zipper ->
-                    ( "", zipper )
+                    ( [], zipper )
 
                 Animating AnimateLeft time animation zipper ->
                     let
-                        x =
-                            Animation.animate time animation
-
-                        translate =
-                            0.25 * x
-
-                        scale =
-                            1.0 / (animation |> Animation.from 1 |> Animation.to 0.7 |> Animation.animate time)
-
-                        rotate =
-                            90 * x
+                        transforms =
+                            [ Rotate (animation |> A.from 0 |> A.to 90 |> A.animate time)
+                            , Scale (1.0 / (animation |> A.from 1 |> A.to 0.7 |> A.animate time))
+                            , Translate (animation |> A.from 0 |> A.to 0.25 |> A.animate time)
+                            ]
                     in
-                        ( "rotate("
-                            ++ (toString rotate)
-                            ++ ") "
-                            ++ "scale("
-                            ++ (toString scale)
-                            ++ ") "
-                            ++ "translate("
-                            ++ (toString translate)
-                            ++ ", 0) "
-                        , zipper
-                        )
+                        ( transforms, zipper )
 
                 Animating AnimateRight time animation zipper ->
                     let
-                        x =
-                            Animation.animate time animation
-
-                        translate =
-                            -0.25 * x
-
-                        scale =
-                            1.0 / (animation |> Animation.from 1 |> Animation.to 0.7 |> Animation.animate time)
-
-                        rotate =
-                            -90 * x
+                        transforms =
+                            [ Rotate (animation |> A.from 0 |> A.to -90 |> A.animate time)
+                            , Scale (1.0 / (animation |> A.from 1 |> A.to 0.7 |> A.animate time))
+                            , Translate (animation |> A.from 0 |> A.to -0.25 |> A.animate time)
+                            ]
                     in
-                        ( "rotate("
-                            ++ (toString rotate)
-                            ++ ") "
-                            ++ "scale("
-                            ++ (toString scale)
-                            ++ ") "
-                            ++ "translate("
-                            ++ (toString translate)
-                            ++ ", 0) "
-                        , zipper
-                        )
+                        ( transforms, zipper )
 
                 Animating AnimateUpLeft time animation zipper ->
                     let
-                        x =
-                            Animation.animate time animation
-
-                        translate =
-                            0.25 * (1 - x)
-
-                        scale =
-                            1.0 / (animation |> Animation.from 0.7 |> Animation.to 1 |> Animation.animate time)
-
-                        rotate =
-                            90 * (1 - x)
+                        transforms =
+                            [ Rotate (animation |> A.from 90 |> A.to 0 |> A.animate time)
+                            , Scale (1.0 / (animation |> A.from 0.7 |> A.to 1 |> A.animate time))
+                            , Translate (animation |> A.from 0.25 |> A.to 0 |> A.animate time)
+                            ]
                     in
-                        ( "rotate("
-                            ++ (toString rotate)
-                            ++ ") "
-                            ++ "scale("
-                            ++ (toString scale)
-                            ++ ") "
-                            ++ "translate("
-                            ++ (toString translate)
-                            ++ ", 0) "
-                        , up zipper
-                        )
+                        ( transforms, up zipper )
 
                 Animating AnimateUpRight time animation zipper ->
                     let
-                        x =
-                            Animation.animate time animation
-
-                        translate =
-                            -0.25 * (1 - x)
-
-                        scale =
-                            1.0 / (animation |> Animation.from 0.7 |> Animation.to 1 |> Animation.animate time)
-
-                        rotate =
-                            -90 * (1 - x)
+                        transforms =
+                            [ Rotate (animation |> A.from -90 |> A.to 0 |> A.animate time)
+                            , Scale (1.0 / (animation |> A.from 0.7 |> A.to 1 |> A.animate time))
+                            , Translate (animation |> A.from -0.25 |> A.to 0 |> A.animate time)
+                            ]
                     in
-                        ( "rotate("
-                            ++ (toString rotate)
-                            ++ ") "
-                            ++ "scale("
-                            ++ (toString scale)
-                            ++ ") "
-                            ++ "translate("
-                            ++ (toString translate)
-                            ++ ", 0) "
-                        , up zipper
-                        )
+                        ( transforms, up zipper )
     in
         Html.div
             [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
@@ -265,7 +224,7 @@ view model =
                 , viewBox "-0.5 -0.5 1 1"
                 , Html.Attributes.style [ ( "background", "lightblue" ), ( "font-family", "sans-serif" ) ]
                 ]
-                [ drawTree transform <| getTree zipper ]
+                [ drawTree (transforms |> List.map transformToAttr |> String.join " ") (getTree zipper) ]
             ]
 
 
