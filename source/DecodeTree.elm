@@ -4,10 +4,10 @@ import Json.Decode exposing (Decoder, int, string, float, maybe, list, lazy, fie
 
 
 type alias TreeData =
-    { pathId : Maybe Int
+    { cladeId : Int
     , length : Maybe Float
     , name : String
-    , mx : Maybe Int
+    , squid : Maybe String
     }
 
 
@@ -40,10 +40,10 @@ treeDecoder : Decoder Tree
 treeDecoder =
     Json.Decode.map2 TreeRecord
         (Json.Decode.map4 TreeData
-            (maybe <| field "pathId" int)
+            (field "cladeId" int)
             (maybe <| field "length" float)
             (removeUnderscore <| maybe <| field "name" string)
-            (maybe <| field "mx" int)
+            (maybe <| field "squid" string)
         )
         (field "children" (lazy (\_ -> (list treeDecoder))))
         |> Json.Decode.andThen checkBinary

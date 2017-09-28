@@ -18,765 +18,619 @@ treeJson : String
 treeJson =
     """
 {
-   "pathId": 0,
-   "length" : 0.0,
+ "children": [
+  {
    "children": [
+    {
+     "children": [
       {
-         "pathId": 1,
-         "length": 2.2997409923456544,
-         "children": [
-            {
-               "pathId": 2,
-               "length": 17.761655859533043,
-               "children": [],
-               "name": "Peltoboykinia_tellimoides"
-            },
-            {
-               "pathId": 3,
-               "length": 11.344384130779105,
-               "children": [
-                  {
-                     "pathId": 4,
-                     "length": 0.3054151405834489,
-                     "children": [
-                        {
-                           "pathId": 5,
-                           "length": 2.2717620145505304,
-                           "children": [
-                              {
-                                 "pathId": 6,
-                                 "length": 0.611602729860282,
-                                 "children": [
-                                    {
-                                       "pathId": 7,
-                                       "length": 1.176778597719423,
-                                       "children": [
-                                          {
-                                             "pathId": 8,
-                                             "length": 0.4550374361764966,
-                                             "children": [
-                                                {
-                                                   "pathId": 9,
-                                                   "length": 1.5966758098637577,
-                                                   "children": [],
-                                                   "name": "Heuchera_richardsonii"
-                                                },
-                                                {
-                                                   "pathId": 10,
-                                                   "length": 0.3462230525932135,
-                                                   "children": [
-                                                      {
-                                                         "pathId": 11,
-                                                         "length": 1.2504527572705442,
-                                                         "children": [],
-                                                         "name": "Heuchera_caroliniana"
-                                                      },
-                                                      {
-                                                         "pathId": 12,
-                                                         "length": 0.3415769256445209,
-                                                         "children": [
-                                                            {
-                                                               "pathId": 13,
-                                                               "length": 0.3076302280262695,
-                                                               "children": [
-                                                                  {
-                                                                     "pathId": 14,
-                                                                     "length": 0.6012456035997538,
-                                                                     "children": [],
-                                                                     "name": "Heuchera_pubescens"
-                                                                  },
-                                                                  {
-                                                                     "pathId": 15,
-                                                                     "length": 0.6012456035997538,
-                                                                     "children": [],
-                                                                     "name": "Heuchera_alba"
-                                                                  }
-                                                               ]
-                                                            },
-                                                            {
-                                                               "pathId": 16,
-                                                               "length": 0.2302970475353341,
-                                                               "children": [
-                                                                  {
-                                                                     "pathId": 17,
-                                                                     "length": 0.6785787840906892,
-                                                                     "children": [],
-                                                                     "name": "Heuchera_longiflora"
-                                                                  },
-                                                                  {
-                                                                     "pathId": 18,
-                                                                     "length": 0.6785787840906892,
-                                                                     "children": [],
-                                                                     "name": "Heuchera_americana"
-                                                                  }
-                                                               ]
-                                                            }
-                                                         ]
-                                                      }
-                                                   ]
-                                                }
-                                             ]
-                                          },
-                                          {
-                                             "pathId": 19,
-                                             "length": 0.47187394130160243,
-                                             "children": [
-                                                {
-                                                   "pathId": 20,
-                                                   "length": 1.5798393047386519,
-                                                   "children": [],
-                                                   "name": "Heuchera_parvifolia"
-                                                },
-                                                {
-                                                   "pathId": 21,
-                                                   "length": 0.5425026010470795,
-                                                   "children": [
-                                                      {
-                                                         "pathId": 22,
-                                                         "length": 1.0373367036915724,
-                                                         "children": [],
-                                                         "name": "Heuchera_wootonii"
-                                                      },
-                                                      {
-                                                         "pathId": 23,
-                                                         "length": 0.23065775846020387,
-                                                         "children": [
-                                                            {
-                                                               "pathId": 24,
-                                                               "length": 0.8066789452313685,
-                                                               "children": [],
-                                                               "name": "Heuchera_inconstans"
-                                                            },
-                                                            {
-                                                               "pathId": 25,
-                                                               "length": 0.12525170811208852,
-                                                               "children": [
-                                                                  {
-                                                                     "pathId": 26,
-                                                                     "length": 0.20019638555055153,
-                                                                     "children": [
-                                                                        {
-                                                                           "pathId": 27,
-                                                                           "length": 0.11321340943251812,
-                                                                           "children": [
-                                                                              {
-                                                                                 "pathId": 28,
-                                                                                 "length": 0.36801744213621035,
-                                                                                 "children": [],
-                                                                                 "name": "Heuchera_soltisii"
-                                                                              },
-                                                                              {
-                                                                                 "pathId": 29,
-                                                                                 "length": 0.36801744213621035,
-                                                                                 "children": [],
-                                                                                 "name": "Heuchera_novomexicana"
-                                                                              }
-                                                                           ]
-                                                                        },
-                                                                        {
-                                                                           "pathId": 30,
-                                                                           "length": 0.48123085156872847,
-                                                                           "children": [],
-                                                                           "name": "Heuchera_glomerulata"
-                                                                        }
-                                                                     ]
-                                                                  },
-                                                                  {
-                                                                     "pathId": 31,
-                                                                     "length": 0.68142723711928,
-                                                                     "children": [],
-                                                                     "name": "Heuchera_eastwoodiae"
-                                                                  }
-                                                               ]
-                                                            }
-                                                         ]
-                                                      }
-                                                   ]
-                                                }
-                                             ]
-                                          }
-                                       ]
-                                    },
-                                    {
-                                       "pathId": 32,
-                                       "length": 0.4888350941898132,
-                                       "children": [
-                                          {
-                                             "pathId": 33,
-                                             "length": 0.47200566715888925,
-                                             "children": [
-                                                {
-                                                   "pathId": 34,
-                                                   "length": 2.267651082410975,
-                                                   "children": [],
-                                                   "name": "Heuchera_woodsiaphila"
-                                                },
-                                                {
-                                                   "pathId": 35,
-                                                   "length": 0.3554426279939733,
-                                                   "children": [
-                                                      {
-                                                         "pathId": 36,
-                                                         "length": 0.7999722234109434,
-                                                         "children": [
-                                                            {
-                                                               "pathId": 37,
-                                                               "length": 1.112236231006058,
-                                                               "children": [],
-                                                               "name": "Heuchera_bracteata"
-                                                            },
-                                                            {
-                                                               "pathId": 38,
-                                                               "length": 1.112236231006058,
-                                                               "children": [],
-                                                               "name": "Heuchera_hallii"
-                                                            }
-                                                         ]
-                                                      },
-                                                      {
-                                                         "pathId": 39,
-                                                         "length": 0.2384391054724091,
-                                                         "children": [
-                                                            {
-                                                               "pathId": 40,
-                                                               "length": 0.21111342075537465,
-                                                               "children": [
-                                                                  {
-                                                                     "pathId": 41,
-                                                                     "length": 0.4527963254466094,
-                                                                     "children": [
-                                                                        {
-                                                                           "pathId": 42,
-                                                                           "length": 1.0098596027426083,
-                                                                           "children": [],
-                                                                           "name": "Heuchera_mexicana"
-                                                                        },
-                                                                        {
-                                                                           "pathId": 43,
-                                                                           "length": 0.3371574010178726,
-                                                                           "children": [
-                                                                              {
-                                                                                 "pathId": 44,
-                                                                                 "length": 0.6727022017247357,
-                                                                                 "children": [],
-                                                                                 "name": "Heuchera_longipetala"
-                                                                              },
-                                                                              {
-                                                                                 "pathId": 45,
-                                                                                 "length": 0.6727022017247357,
-                                                                                 "children": [],
-                                                                                 "name": "Heuchera_acutifolia"
-                                                                              }
-                                                                           ]
-                                                                        }
-                                                                     ]
-                                                                  },
-                                                                  {
-                                                                     "pathId": 46,
-                                                                     "length": 0.16571057212127016,
-                                                                     "children": [
-                                                                        {
-                                                                           "pathId": 47,
-                                                                           "length": 0.23571097096003513,
-                                                                           "children": [
-                                                                              {
-                                                                                 "pathId": 48,
-                                                                                 "length": 0.15224904639183734,
-                                                                                 "children": [
-                                                                                    {
-                                                                                       "pathId": 49,
-                                                                                       "length": 0.9089853387160751,
-                                                                                       "children": [],
-                                                                                       "name": "Heuchera_hirsutissima"
-                                                                                    },
-                                                                                    {
-                                                                                       "pathId": 50,
-                                                                                       "length": 0.19871193173261403,
-                                                                                       "children": [
-                                                                                          {
-                                                                                             "pathId": 51,
-                                                                                             "length": 0.21751211989885277,
-                                                                                             "children": [
-                                                                                                {
-                                                                                                   "pathId": 52,
-                                                                                                   "length": 0.4927612870846083,
-                                                                                                   "children": [],
-                                                                                                   "name": "Heuchera_caespitosa"
-                                                                                                },
-                                                                                                {
-                                                                                                   "pathId": 53,
-                                                                                                   "length": 0.4927612870846083,
-                                                                                                   "children": [],
-                                                                                                   "name": "Heuchera_abramsii"
-                                                                                                }
-                                                                                             ]
-                                                                                          },
-                                                                                          {
-                                                                                             "pathId": 54,
-                                                                                             "length": 0.13999698615662126,
-                                                                                             "children": [
-                                                                                                {
-                                                                                                   "pathId": 55,
-                                                                                                   "length": 0.5702764208268398,
-                                                                                                   "children": [],
-                                                                                                   "name": "Heuchera_elegans"
-                                                                                                },
-                                                                                                {
-                                                                                                   "pathId": 56,
-                                                                                                   "length": 0.5702764208268398,
-                                                                                                   "children": [],
-                                                                                                   "name": "Heuchera_parishii"
-                                                                                                }
-                                                                                             ]
-                                                                                          }
-                                                                                       ]
-                                                                                    }
-                                                                                 ]
-                                                                              },
-                                                                              {
-                                                                                 "pathId": 57,
-                                                                                 "length": 1.0612343851079125,
-                                                                                 "children": [],
-                                                                                 "name": "Heuchera_brevistaminea"
-                                                                              }
-                                                                           ]
-                                                                        },
-                                                                        {
-                                                                           "pathId": 58,
-                                                                           "length": 0.19797731227478366,
-                                                                           "children": [
-                                                                              {
-                                                                                 "pathId": 59,
-                                                                                 "length": 0.1809859827895579,
-                                                                                 "children": [
-                                                                                    {
-                                                                                       "pathId": 60,
-                                                                                       "length": 0.4817445066949446,
-                                                                                       "children": [
-                                                                                          {
-                                                                                             "pathId": 61,
-                                                                                             "length": 0.4362375543086614,
-                                                                                             "children": [],
-                                                                                             "name": "Heuchera_rosendahlii"
-                                                                                          },
-                                                                                          {
-                                                                                             "pathId": 62,
-                                                                                             "length": 0.4362375543086614,
-                                                                                             "children": [],
-                                                                                             "name": "Heuchera_wellsiae"
-                                                                                          }
-                                                                                       ]
-                                                                                    },
-                                                                                    {
-                                                                                       "pathId": 63,
-                                                                                       "length": 0.917982061003606,
-                                                                                       "children": [],
-                                                                                       "name": "Heuchera_sanguinea"
-                                                                                    }
-                                                                                 ]
-                                                                              },
-                                                                              {
-                                                                                 "pathId": 64,
-                                                                                 "length": 1.098968043793164,
-                                                                                 "children": [],
-                                                                                 "name": "Heuchera_versicolor"
-                                                                              }
-                                                                           ]
-                                                                        }
-                                                                     ]
-                                                                  }
-                                                               ]
-                                                            },
-                                                            {
-                                                               "pathId": 65,
-                                                               "length": 0.4799612897636507,
-                                                               "children": [
-                                                                  {
-                                                                     "pathId": 66,
-                                                                     "length": 1.1938080591809417,
-                                                                     "children": [],
-                                                                     "name": "Heuchera_pulchella"
-                                                                  },
-                                                                  {
-                                                                     "pathId": 67,
-                                                                     "length": 1.1938080591809417,
-                                                                     "children": [],
-                                                                     "name": "Heuchera_rubescens"
-                                                                  }
-                                                               ]
-                                                            }
-                                                         ]
-                                                      }
-                                                   ]
-                                                }
-                                             ]
-                                          },
-                                          {
-                                             "pathId": 68,
-                                             "length": 0.35059848255879444,
-                                             "children": [
-                                                {
-                                                   "pathId": 69,
-                                                   "length": 2.3890582670110696,
-                                                   "children": [],
-                                                   "name": "Heuchera_merriamii"
-                                                },
-                                                {
-                                                   "pathId": 70,
-                                                   "length": 2.3890582670110696,
-                                                   "children": [],
-                                                   "name": "Heuchera_grossulariifolia"
-                                                }
-                                             ]
-                                          }
-                                       ]
-                                    }
-                                 ]
-                              },
-                              {
-                                 "pathId": 71,
-                                 "length": 0.2991987051321221,
-                                 "children": [
-                                    {
-                                       "pathId": 72,
-                                       "length": 2.5145741447943273,
-                                       "children": [
-                                          {
-                                             "pathId": 73,
-                                             "length": 0.5547828033234765,
-                                             "children": [
-                                                {
-                                                   "pathId": 74,
-                                                   "length": 0.4715389203700333,
-                                                   "children": [],
-                                                   "name": "Heuchera_pilosissima"
-                                                },
-                                                {
-                                                   "pathId": 75,
-                                                   "length": 0.4715389203700333,
-                                                   "children": [],
-                                                   "name": "Heuchera_maxima"
-                                                }
-                                             ]
-                                          },
-                                          {
-                                             "pathId": 76,
-                                             "length": 1.0263217236935098,
-                                             "children": [],
-                                             "name": "Heuchera_micrantha"
-                                          }
-                                       ]
-                                    },
-                                    {
-                                       "pathId": 77,
-                                       "length": 0.31674667659847344,
-                                       "children": [
-                                          {
-                                             "pathId": 78,
-                                             "length": 3.2241491918893637,
-                                             "children": [],
-                                             "name": "Heuchera_glabra"
-                                          },
-                                          {
-                                             "pathId": 79,
-                                             "length": 0.5528931165335749,
-                                             "children": [
-                                                {
-                                                   "pathId": 80,
-                                                   "length": 1.182633807773751,
-                                                   "children": [
-                                                      {
-                                                         "pathId": 81,
-                                                         "length": 0.5071153942854956,
-                                                         "children": [
-                                                            {
-                                                               "pathId": 82,
-                                                               "length": 0.9815068732965422,
-                                                               "children": [],
-                                                               "name": "Heuchera_villosa"
-                                                            },
-                                                            {
-                                                               "pathId": 83,
-                                                               "length": 0.9815068732965422,
-                                                               "children": [],
-                                                               "name": "Heuchera_puberula"
-                                                            }
-                                                         ]
-                                                      },
-                                                      {
-                                                         "pathId": 84,
-                                                         "length": 0.5464074854841101,
-                                                         "children": [
-                                                            {
-                                                               "pathId": 85,
-                                                               "length": 0.9422147820979276,
-                                                               "children": [],
-                                                               "name": "Heuchera_missouriensis"
-                                                            },
-                                                            {
-                                                               "pathId": 86,
-                                                               "length": 0.9422147820979276,
-                                                               "children": [],
-                                                               "name": "Heuchera_parviflora"
-                                                            }
-                                                         ]
-                                                      }
-                                                   ]
-                                                },
-                                                {
-                                                   "pathId": 87,
-                                                   "length": 0.9262046180939212,
-                                                   "children": [
-                                                      {
-                                                         "pathId": 88,
-                                                         "length": 1.7450514572618676,
-                                                         "children": [],
-                                                         "name": "Heuchera_chlorantha"
-                                                      },
-                                                      {
-                                                         "pathId": 89,
-                                                         "length": 1.7450514572618676,
-                                                         "children": [],
-                                                         "name": "Heuchera_cylindrica"
-                                                      }
-                                                   ]
-                                                }
-                                             ]
-                                          }
-                                       ]
-                                    }
-                                 ]
-                              }
-                           ]
-                        },
-                        {
-                           "pathId": 90,
-                           "length": 0.36684912329080177,
-                           "children": [
-                              {
-                                 "pathId": 91,
-                                 "length": 3.900212763838672,
-                                 "children": [
-                                    {
-                                       "pathId": 92,
-                                       "length": 1.8447947010410157,
-                                       "children": [],
-                                       "name": "menziesii"
-                                    },
-                                    {
-                                       "pathId": 93,
-                                       "length": 1.8447947010410157,
-                                       "children": [],
-                                       "name": "diplomenziesii"
-                                    }
-                                 ]
-                              },
-                              {
-                                 "pathId": 94,
-                                 "length": 0.3745823917305344,
-                                 "children": [
-                                    {
-                                       "pathId": 95,
-                                       "length": 0.7313617060367275,
-                                       "children": [
-                                          {
-                                             "pathId": 96,
-                                             "length": 4.639063367112426,
-                                             "children": [],
-                                             "name": "Tellima_grandiflora"
-                                          },
-                                          {
-                                             "pathId": 97,
-                                             "length": 0.5413606106903632,
-                                             "children": [
-                                                {
-                                                   "pathId": 98,
-                                                   "length": 4.097702756422063,
-                                                   "children": [],
-                                                   "name": "Mitella_pentandra"
-                                                },
-                                                {
-                                                   "pathId": 99,
-                                                   "length": 2.8941250878466516,
-                                                   "children": [
-                                                      {
-                                                         "pathId": 100,
-                                                         "length": 0.564868364663317,
-                                                         "children": [
-                                                            {
-                                                               "pathId": 101,
-                                                               "length": 0.6387093039120941,
-                                                               "children": [],
-                                                               "name": "Mitella_stylosa"
-                                                            },
-                                                            {
-                                                               "pathId": 102,
-                                                               "length": 0.29445753672593966,
-                                                               "children": [
-                                                                  {
-                                                                     "pathId": 103,
-                                                                     "length": 0.34425176718615447,
-                                                                     "children": [],
-                                                                     "name": "Mitella_furusei"
-                                                                  },
-                                                                  {
-                                                                     "pathId": 104,
-                                                                     "length": 0.34425176718615447,
-                                                                     "children": [],
-                                                                     "name": "Mitella_pauciflora"
-                                                                  }
-                                                               ]
-                                                            }
-                                                         ]
-                                                      },
-                                                      {
-                                                         "pathId": 105,
-                                                         "length": 1.2035776685754112,
-                                                         "children": [],
-                                                         "name": "Mitella_japonica"
-                                                      }
-                                                   ]
-                                                }
-                                             ]
-                                          }
-                                       ]
-                                    },
-                                    {
-                                       "pathId": 106,
-                                       "length": 0.34978619639352715,
-                                       "children": [
-                                          {
-                                             "pathId": 107,
-                                             "length": 0.5038748262552062,
-                                             "children": [
-                                                {
-                                                   "pathId": 108,
-                                                   "length": 2.9798832994681135,
-                                                   "children": [
-                                                      {
-                                                         "pathId": 109,
-                                                         "length": 1.5368807510323066,
-                                                         "children": [],
-                                                         "name": "Mitella_breweri"
-                                                      },
-                                                      {
-                                                         "pathId": 110,
-                                                         "length": 1.5368807510323066,
-                                                         "children": [],
-                                                         "name": "Mitella_ovalis"
-                                                      }
-                                                   ]
-                                                },
-                                                {
-                                                   "pathId": 111,
-                                                   "length": 4.51676405050042,
-                                                   "children": [],
-                                                   "name": "Bensoniella_oregona"
-                                                }
-                                             ]
-                                          },
-                                          {
-                                             "pathId": 112,
-                                             "length": 0.5757118232995779,
-                                             "children": [
-                                                {
-                                                   "pathId": 113,
-                                                   "length": 4.444927053456048,
-                                                   "children": [],
-                                                   "name": "Lithophragma_parviflorum"
-                                                },
-                                                {
-                                                   "pathId": 114,
-                                                   "length": 1.682729328332485,
-                                                   "children": [
-                                                      {
-                                                         "pathId": 115,
-                                                         "length": 2.7621977251235634,
-                                                         "children": [],
-                                                         "name": "Mitella_nuda"
-                                                      },
-                                                      {
-                                                         "pathId": 116,
-                                                         "length": 2.7621977251235634,
-                                                         "children": [],
-                                                         "name": "Mitella_diphylla"
-                                                      }
-                                                   ]
-                                                }
-                                             ]
-                                          }
-                                       ]
-                                    }
-                                 ]
-                              }
-                           ]
-                        }
-                     ]
-                  },
-                  {
-                     "pathId": 117,
-                     "length": 0.48045556757312013,
-                     "children": [
-                        {
-                           "pathId": 118,
-                           "length": 5.936816161180818,
-                           "children": [],
-                           "name": "Tiarella_polyphylla"
-                        },
-                        {
-                           "pathId": 119,
-                           "length": 1.4294508717056722,
-                           "children": [
-                              {
-                                 "pathId": 120,
-                                 "length": 1.2373578645983425,
-                                 "children": [
-                                    {
-                                       "pathId": 121,
-                                       "length": 3.2700074248768036,
-                                       "children": [],
-                                       "name": "Elmera_racemosa"
-                                    },
-                                    {
-                                       "pathId": 122,
-                                       "length": 3.2700074248768036,
-                                       "children": [],
-                                       "name": "Mitella_caulescens"
-                                    }
-                                 ]
-                              },
-                              {
-                                 "pathId": 123,
-                                 "length": 1.5018194143115124,
-                                 "children": [
-                                    {
-                                       "pathId": 124,
-                                       "length": 3.0055458751636337,
-                                       "children": [],
-                                       "name": "Conimitella_williamsii"
-                                    },
-                                    {
-                                       "pathId": 125,
-                                       "length": 3.0055458751636337,
-                                       "children": [],
-                                       "name": "Mitella_stauropetala"
-                                    }
-                                 ]
-                              }
-                           ]
-                        }
-                     ]
-                  }
-               ]
-            }
-         ]
+       "children": [
+        {
+         "children": [],
+         "cladeId": 9,
+         "name": "Species 9",
+         "squid": "a9655bd78c883ac2469e43b582955b8fcf3a4521d7757d11b9a11f32117a2651"
+        },
+        {
+         "children": [],
+         "cladeId": 20,
+         "name": "Species 20",
+         "squid": "9426f9bec422b5430f4fcec0444acb195cfa3cc9945896fcd84c3908a8d928f1"
+        }
+       ],
+       "cladeId": 51,
+       "length": 0.0,
+       "name": ""
       },
       {
-         "pathId": 126,
-         "length": 20.061396851878698,
-         "children": [],
-         "name": "Telesonix_jamesii"
+       "children": [],
+       "cladeId": 42,
+       "name": "Species 42",
+       "squid": "3f084c13957bf7ee3525b8ac237f769df32e53f0b62b0ae014ad72d2a15f9516"
       }
-   ]
+     ],
+     "cladeId": 50,
+     "length": 0.0,
+     "name": ""
+    },
+    {
+     "children": [],
+     "cladeId": 12,
+     "name": "Species 12",
+     "squid": "88093eb8272be2733b652edd444b2bd7307e1e692ae078ad0a1c63c2432e500c"
+    }
+   ],
+   "cladeId": 49,
+   "length": 0.0,
+   "name": ""
+  },
+  {
+   "children": [
+    {
+     "children": [
+      {
+       "children": [
+        {
+         "children": [
+          {
+           "children": [],
+           "cladeId": 17,
+           "name": "Species 17",
+           "squid": "5c865386fbacbde30931ec2b463bbb3b6c5aca084734f0660fcc34928833d66a"
+          },
+          {
+           "children": [
+            {
+             "children": [],
+             "cladeId": 8,
+             "name": "Species 8",
+             "squid": "277e99c4bcf2a34919620ae5a36a4a3f6d1e037cc079fb4472169bc5173b6a10"
+            },
+            {
+             "children": [
+              {
+               "children": [],
+               "cladeId": 21,
+               "name": "Species 21",
+               "squid": "cb4e4507016daff4363b0afe8c80503d5cb153e4e1be4a888bf56d1e552e6888"
+              },
+              {
+               "children": [],
+               "cladeId": 15,
+               "name": "Species 15",
+               "squid": "31b01c41e68f714829fe61e49a938c52825aa7418d74e272bc767b9bfd13ad33"
+              }
+             ],
+             "cladeId": 57,
+             "length": 0.0,
+             "name": ""
+            }
+           ],
+           "cladeId": 56,
+           "length": 0.0,
+           "name": ""
+          }
+         ],
+         "cladeId": 55,
+         "length": 0.0,
+         "name": ""
+        },
+        {
+         "children": [
+          {
+           "children": [
+            {
+             "children": [],
+             "cladeId": 32,
+             "name": "Species 32",
+             "squid": "5fab5c8bd4cdbfd62a0b53418c4342819504b75937561d1634f5cb52cbf733be"
+            },
+            {
+             "children": [],
+             "cladeId": 23,
+             "name": "Species 23",
+             "squid": "cdfc61168901288d8af6f0d1b548a951b719c89b9c0081183bb62d21c9a7cf10"
+            }
+           ],
+           "cladeId": 59,
+           "length": 0.0,
+           "name": ""
+          },
+          {
+           "children": [
+            {
+             "children": [],
+             "cladeId": 19,
+             "name": "Species 19",
+             "squid": "c070e509bcaf7cc95ab30d761aae50c8d27dc3cf4cde909a21f557d6f3711104"
+            },
+            {
+             "children": [],
+             "cladeId": 16,
+             "name": "Species 16",
+             "squid": "88093eb8272be2733b652edd444b2bd7307e1e692ae078ad0a1c63c2432e500c"
+            }
+           ],
+           "cladeId": 60,
+           "length": 0.0,
+           "name": ""
+          }
+         ],
+         "cladeId": 58,
+         "length": 0.0,
+         "name": ""
+        }
+       ],
+       "cladeId": 54,
+       "length": 0.0,
+       "name": ""
+      },
+      {
+       "children": [
+        {
+         "children": [
+          {
+           "children": [
+            {
+             "children": [
+              {
+               "children": [],
+               "cladeId": 43,
+               "name": "Species 43",
+               "squid": "6033617be54c97a10e7b2a291f9fa71cea9cdd6b1d93b64af211d77f666370f6"
+              },
+              {
+               "children": [
+                {
+                 "children": [],
+                 "cladeId": 27,
+                 "name": "Species 27",
+                 "squid": "cb4e4507016daff4363b0afe8c80503d5cb153e4e1be4a888bf56d1e552e6888"
+                },
+                {
+                 "children": [
+                  {
+                   "children": [
+                    {
+                     "children": [
+                      {
+                       "children": [
+                        {
+                         "children": [],
+                         "cladeId": 41,
+                         "name": "Species 41",
+                         "squid": "6033617be54c97a10e7b2a291f9fa71cea9cdd6b1d93b64af211d77f666370f6"
+                        },
+                        {
+                         "children": [],
+                         "cladeId": 33,
+                         "name": "Species 33",
+                         "squid": "eea122035b5aafc233c4aa08a1b34b4c7dd0898c75111801ef4e96809da65d12"
+                        }
+                       ],
+                       "cladeId": 69,
+                       "length": 0.0,
+                       "name": ""
+                      },
+                      {
+                       "children": [],
+                       "cladeId": 26,
+                       "name": "Species 26",
+                       "squid": "fe728a820f7c1f4b958b45dbda521a4de88a78a53b12410abb34eb5227dcb692"
+                      }
+                     ],
+                     "cladeId": 68,
+                     "length": 0.0,
+                     "name": ""
+                    },
+                    {
+                     "children": [],
+                     "cladeId": 24,
+                     "name": "Species 24",
+                     "squid": "d00e7382dbccb6eeb81a2d92746bf446204a4326879443b66f1c02193b25e06c"
+                    }
+                   ],
+                   "cladeId": 67,
+                   "length": 0.0,
+                   "name": ""
+                  },
+                  {
+                   "children": [],
+                   "cladeId": 2,
+                   "name": "Species 2",
+                   "squid": "5c3a6b6e392a815717d66dfbf7c5a4181d338a6917e3413b357e9318e6d233e9"
+                  }
+                 ],
+                 "cladeId": 66,
+                 "length": 0.0,
+                 "name": ""
+                }
+               ],
+               "cladeId": 65,
+               "length": 0.0,
+               "name": ""
+              }
+             ],
+             "cladeId": 64,
+             "length": 0.0,
+             "name": ""
+            },
+            {
+             "children": [
+              {
+               "children": [
+                {
+                 "children": [
+                  {
+                   "children": [
+                    {
+                     "children": [],
+                     "cladeId": 30,
+                     "name": "Species 30",
+                     "squid": "87ba42b1bdc43261c63c8c0bde591efad69ba7d3e39b167dc03d9ee8bb77eb84"
+                    },
+                    {
+                     "children": [
+                      {
+                       "children": [],
+                       "cladeId": 36,
+                       "name": "Species 36",
+                       "squid": "9e43608eba7ebc83467687e4959ccabf3c25661a1709e2b035acffa29d5510fe"
+                      },
+                      {
+                       "children": [],
+                       "cladeId": 45,
+                       "name": "Species 45",
+                       "squid": "36c9b3dd5beae67b937ca31b527c5ae4a80a3ef28fff00903ff1775e4ef0f7c5"
+                      }
+                     ],
+                     "cladeId": 74,
+                     "length": 0.0,
+                     "name": ""
+                    }
+                   ],
+                   "cladeId": 73,
+                   "length": 0.0,
+                   "name": ""
+                  },
+                  {
+                   "children": [
+                    {
+                     "children": [],
+                     "cladeId": 22,
+                     "name": "Species 22",
+                     "squid": "fe728a820f7c1f4b958b45dbda521a4de88a78a53b12410abb34eb5227dcb692"
+                    },
+                    {
+                     "children": [
+                      {
+                       "children": [],
+                       "cladeId": 7,
+                       "name": "Species 7",
+                       "squid": "5c3a6b6e392a815717d66dfbf7c5a4181d338a6917e3413b357e9318e6d233e9"
+                      },
+                      {
+                       "children": [],
+                       "cladeId": 6,
+                       "name": "Species 6",
+                       "squid": "92fcc804e96d19c2ffdba835ef507ebe84b07f7b8200bd5f3f4baa73567a693e"
+                      }
+                     ],
+                     "cladeId": 76,
+                     "length": 0.0,
+                     "name": ""
+                    }
+                   ],
+                   "cladeId": 75,
+                   "length": 0.0,
+                   "name": ""
+                  }
+                 ],
+                 "cladeId": 72,
+                 "length": 0.0,
+                 "name": ""
+                },
+                {
+                 "children": [
+                  {
+                   "children": [
+                    {
+                     "children": [],
+                     "cladeId": 1,
+                     "name": "Species 1",
+                     "squid": "a9655bd78c883ac2469e43b582955b8fcf3a4521d7757d11b9a11f32117a2651"
+                    },
+                    {
+                     "children": [
+                      {
+                       "children": [],
+                       "cladeId": 37,
+                       "name": "Species 37",
+                       "squid": "5fab5c8bd4cdbfd62a0b53418c4342819504b75937561d1634f5cb52cbf733be"
+                      },
+                      {
+                       "children": [],
+                       "cladeId": 11,
+                       "name": "Species 11",
+                       "squid": "31b01c41e68f714829fe61e49a938c52825aa7418d74e272bc767b9bfd13ad33"
+                      }
+                     ],
+                     "cladeId": 79,
+                     "length": 0.0,
+                     "name": ""
+                    }
+                   ],
+                   "cladeId": 78,
+                   "length": 0.0,
+                   "name": ""
+                  },
+                  {
+                   "children": [
+                    {
+                     "children": [],
+                     "cladeId": 25,
+                     "name": "Species 25",
+                     "squid": "9426f9bec422b5430f4fcec0444acb195cfa3cc9945896fcd84c3908a8d928f1"
+                    },
+                    {
+                     "children": [
+                      {
+                       "children": [],
+                       "cladeId": 10,
+                       "name": "Species 10",
+                       "squid": "113a3085ac2c5adaa890da87f6499355984807b50695972f34a45937b2c5b24b"
+                      },
+                      {
+                       "children": [],
+                       "cladeId": 47,
+                       "name": "Species 47",
+                       "squid": "04eb74bde4c5e806744ba3de8ae27ef4c44cb858f36e6022f727ac154ba693f9"
+                      }
+                     ],
+                     "cladeId": 81,
+                     "length": 0.0,
+                     "name": ""
+                    }
+                   ],
+                   "cladeId": 80,
+                   "length": 0.0,
+                   "name": ""
+                  }
+                 ],
+                 "cladeId": 77,
+                 "length": 0.0,
+                 "name": ""
+                }
+               ],
+               "cladeId": 71,
+               "length": 0.0,
+               "name": ""
+              },
+              {
+               "children": [
+                {
+                 "children": [],
+                 "cladeId": 29,
+                 "name": "Species 29",
+                 "squid": "eea122035b5aafc233c4aa08a1b34b4c7dd0898c75111801ef4e96809da65d12"
+                },
+                {
+                 "children": [],
+                 "cladeId": 48,
+                 "name": "Species 48",
+                 "squid": "04eb74bde4c5e806744ba3de8ae27ef4c44cb858f36e6022f727ac154ba693f9"
+                }
+               ],
+               "cladeId": 82,
+               "length": 0.0,
+               "name": ""
+              }
+             ],
+             "cladeId": 70,
+             "length": 0.0,
+             "name": ""
+            }
+           ],
+           "cladeId": 63,
+           "length": 0.0,
+           "name": ""
+          },
+          {
+           "children": [
+            {
+             "children": [],
+             "cladeId": 28,
+             "name": "Species 28",
+             "squid": "d00e7382dbccb6eeb81a2d92746bf446204a4326879443b66f1c02193b25e06c"
+            },
+            {
+             "children": [],
+             "cladeId": 31,
+             "name": "Species 31",
+             "squid": "adaecc271a630623fbf76b0fbc0380ede2f3947eb9497c70d162632ab98e9d98"
+            }
+           ],
+           "cladeId": 83,
+           "length": 0.0,
+           "name": ""
+          }
+         ],
+         "cladeId": 62,
+         "length": 0.0,
+         "name": ""
+        },
+        {
+         "children": [
+          {
+           "children": [],
+           "cladeId": 5,
+           "name": "Species 5",
+           "squid": "113a3085ac2c5adaa890da87f6499355984807b50695972f34a45937b2c5b24b"
+          },
+          {
+           "children": [
+            {
+             "children": [],
+             "cladeId": 35,
+             "name": "Species 35",
+             "squid": "adaecc271a630623fbf76b0fbc0380ede2f3947eb9497c70d162632ab98e9d98"
+            },
+            {
+             "children": [],
+             "cladeId": 38,
+             "name": "Species 38",
+             "squid": "eb5f74f60707bbaffde32b62180549482024e0a4b268eae39cf3758549fe9c1f"
+            }
+           ],
+           "cladeId": 85,
+           "length": 0.0,
+           "name": ""
+          }
+         ],
+         "cladeId": 84,
+         "length": 0.0,
+         "name": ""
+        }
+       ],
+       "cladeId": 61,
+       "length": 0.0,
+       "name": ""
+      }
+     ],
+     "cladeId": 53,
+     "length": 0.0,
+     "name": ""
+    },
+    {
+     "children": [
+      {
+       "children": [],
+       "cladeId": 14,
+       "name": "Species 14",
+       "squid": "c070e509bcaf7cc95ab30d761aae50c8d27dc3cf4cde909a21f557d6f3711104"
+      },
+      {
+       "children": [
+        {
+         "children": [
+          {
+           "children": [
+            {
+             "children": [],
+             "cladeId": 3,
+             "name": "Species 3",
+             "squid": "277e99c4bcf2a34919620ae5a36a4a3f6d1e037cc079fb4472169bc5173b6a10"
+            },
+            {
+             "children": [],
+             "cladeId": 34,
+             "name": "Species 34",
+             "squid": "87ba42b1bdc43261c63c8c0bde591efad69ba7d3e39b167dc03d9ee8bb77eb84"
+            }
+           ],
+           "cladeId": 89,
+           "length": 0.0,
+           "name": ""
+          },
+          {
+           "children": [
+            {
+             "children": [],
+             "cladeId": 4,
+             "name": "Species 4",
+             "squid": "92fcc804e96d19c2ffdba835ef507ebe84b07f7b8200bd5f3f4baa73567a693e"
+            },
+            {
+             "children": [
+              {
+               "children": [],
+               "cladeId": 39,
+               "name": "Species 39",
+               "squid": "36c9b3dd5beae67b937ca31b527c5ae4a80a3ef28fff00903ff1775e4ef0f7c5"
+              },
+              {
+               "children": [],
+               "cladeId": 40,
+               "name": "Species 40",
+               "squid": "9e43608eba7ebc83467687e4959ccabf3c25661a1709e2b035acffa29d5510fe"
+              }
+             ],
+             "cladeId": 91,
+             "length": 0.0,
+             "name": ""
+            }
+           ],
+           "cladeId": 90,
+           "length": 0.0,
+           "name": ""
+          }
+         ],
+         "cladeId": 88,
+         "length": 0.0,
+         "name": ""
+        },
+        {
+         "children": [
+          {
+           "children": [
+            {
+             "children": [
+              {
+               "children": [],
+               "cladeId": 46,
+               "name": "Species 46",
+               "squid": "3f084c13957bf7ee3525b8ac237f769df32e53f0b62b0ae014ad72d2a15f9516"
+              },
+              {
+               "children": [],
+               "cladeId": 44,
+               "name": "Species 44",
+               "squid": "eb5f74f60707bbaffde32b62180549482024e0a4b268eae39cf3758549fe9c1f"
+              }
+             ],
+             "cladeId": 94,
+             "length": 0.0,
+             "name": ""
+            },
+            {
+             "children": [],
+             "cladeId": 18,
+             "name": "Species 18",
+             "squid": "cdfc61168901288d8af6f0d1b548a951b719c89b9c0081183bb62d21c9a7cf10"
+            }
+           ],
+           "cladeId": 93,
+           "length": 0.0,
+           "name": ""
+          },
+          {
+           "children": [],
+           "cladeId": 13,
+           "name": "Species 13",
+           "squid": "5c865386fbacbde30931ec2b463bbb3b6c5aca084734f0660fcc34928833d66a"
+          }
+         ],
+         "cladeId": 92,
+         "length": 0.0,
+         "name": ""
+        }
+       ],
+       "cladeId": 87,
+       "length": 0.0,
+       "name": ""
+      }
+     ],
+     "cladeId": 86,
+     "length": 0.0,
+     "name": ""
+    }
+   ],
+   "cladeId": 52,
+   "length": 0.0,
+   "name": ""
+  }
+ ],
+ "cladeId": 0,
+ "name": ""
 }
-    """
+"""
