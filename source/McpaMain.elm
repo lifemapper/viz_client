@@ -277,5 +277,16 @@ main =
         { init = ( Static <| top ExampleTree.tree, Cmd.none )
         , update = update
         , view = view
-        , subscriptions = always <| AnimationFrame.times CurrentTick
+        , subscriptions =
+            (\model ->
+                case model of
+                    StartAnimation _ _ ->
+                        AnimationFrame.times CurrentTick
+
+                    Animating _ _ _ _ ->
+                        AnimationFrame.times CurrentTick
+
+                    _ ->
+                        Sub.none
+            )
         }
