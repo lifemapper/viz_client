@@ -8,6 +8,9 @@ import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import ExampleTree
 import DecodeTree exposing (Tree(..), TreeData)
+import Time exposing (Time)
+import Animation exposing (Animation)
+import AnimationFrame
 
 
 type Context
@@ -63,49 +66,212 @@ getTree ( tree, context ) =
     tree
 
 
-type alias Model =
-    TreeZipper
+type AnimationDirection
+    = AnimateUpLeft
+    | AnimateUpRight
+    | AnimateLeft
+    | AnimateRight
+
+
+type Model
+    = Static TreeZipper
+    | StartAnimation AnimationDirection TreeZipper
+    | Animating AnimationDirection Time Animation TreeZipper
 
 
 type Msg
     = KeyUp String
+    | CurrentTick Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "msg:" msg of
-        KeyUp "ArrowDown" ->
-            ( up model, Cmd.none )
+    case model of
+        Static zipper ->
+            case msg of
+                KeyUp "ArrowDown" ->
+                    case zipper of
+                        ( _, Left _ _ _ ) ->
+                            ( StartAnimation AnimateUpLeft (up zipper), Cmd.none )
 
-        KeyUp "ArrowLeft" ->
-            ( left model, Cmd.none )
+                        ( _, Right _ _ _ ) ->
+                            ( StartAnimation AnimateUpRight (up zipper), Cmd.none )
 
-        KeyUp "ArrowRight" ->
-            ( right model, Cmd.none )
+                        _ ->
+                            ( model, Cmd.none )
 
-        _ ->
-            ( model, Cmd.none )
+                KeyUp "ArrowLeft" ->
+                    ( StartAnimation AnimateLeft zipper, Cmd.none )
+
+                KeyUp "ArrowRight" ->
+                    ( StartAnimation AnimateRight zipper, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        StartAnimation dir zipper ->
+            case msg of
+                CurrentTick time_ ->
+                    ( Animating dir time_ (Animation.animation time_ |> Animation.duration (1 * Time.second)) zipper, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        Animating dir time animation zipper ->
+            case msg of
+                CurrentTick time_ ->
+                    if Animation.isRunning time_ animation then
+                        ( Animating dir time_ animation zipper, Cmd.none )
+                    else
+                        case dir of
+                            AnimateUpLeft ->
+                                ( Static zipper, Cmd.none )
+
+                            AnimateUpRight ->
+                                ( Static zipper, Cmd.none )
+
+                            AnimateLeft ->
+                                ( Static (left zipper), Cmd.none )
+
+                            AnimateRight ->
+                                ( Static (right zipper), Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
 
 view : Model -> Html.Html Msg
 view model =
-    Html.div
-        [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
-        , Html.Attributes.tabindex 0
-        ]
-        [ svg
-            [ width "800"
-            , height "800"
-            , viewBox "-0.5 -0.5 1 1"
-            , Html.Attributes.style [ ( "background", "lightblue" ), ( "font-family", "sans-serif" ) ]
+    let
+        ( transform, zipper ) =
+            case model of
+                Static zipper ->
+                    ( "", zipper )
+
+                StartAnimation _ zipper ->
+                    ( "", zipper )
+
+                Animating AnimateLeft time animation zipper ->
+                    let
+                        x =
+                            Animation.animate time animation
+
+                        translate =
+                            0.25 * x
+
+                        scale =
+                            1.0 / (animation |> Animation.from 1 |> Animation.to 0.7 |> Animation.animate time)
+
+                        rotate =
+                            90 * x
+                    in
+                        ( "rotate("
+                            ++ (toString rotate)
+                            ++ ") "
+                            ++ "scale("
+                            ++ (toString scale)
+                            ++ ") "
+                            ++ "translate("
+                            ++ (toString translate)
+                            ++ ", 0) "
+                        , zipper
+                        )
+
+                Animating AnimateRight time animation zipper ->
+                    let
+                        x =
+                            Animation.animate time animation
+
+                        translate =
+                            -0.25 * x
+
+                        scale =
+                            1.0 / (animation |> Animation.from 1 |> Animation.to 0.7 |> Animation.animate time)
+
+                        rotate =
+                            -90 * x
+                    in
+                        ( "rotate("
+                            ++ (toString rotate)
+                            ++ ") "
+                            ++ "scale("
+                            ++ (toString scale)
+                            ++ ") "
+                            ++ "translate("
+                            ++ (toString translate)
+                            ++ ", 0) "
+                        , zipper
+                        )
+
+                Animating AnimateUpLeft time animation zipper ->
+                    let
+                        x =
+                            Animation.animate time animation
+
+                        translate =
+                            0.25 * (1 - x)
+
+                        scale =
+                            1.0 / (animation |> Animation.from 0.7 |> Animation.to 1 |> Animation.animate time)
+
+                        rotate =
+                            90 * (1 - x)
+                    in
+                        ( "rotate("
+                            ++ (toString rotate)
+                            ++ ") "
+                            ++ "scale("
+                            ++ (toString scale)
+                            ++ ") "
+                            ++ "translate("
+                            ++ (toString translate)
+                            ++ ", 0) "
+                        , zipper
+                        )
+
+                Animating AnimateUpRight time animation zipper ->
+                    let
+                        x =
+                            Animation.animate time animation
+
+                        translate =
+                            -0.25 * (1 - x)
+
+                        scale =
+                            1.0 / (animation |> Animation.from 0.7 |> Animation.to 1 |> Animation.animate time)
+
+                        rotate =
+                            -90 * (1 - x)
+                    in
+                        ( "rotate("
+                            ++ (toString rotate)
+                            ++ ") "
+                            ++ "scale("
+                            ++ (toString scale)
+                            ++ ") "
+                            ++ "translate("
+                            ++ (toString translate)
+                            ++ ", 0) "
+                        , zipper
+                        )
+    in
+        Html.div
+            [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
+            , Html.Attributes.tabindex 0
             ]
-            [ drawTree <| getTree model ]
-        ]
+            [ svg
+                [ width "800"
+                , height "800"
+                , viewBox "-0.5 -0.5 1 1"
+                , Html.Attributes.style [ ( "background", "lightblue" ), ( "font-family", "sans-serif" ) ]
+                ]
+                [ drawTree transform <| getTree zipper ]
+            ]
 
 
-drawTree : Tree -> Svg msg
-drawTree tree =
-    g []
+drawTree : String -> Tree -> Svg msg
+drawTree trans tree =
+    g [ transform trans ]
         (line [ x1 "0", x2 "0", y1 "0.5", y2 "0", stroke "darkolivegreen", strokeWidth "0.014" ] []
             :: drawTree_ 0 tree
         )
@@ -140,8 +306,8 @@ drawTree_ depth tree =
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( top ExampleTree.tree, Cmd.none )
+        { init = ( Static <| top ExampleTree.tree, Cmd.none )
         , update = update
         , view = view
-        , subscriptions = always Sub.none
+        , subscriptions = always <| AnimationFrame.times CurrentTick
         }
