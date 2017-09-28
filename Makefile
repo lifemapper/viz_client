@@ -1,12 +1,15 @@
 ELMFLAGS = --yes --warn
 
-all: sdm.tar.gz
+all: sdm.tar.gz mcpa.tar.gz
 
 debug: ELMFLAGS += --debug
-debug: sdm.tar.gz
+debug: sdm.tar.gz mcpa.tar.gz
 
 sdm.tar.gz: sdm/elm.js sdm/*
 	tar -zcvf sdm.tar.gz --exclude=sdmFlagsOverride.js sdm
+
+mcpa.tar.gz: mcpa/elm.js mcpa/*
+	tar -zcvf mcpa.tar.gz mcpa
 
 sdm/elm.js: source/Decoder.elm source/*
 	elm-make source/Main.elm $(ELMFLAGS) --output=sdm/elm.js
@@ -20,6 +23,8 @@ source/Decoder.elm: swagger.json source/Decoder.elm.patch
 	rm -f source/Decoder.elm.generated
 
 clean:
-	rm -f sdm.tar.gz sdm/elm.js source/Decoder.elm
+	rm -f source/Decoder.elm
+	rm -f sdm.tar.gz sdm/elm.js
+	rm -f mcpa.tar.gz mcpa/elm.js
 
 .PHONY: all clean
