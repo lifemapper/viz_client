@@ -11,6 +11,7 @@ import DecodeTree exposing (Tree(..), TreeData)
 import Time exposing (Time)
 import Animation as A exposing (Animation)
 import AnimationFrame
+import Ease
 
 
 type Context
@@ -114,7 +115,9 @@ update msg model =
                 CurrentTick time ->
                     let
                         animation =
-                            A.animation time |> A.duration (0.2 * Time.second)
+                            A.animation time
+                                |> A.duration (0.5 * Time.second)
+                                |> A.ease Ease.inOutCirc
                     in
                         ( Animating dir time animation zipper, Cmd.none )
 
