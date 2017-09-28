@@ -102,10 +102,16 @@ update msg model =
                             ( model, Cmd.none )
 
                 KeyUp "ArrowLeft" ->
-                    ( StartAnimation AnimateLeft zipper, Cmd.none )
+                    if zipper /= left zipper then
+                        ( StartAnimation AnimateLeft zipper, Cmd.none )
+                    else
+                        ( model, Cmd.none )
 
                 KeyUp "ArrowRight" ->
-                    ( StartAnimation AnimateRight zipper, Cmd.none )
+                    if zipper /= right zipper then
+                        ( StartAnimation AnimateRight zipper, Cmd.none )
+                    else
+                        ( model, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
