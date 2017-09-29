@@ -67,6 +67,16 @@ getTree ( tree, context ) =
     tree
 
 
+getData : TreeZipper -> TreeData
+getData zipper =
+    case getTree zipper of
+        Leaf data ->
+            data
+
+        Node data _ _ ->
+            data
+
+
 type AnimationDirection
     = AnimateUpLeft
     | AnimateUpRight
@@ -175,13 +185,13 @@ transformToAttr t =
 view : Model -> Html.Html Msg
 view model =
     let
-        ( transforms, zipper ) =
+        ( transforms, tree, mapClade ) =
             case model of
                 Static zipper ->
-                    ( [], zipper )
+                    ( [], zipper |> getTree, getData zipper |> .cladeId )
 
                 StartAnimation _ zipper ->
-                    ( [], zipper )
+                    ( [], zipper |> getTree, getData zipper |> .cladeId )
 
                 Animating AnimateLeft time animation zipper ->
                     let
@@ -191,7 +201,7 @@ view model =
                             , Translate (animation |> A.from 0 |> A.to 0.25 |> A.animate time)
                             ]
                     in
-                        ( transforms, zipper )
+                        ( transforms, zipper |> getTree, getData zipper |> .cladeId )
 
                 Animating AnimateRight time animation zipper ->
                     let
@@ -201,7 +211,7 @@ view model =
                             , Translate (animation |> A.from 0 |> A.to -0.25 |> A.animate time)
                             ]
                     in
-                        ( transforms, zipper )
+                        ( transforms, zipper |> getTree, getData zipper |> .cladeId )
 
                 Animating AnimateUpLeft time animation zipper ->
                     let
@@ -211,7 +221,7 @@ view model =
                             , Translate (animation |> A.from 0.25 |> A.to 0 |> A.animate time)
                             ]
                     in
-                        ( transforms, up zipper )
+                        ( transforms, up zipper |> getTree, getData zipper |> .cladeId )
 
                 Animating AnimateUpRight time animation zipper ->
                     let
@@ -221,10 +231,11 @@ view model =
                             , Translate (animation |> A.from -0.25 |> A.to 0 |> A.animate time)
                             ]
                     in
-                        ( transforms, up zipper )
+                        ( transforms, up zipper |> getTree, getData zipper |> .cladeId )
     in
         Html.div
             [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
+            , Html.Attributes.style [ ( "display", "flex" ), ( "flex-direction", "flex-row" ) ]
             , Html.Attributes.tabindex 0
             ]
             [ svg
@@ -233,7 +244,13 @@ view model =
                 , viewBox "-0.5 -0.5 1 1"
                 , Html.Attributes.style [ ( "background", "lightblue" ), ( "font-family", "sans-serif" ) ]
                 ]
-                [ drawTree (transforms |> List.map transformToAttr |> String.join " ") (getTree zipper) ]
+                [ drawTree (transforms |> List.map transformToAttr |> String.join " ") tree ]
+            , Html.div
+                [ Html.Attributes.class "leaflet-map"
+                , Html.Attributes.attribute "data-map-column" (mapClade |> toString)
+                , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
+                ]
+                []
             ]
 
 
@@ -265,7 +282,7 @@ drawTree_ depth tree =
                         (drawTree_ depth right)
                     ]
     in
-        if depth < 10 then
+        if depth < 11 then
             descend (depth + 1)
         else
             []
