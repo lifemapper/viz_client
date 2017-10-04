@@ -2,8 +2,10 @@ module McpaMain exposing (..)
 
 import Html
 import Html.Attributes
+import Html.Events
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
+import Json.Decode as Decode
 import ExampleTree
 import DecodeTree exposing (Tree(..), TreeData)
 import LinearTree
@@ -77,13 +79,22 @@ type alias Model =
 
 
 type Msg
-    = Msg
+    = KeyUp String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        Msg ->
+    case Debug.log "message:" msg of
+        KeyUp "ArrowLeft" ->
+            ( up model, Cmd.none )
+
+        KeyUp "ArrowUp" ->
+            ( left model, Cmd.none )
+
+        KeyUp "ArrowDown" ->
+            ( right model, Cmd.none )
+
+        KeyUp _ ->
             ( model, Cmd.none )
 
 
@@ -100,8 +111,8 @@ view model =
             LinearTree.drawTree treeDepth tree
     in
         Html.div
-            -- [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
-            [ Html.Attributes.style [ ( "display", "flex" ), ( "flex-direction", "flex-row" ) ]
+            [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
+            , Html.Attributes.style [ ( "display", "flex" ), ( "flex-direction", "flex-row" ) ]
             , Html.Attributes.tabindex 0
             ]
             [ svg

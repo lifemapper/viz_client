@@ -39,11 +39,14 @@ drawTree depth tree =
 
                 thisHeight =
                     leftHeight + rightHeight
+
+                width =
+                    (toFloat depth) / 8 |> toString
             in
                 ( thisHeight
                 , [ line
                         [ x1 "0"
-                        , x2 "1"
+                        , x2 width
                         , y1 <| toString (thisHeight / 2.0)
                         , y2 <| toString (thisHeight / 2.0)
                         , strokeWidth "0.1"
@@ -51,15 +54,15 @@ drawTree depth tree =
                         ]
                         []
                   , line
-                        [ x1 "1"
-                        , x2 "1"
+                        [ x1 width
+                        , x2 width
                         , y1 (toString (leftHeight / 2))
                         , y2 (toString (leftHeight + rightHeight / 2))
                         , strokeWidth "0.1"
                         , stroke "black"
                         ]
                         []
-                  , g [ transform <| "translate(1,0)" ] leftNodes
-                  , g [ transform <| "translate(1," ++ (toString leftHeight) ++ ")" ] rightNodes
+                  , g [ transform <| "translate(" ++ width ++ ",0)" ] leftNodes
+                  , g [ transform <| "translate(" ++ width ++ "," ++ (toString leftHeight) ++ ")" ] rightNodes
                   ]
                 )
