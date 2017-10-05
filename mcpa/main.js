@@ -1,10 +1,18 @@
 "use strict";
 
-var app = Elm.McpaMain.fullscreen();
+var app = Elm.StatsMain.fullscreen();
 
 var maps = {};
 var mapLayers = {};
 
+document.onmousemove = document.onmouseup = document.onmousedown = function(event) {
+    const plot = document.getElementById("plot");
+    if (plot == null) return;
+    const rect = plot.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    app.ports.mouseEvent.send([event.type, x, y]);
+};
 
 function configureMap(element) {
     var map = maps[element._leaflet_id];
