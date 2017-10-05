@@ -224,6 +224,9 @@ view model =
 
                 _ ->
                     []
+
+        selectedSiteIds =
+            model.selected |> List.map (.siteId >> toString) |> String.join " "
     in
         Html.div
             -- [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
@@ -232,7 +235,7 @@ view model =
             ]
             [ Html.div
                 [ Html.Attributes.class "leaflet-map"
-                  -- , Html.Attributes.attribute "data-map-column" (mapClade |> toString)
+                , Html.Attributes.attribute "data-map-sites" selectedSiteIds
                 , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
                 ]
                 []
