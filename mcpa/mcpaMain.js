@@ -1,6 +1,6 @@
 "use strict";
 
-var app = Elm.StatsMain.fullscreen();
+var app = Elm.McpaMain.fullscreen();
 
 var maps = {};
 var mapLayers = {};
