@@ -36,18 +36,26 @@ type alias Point =
     }
 
 
-data2svg : DataScale -> Point -> Point
-data2svg ds { x, y } =
-    { x = (x - ds.minX) / (ds.maxX - ds.minX)
-    , y = 1 - (y - ds.minY) / (ds.maxY - ds.minY)
-    }
+type PixelPoint
+    = PixelPoint Point
 
 
-svg2data : DataScale -> Point -> Point
-svg2data ds { x, y } =
-    { x = x * (ds.maxX - ds.minX) + ds.minX
-    , y = (1 - y) * (ds.maxY - ds.minY) + ds.minY
-    }
+type SvgPoint
+    = SvgPoint Point
+
+
+type DataPoint
+    = DataPoint Point
+
+
+data2svg : DataScale -> DataPoint -> SvgPoint
+data2svg ds (DataPoint { x, y }) =
+    SvgPoint { x = (x - ds.minX) / (ds.maxX - ds.minX), y = 1 - (y - ds.minY) / (ds.maxY - ds.minY) }
+
+
+svg2data : DataScale -> SvgPoint -> DataPoint
+svg2data ds (SvgPoint { x, y }) =
+    DataPoint { x = x * (ds.maxX - ds.minX) + ds.minX, y = (1 - y) * (ds.maxY - ds.minY) + ds.minY }
 
 
 type alias SvgViewBox =
@@ -71,9 +79,9 @@ svgViewBox =
     }
 
 
-pixel2svg : SvgViewBox -> Point -> Point
-pixel2svg { width, height, minX, minY, maxX, maxY } { x, y } =
-    Point (x / width * (maxX - minX) + minX) (y / height * (maxY - minY) + minY)
+pixel2svg : SvgViewBox -> PixelPoint -> SvgPoint
+pixel2svg { width, height, minX, minY, maxX, maxY } (PixelPoint { x, y }) =
+    SvgPoint { x = x / width * (maxX - minX) + minX, y = y / height * (maxY - minY) + minY }
 
 
 type alias MouseEvent =
@@ -89,7 +97,7 @@ port mouseEvent : (MouseEvent -> msg) -> Sub msg
 
 type alias Model =
     { selected : List Record
-    , selecting : Maybe ( Point, Point )
+    , selecting : Maybe ( SvgPoint, SvgPoint )
     , data : List Record
     , scale : DataScale
     }
@@ -107,7 +115,7 @@ update msg model =
                 "mousedown" ->
                     let
                         p =
-                            pixel2svg svgViewBox (Point event.x event.y)
+                            pixel2svg svgViewBox (PixelPoint { x = event.x, y = event.y })
 
                         selecting =
                             Just ( p, p )
@@ -119,7 +127,7 @@ update msg model =
                         Just ( p1, _ ) ->
                             let
                                 p2 =
-                                    pixel2svg svgViewBox (Point event.x event.y)
+                                    pixel2svg svgViewBox (PixelPoint { x = event.x, y = event.y })
 
                                 selecting =
                                     Just ( p1, p2 )
@@ -134,9 +142,9 @@ update msg model =
                         Just ( p1_, _ ) ->
                             let
                                 p2_ =
-                                    pixel2svg svgViewBox (Point event.x event.y)
+                                    pixel2svg svgViewBox (PixelPoint { x = event.x, y = event.y })
 
-                                ( p1, p2 ) =
+                                ( DataPoint p1, DataPoint p2 ) =
                                     ( svg2data model.scale p1_, svg2data model.scale p2_ )
 
                                 ( x1, y1 ) =
@@ -202,8 +210,8 @@ drawScatter scale data selected =
     let
         plot record =
             let
-                point =
-                    data2svg scale (Point record.x record.y)
+                (SvgPoint point) =
+                    data2svg scale (DataPoint { x = record.x, y = record.y })
             in
                 circle
                     [ point.x |> toString |> cx
@@ -251,7 +259,7 @@ view model =
             model.selecting
                 |> Maybe.toList
                 |> List.map
-                    (\( p1, p2 ) ->
+                    (\( SvgPoint p1, SvgPoint p2 ) ->
                         let
                             ( x_, y_ ) =
                                 ( Basics.min p1.x p2.x, Basics.min p1.y p2.y )
