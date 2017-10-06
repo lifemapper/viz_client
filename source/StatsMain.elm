@@ -40,7 +40,7 @@ update msg model =
                 "mousedown" ->
                     let
                         p =
-                            Point (event.x / 800 * 1.2 + (-0.1)) (event.y / 800 * 1.2 + (-0.1))
+                            pixel2svg svgViewBox (Point event.x event.y)
 
                         selecting =
                             Just ( p, p )
@@ -52,14 +52,14 @@ update msg model =
                         Just ( p1, _ ) ->
                             let
                                 p2 =
-                                    Point (event.x / 800 * 1.2 + (-0.1)) (event.y / 800 * 1.2 + (-0.1))
+                                    pixel2svg svgViewBox (Point event.x event.y)
 
                                 selecting =
                                     Just ( p1, p2 )
                             in
                                 ( { model | selecting = selecting }, Cmd.none )
 
-                        _ ->
+                        Nothing ->
                             ( model, Cmd.none )
 
                 "mouseup" ->
@@ -67,7 +67,7 @@ update msg model =
                         Just ( p1_, _ ) ->
                             let
                                 p2_ =
-                                    Point (event.x / 800 * 1.2 + (-0.1)) (event.y / 800 * 1.2 + (-0.1))
+                                    pixel2svg svgViewBox (Point event.x event.y)
 
                                 ( p1, p2 ) =
                                     ( svg2data model.scale p1_, svg2data model.scale p2_ )
@@ -213,32 +213,62 @@ drawAxis min max =
     ]
 
 
+type alias SvgViewBox =
+    { width : Float
+    , height : Float
+    , minX : Float
+    , minY : Float
+    , maxX : Float
+    , maxY : Float
+    }
+
+
+svgViewBox : SvgViewBox
+svgViewBox =
+    { width = 800
+    , height = 800
+    , minX = -0.1
+    , minY = -0.1
+    , maxX = 1.1
+    , maxY = 1.1
+    }
+
+
+pixel2svg : SvgViewBox -> Point -> Point
+pixel2svg { width, height, minX, minY, maxX, maxY } { x, y } =
+    Point (x / width * (maxX - minX) + minX) (y / height * (maxY - minY) + minY)
+
+
+svgViewBox2String : SvgViewBox -> String
+svgViewBox2String { width, height, minX, minY, maxX, maxY } =
+    [ minX, minY, maxX - minX, maxY - minY ] |> List.map toString |> String.join " "
+
+
 view : Model -> Html.Html Msg
 view model =
     let
         selectionBox =
-            case model.selecting of
-                Just ( p1, p2 ) ->
-                    let
-                        ( x_, y_ ) =
-                            ( Basics.min p1.x p2.x, Basics.min p1.y p2.y )
+            model.selecting
+                |> Maybe.toList
+                |> List.map
+                    (\( p1, p2 ) ->
+                        let
+                            ( x_, y_ ) =
+                                ( Basics.min p1.x p2.x, Basics.min p1.y p2.y )
 
-                        ( w, h ) =
-                            ( Basics.abs (p2.x - p1.x), Basics.abs (p2.y - p1.y) )
-                    in
-                        [ rect
-                            [ x (toString x_)
-                            , y (toString y_)
-                            , width <| toString w
-                            , height <| toString h
-                            , fill "red"
-                            , fillOpacity "0.4"
-                            ]
-                            []
-                        ]
-
-                _ ->
-                    []
+                            ( w, h ) =
+                                ( Basics.abs (p2.x - p1.x), Basics.abs (p2.y - p1.y) )
+                        in
+                            rect
+                                [ x (toString x_)
+                                , y (toString y_)
+                                , width <| toString w
+                                , height <| toString h
+                                , fill "red"
+                                , fillOpacity "0.4"
+                                ]
+                                []
+                    )
 
         selectedSiteIds =
             model.selected |> List.map (.siteId >> toString) |> String.join " "
@@ -255,9 +285,9 @@ view model =
                 ]
                 []
             , svg
-                [ width "800"
-                , height "800"
-                , viewBox "-0.1 -0.1 1.2 1.2"
+                [ width <| toString svgViewBox.width
+                , height <| toString svgViewBox.height
+                , viewBox <| svgViewBox2String svgViewBox
                 , Html.Attributes.id "plot"
                 ]
                 ([ g [ transform "" ] <| (drawScatter model.scale model.data model.selected) ] ++ selectionBox)
