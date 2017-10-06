@@ -9,7 +9,15 @@ import Svg.Attributes exposing (..)
 import ExampleStats exposing (exampleStats)
 
 
-port mouseEvent : (( String, Float, Float ) -> msg) -> Sub msg
+type alias MouseEvent =
+    { eventType : String
+    , x : Float
+    , y : Float
+    , ctrlKey : Bool
+    }
+
+
+port mouseEvent : (MouseEvent -> msg) -> Sub msg
 
 
 type alias Model =
@@ -21,64 +29,71 @@ type alias Model =
 
 
 type Msg
-    = Msg
-    | MouseEvent ( String, Float, Float )
+    = MouseMsg MouseEvent
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        MouseEvent ( "mousedown", offsetX, offsetY ) ->
-            let
-                p =
-                    Point (offsetX / 800 * 1.2 + (-0.1)) (offsetY / 800 * 1.2 + (-0.1))
-
-                selecting =
-                    Just ( p, p )
-            in
-                ( { model | selecting = selecting }, Cmd.none )
-
-        MouseEvent ( "mousemove", offsetX, offsetY ) ->
-            case model.selecting of
-                Just ( p1, _ ) ->
+        MouseMsg event ->
+            case event.eventType of
+                "mousedown" ->
                     let
-                        p2 =
-                            Point (offsetX / 800 * 1.2 + (-0.1)) (offsetY / 800 * 1.2 + (-0.1))
+                        p =
+                            Point (event.x / 800 * 1.2 + (-0.1)) (event.y / 800 * 1.2 + (-0.1))
 
                         selecting =
-                            Just ( p1, p2 )
+                            Just ( p, p )
                     in
                         ( { model | selecting = selecting }, Cmd.none )
 
+                "mousemove" ->
+                    case model.selecting of
+                        Just ( p1, _ ) ->
+                            let
+                                p2 =
+                                    Point (event.x / 800 * 1.2 + (-0.1)) (event.y / 800 * 1.2 + (-0.1))
+
+                                selecting =
+                                    Just ( p1, p2 )
+                            in
+                                ( { model | selecting = selecting }, Cmd.none )
+
+                        _ ->
+                            ( model, Cmd.none )
+
+                "mouseup" ->
+                    case model.selecting of
+                        Just ( p1_, _ ) ->
+                            let
+                                p2_ =
+                                    Point (event.x / 800 * 1.2 + (-0.1)) (event.y / 800 * 1.2 + (-0.1))
+
+                                ( p1, p2 ) =
+                                    ( svg2data model.scale p1_, svg2data model.scale p2_ )
+
+                                ( x1, y1 ) =
+                                    ( Basics.min p1.x p2.x, Basics.min p1.y p2.y )
+
+                                ( x2, y2 ) =
+                                    ( Basics.max p1.x p2.x, Basics.max p1.y p2.y )
+
+                                newlySelected =
+                                    model.data |> List.filter (\d -> d.x > x1 && d.x < x2 && d.y > y1 && d.y < y2)
+
+                                selected =
+                                    if event.ctrlKey then
+                                        model.selected ++ newlySelected
+                                    else
+                                        newlySelected
+                            in
+                                ( { model | selected = selected, selecting = Nothing }, Cmd.none )
+
+                        Nothing ->
+                            ( model, Cmd.none )
+
                 _ ->
                     ( model, Cmd.none )
-
-        MouseEvent ( "mouseup", offsetX, offsetY ) ->
-            case model.selecting of
-                Just ( p1_, _ ) ->
-                    let
-                        p2_ =
-                            Point (offsetX / 800 * 1.2 + (-0.1)) (offsetY / 800 * 1.2 + (-0.1))
-
-                        ( p1, p2 ) =
-                            ( svg2data model.scale p1_, svg2data model.scale p2_ )
-
-                        ( x1, y1 ) =
-                            ( Basics.min p1.x p2.x, Basics.min p1.y p2.y )
-
-                        ( x2, y2 ) =
-                            ( Basics.max p1.x p2.x, Basics.max p1.y p2.y )
-
-                        selected =
-                            model.data |> List.filter (\d -> d.x > x1 && d.x < x2 && d.y > y1 && d.y < y2)
-                    in
-                        ( { model | selected = selected, selecting = Nothing }, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
-        _ ->
-            ( model, Cmd.none )
 
 
 type alias Record =
@@ -255,5 +270,5 @@ main =
         { init = ( { selected = [], selecting = Nothing, data = data_, scale = computeScale data_ }, Cmd.none )
         , update = update
         , view = view
-        , subscriptions = always <| mouseEvent MouseEvent
+        , subscriptions = always <| mouseEvent MouseMsg
         }

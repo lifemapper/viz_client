@@ -9,9 +9,12 @@ document.onmousemove = document.onmouseup = document.onmousedown = function(even
     const plot = document.getElementById("plot");
     if (plot == null) return;
     const rect = plot.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    app.ports.mouseEvent.send([event.type, x, y]);
+    app.ports.mouseEvent.send({
+        eventType: event.type,
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+        ctrlKey: event.ctrlKey
+    });
 };
 
 function configureMap(element) {
