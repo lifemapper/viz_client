@@ -9,6 +9,73 @@ import Svg.Attributes exposing (..)
 import ExampleStats exposing (exampleStats)
 
 
+type alias DataScale =
+    { minX : Float
+    , minY : Float
+    , maxX : Float
+    , maxY : Float
+    }
+
+
+computeScale : List Record -> DataScale
+computeScale data =
+    { minX =
+        Maybe.withDefault 0 <| agg Basics.min <| List.map .x data
+    , maxX =
+        Maybe.withDefault 0 <| agg Basics.max <| List.map .x data
+    , minY =
+        Maybe.withDefault 0 <| agg Basics.min <| List.map .y data
+    , maxY =
+        Maybe.withDefault 0 <| agg Basics.max <| List.map .y data
+    }
+
+
+type alias Point =
+    { x : Float
+    , y : Float
+    }
+
+
+data2svg : DataScale -> Point -> Point
+data2svg ds { x, y } =
+    { x = (x - ds.minX) / (ds.maxX - ds.minX)
+    , y = 1 - (y - ds.minY) / (ds.maxY - ds.minY)
+    }
+
+
+svg2data : DataScale -> Point -> Point
+svg2data ds { x, y } =
+    { x = x * (ds.maxX - ds.minX) + ds.minX
+    , y = (1 - y) * (ds.maxY - ds.minY) + ds.minY
+    }
+
+
+type alias SvgViewBox =
+    { width : Float
+    , height : Float
+    , minX : Float
+    , minY : Float
+    , maxX : Float
+    , maxY : Float
+    }
+
+
+svgViewBox : SvgViewBox
+svgViewBox =
+    { width = 800
+    , height = 800
+    , minX = -0.1
+    , minY = -0.1
+    , maxX = 1.1
+    , maxY = 1.1
+    }
+
+
+pixel2svg : SvgViewBox -> Point -> Point
+pixel2svg { width, height, minX, minY, maxX, maxY } { x, y } =
+    Point (x / width * (maxX - minX) + minX) (y / height * (maxY - minY) + minY)
+
+
 type alias MouseEvent =
     { eventType : String
     , x : Float
@@ -130,47 +197,6 @@ agg fn xs =
             List.foldl fn x xs |> Just
 
 
-type alias DataScale =
-    { minX : Float
-    , minY : Float
-    , maxX : Float
-    , maxY : Float
-    }
-
-
-computeScale : List Record -> DataScale
-computeScale data =
-    { minX =
-        Maybe.withDefault 0 <| agg Basics.min <| List.map .x data
-    , maxX =
-        Maybe.withDefault 0 <| agg Basics.max <| List.map .x data
-    , minY =
-        Maybe.withDefault 0 <| agg Basics.min <| List.map .y data
-    , maxY =
-        Maybe.withDefault 0 <| agg Basics.max <| List.map .y data
-    }
-
-
-type alias Point =
-    { x : Float
-    , y : Float
-    }
-
-
-data2svg : DataScale -> Point -> Point
-data2svg ds { x, y } =
-    { x = (x - ds.minX) / (ds.maxX - ds.minX)
-    , y = 1 - (y - ds.minY) / (ds.maxY - ds.minY)
-    }
-
-
-svg2data : DataScale -> Point -> Point
-svg2data ds { x, y } =
-    { x = x * (ds.maxX - ds.minX) + ds.minX
-    , y = (1 - y) * (ds.maxY - ds.minY) + ds.minY
-    }
-
-
 drawScatter : DataScale -> List Record -> List Record -> List (Svg msg)
 drawScatter scale data selected =
     let
@@ -211,32 +237,6 @@ drawAxis min max =
     , line [ x1 "0.9", x2 "0.9", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
     , line [ x1 "1.0", x2 "1.0", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
     ]
-
-
-type alias SvgViewBox =
-    { width : Float
-    , height : Float
-    , minX : Float
-    , minY : Float
-    , maxX : Float
-    , maxY : Float
-    }
-
-
-svgViewBox : SvgViewBox
-svgViewBox =
-    { width = 800
-    , height = 800
-    , minX = -0.1
-    , minY = -0.1
-    , maxX = 1.1
-    , maxY = 1.1
-    }
-
-
-pixel2svg : SvgViewBox -> Point -> Point
-pixel2svg { width, height, minX, minY, maxX, maxY } { x, y } =
-    Point (x / width * (maxX - minX) + minX) (y / height * (maxY - minY) + minY)
 
 
 svgViewBox2String : SvgViewBox -> String
