@@ -95,6 +95,9 @@ type alias MouseEvent =
 port mouseEvent : (MouseEvent -> msg) -> Sub msg
 
 
+port sitesSelected : (List Int -> msg) -> Sub msg
+
+
 type alias Model =
     { selected : List Record
     , selecting : Maybe ( SvgPoint, SvgPoint )
@@ -105,11 +108,20 @@ type alias Model =
 
 type Msg
     = MouseMsg MouseEvent
+    | SitesSelectedMsg (List Int)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        SitesSelectedMsg sites ->
+            let
+                selected =
+                    model.data
+                        |> List.filter (\r -> List.member r.siteId sites)
+            in
+                ( { model | selected = selected }, Cmd.none )
+
         MouseMsg event ->
             case event.eventType of
                 "mousedown" ->
@@ -308,5 +320,10 @@ main =
         { init = ( { selected = [], selecting = Nothing, data = data_, scale = computeScale data_ }, Cmd.none )
         , update = update
         , view = view
-        , subscriptions = always <| mouseEvent MouseMsg
+        , subscriptions =
+            always <|
+                Sub.batch
+                    [ mouseEvent MouseMsg
+                    , sitesSelected SitesSelectedMsg
+                    ]
         }
