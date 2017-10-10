@@ -84,10 +84,16 @@ type AnimationDirection
     | AnimateRight
 
 
-type Model
-    = Static TreeZipper
-    | StartAnimation AnimationDirection TreeZipper
-    | Animating AnimationDirection Time Animation TreeZipper
+type AnimationState
+    = Start AnimationDirection
+    | Running AnimationDirection Time Animation
+    | Static
+
+
+type alias Model =
+    { zipper : TreeZipper
+    , animationState : AnimationState
+    }
 
 
 type Msg
@@ -96,37 +102,37 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case model of
-        Static zipper ->
+update msg ({ zipper, animationState } as model) =
+    case animationState of
+        Static ->
             case msg of
                 KeyUp "ArrowDown" ->
                     case zipper of
                         ( _, Left _ _ _ ) ->
-                            ( StartAnimation AnimateUpLeft zipper, Cmd.none )
+                            ( { model | animationState = Start AnimateUpLeft }, Cmd.none )
 
                         ( _, Right _ _ _ ) ->
-                            ( StartAnimation AnimateUpRight zipper, Cmd.none )
+                            ( { model | animationState = Start AnimateUpRight }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
 
                 KeyUp "ArrowLeft" ->
                     if zipper /= left zipper then
-                        ( StartAnimation AnimateLeft zipper, Cmd.none )
+                        ( { model | animationState = Start AnimateLeft }, Cmd.none )
                     else
                         ( model, Cmd.none )
 
                 KeyUp "ArrowRight" ->
                     if zipper /= right zipper then
-                        ( StartAnimation AnimateRight zipper, Cmd.none )
+                        ( { model | animationState = Start AnimateRight }, Cmd.none )
                     else
                         ( model, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
-        StartAnimation dir zipper ->
+        Start dir ->
             case msg of
                 CurrentTick time ->
                     let
@@ -135,29 +141,29 @@ update msg model =
                                 |> A.duration (0.5 * Time.second)
                                 |> A.ease Ease.inOutCirc
                     in
-                        ( Animating dir time animation zipper, Cmd.none )
+                        ( { model | animationState = Running dir time animation }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
-        Animating dir _ animation zipper ->
+        Running dir _ animation ->
             case msg of
                 CurrentTick time ->
                     if A.isRunning time animation then
-                        ( Animating dir time animation zipper, Cmd.none )
+                        ( { model | animationState = Running dir time animation }, Cmd.none )
                     else
                         case dir of
                             AnimateUpLeft ->
-                                ( Static (up zipper), Cmd.none )
+                                ( { model | animationState = Static, zipper = up zipper }, Cmd.none )
 
                             AnimateUpRight ->
-                                ( Static (up zipper), Cmd.none )
+                                ( { model | animationState = Static, zipper = up zipper }, Cmd.none )
 
                             AnimateLeft ->
-                                ( Static (left zipper), Cmd.none )
+                                ( { model | animationState = Static, zipper = left zipper }, Cmd.none )
 
                             AnimateRight ->
-                                ( Static (right zipper), Cmd.none )
+                                ( { model | animationState = Static, zipper = right zipper }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -183,17 +189,17 @@ transformToAttr t =
 
 
 view : Model -> Html.Html Msg
-view model =
+view { zipper, animationState } =
     let
         ( transforms, tree, mapClade ) =
-            case model of
-                Static zipper ->
+            case animationState of
+                Static ->
                     ( [], zipper |> getTree, getData zipper |> .cladeId )
 
-                StartAnimation _ zipper ->
+                Start _ ->
                     ( [], zipper |> getTree, getData zipper |> .cladeId )
 
-                Animating AnimateLeft time animation zipper ->
+                Running AnimateLeft time animation ->
                     let
                         transforms =
                             [ Rotate (animation |> A.from 0 |> A.to 90 |> A.animate time)
@@ -203,7 +209,7 @@ view model =
                     in
                         ( transforms, zipper |> getTree, getData zipper |> .cladeId )
 
-                Animating AnimateRight time animation zipper ->
+                Running AnimateRight time animation ->
                     let
                         transforms =
                             [ Rotate (animation |> A.from 0 |> A.to -90 |> A.animate time)
@@ -213,7 +219,7 @@ view model =
                     in
                         ( transforms, zipper |> getTree, getData zipper |> .cladeId )
 
-                Animating AnimateUpLeft time animation zipper ->
+                Running AnimateUpLeft time animation ->
                     let
                         transforms =
                             [ Rotate (animation |> A.from 90 |> A.to 0 |> A.animate time)
@@ -223,7 +229,7 @@ view model =
                     in
                         ( transforms, up zipper |> getTree, getData zipper |> .cladeId )
 
-                Animating AnimateUpRight time animation zipper ->
+                Running AnimateUpRight time animation ->
                     let
                         transforms =
                             [ Rotate (animation |> A.from -90 |> A.to 0 |> A.animate time)
@@ -332,16 +338,16 @@ clickBoxes =
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( Static <| top ExampleTree.tree, Cmd.none )
+        { init = ( { animationState = Static, zipper = top ExampleTree.tree }, Cmd.none )
         , update = update
         , view = view
         , subscriptions =
             (\model ->
-                case model of
-                    StartAnimation _ _ ->
+                case model.animationState of
+                    Start _ ->
                         AnimationFrame.times CurrentTick
 
-                    Animating _ _ _ _ ->
+                    Running _ _ _ ->
                         AnimationFrame.times CurrentTick
 
                     _ ->
