@@ -77,7 +77,14 @@ var observer = new MutationObserver(function(mutations) {
                 var editableLayers = new L.FeatureGroup();
                 map.addLayer(editableLayers);
 
-                var drawControl = new L.Control.Draw();
+                var drawControl = new L.Control.Draw({
+                    draw: {
+                        polyline: false,
+                        marker: false,
+                        circle: false,
+                        circlemarker: false
+                    }
+                });
                 map.addControl(drawControl);
 
                 map.on(L.Draw.Event.CREATED, function(e) {
@@ -89,6 +96,10 @@ var observer = new MutationObserver(function(mutations) {
                                 return sites.concat(feature.properties.siteid);
                             }, [])
                     );
+                });
+
+                map.on(L.Draw.Event.DRAWSTART, function(e) {
+                    editableLayers.clearLayers();
                 });
 
                 maps[element._leaflet_id] = map;
