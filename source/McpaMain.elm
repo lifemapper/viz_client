@@ -93,16 +93,28 @@ type AnimationState
 type alias Model =
     { zipper : TreeZipper
     , animationState : AnimationState
+    , mouseIn : Bool
     }
 
 
 type Msg
     = KeyUp String
     | CurrentTick Time
+    | SetMouseIn Bool
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ zipper, animationState } as model) =
+update msg model =
+    case msg of
+        SetMouseIn mouseIn ->
+            ( { model | mouseIn = mouseIn }, Cmd.none )
+
+        _ ->
+            updateAnimation msg model
+
+
+updateAnimation : Msg -> Model -> ( Model, Cmd Msg )
+updateAnimation msg ({ zipper, animationState } as model) =
     case animationState of
         Static ->
             case msg of
@@ -189,8 +201,14 @@ transformToAttr t =
 
 
 view : Model -> Html.Html Msg
-view { zipper, animationState } =
+view { zipper, animationState, mouseIn } =
     let
+        cbx =
+            if mouseIn then
+                clickBoxes
+            else
+                []
+
         ( transforms, tree, mapClade ) =
             case animationState of
                 Static ->
@@ -249,8 +267,10 @@ view { zipper, animationState } =
                 , height "800"
                 , viewBox "-0.5 -0.5 1 1"
                 , Html.Attributes.style [ ( "background", "lightblue" ), ( "font-family", "sans-serif" ) ]
+                , Html.Events.onMouseEnter (SetMouseIn True)
+                , Html.Events.onMouseLeave (SetMouseIn False)
                 ]
-                [ drawTree (transforms |> List.map transformToAttr |> String.join " ") tree ]
+                (drawTree (transforms |> List.map transformToAttr |> String.join " ") tree :: cbx)
             , Html.div
                 [ Html.Attributes.class "leaflet-map"
                 , Html.Attributes.attribute "data-map-column" (mapClade |> toString)
@@ -338,7 +358,7 @@ clickBoxes =
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( { animationState = Static, zipper = top ExampleTree.tree }, Cmd.none )
+        { init = ( { animationState = Static, zipper = top ExampleTree.tree, mouseIn = False }, Cmd.none )
         , update = update
         , view = view
         , subscriptions =
