@@ -284,28 +284,34 @@ drawTree : String -> Tree -> Svg msg
 drawTree trans tree =
     g [ transform trans ]
         (line [ x1 "0", x2 "0", y1 "0.5", y2 "0", stroke "darkolivegreen", strokeWidth "0.014" ] []
-            :: drawTree_ 0 tree
+            :: drawTree_ 0 0 tree
         )
 
 
-drawTree_ : Int -> Tree -> List (Svg msg)
-drawTree_ depth tree =
+drawTree_ : Int -> Int -> Tree -> List (Svg msg)
+drawTree_ depth quadrant tree =
     let
+        textTransform =
+            if quadrant < 2 then
+                "rotate(90)"
+            else
+                "rotate(-90)"
+
         descend depth =
             case tree of
                 Leaf data ->
                     [ ellipse [ cx "0", cy "0", rx "0.2", ry "0.3", fill "green", stroke "lightgreen", strokeWidth "0.005" ]
                         []
-                    , text_ [ x "0", y "0", textAnchor "middle", fontSize "0.05", transform "rotate(-90)", fill "white" ]
+                    , text_ [ x "0", y "0", textAnchor "middle", fontSize "0.05", transform textTransform, fill "white" ]
                         [ text data.name ]
                     ]
 
                 Node data left right ->
                     [ line [ x1 "-0.25", x2 "0.25", y1 "0", y2 "0", stroke "darkolivegreen", strokeWidth "0.01" ] []
                     , g [ transform "translate(-0.25, 0) scale(0.7) rotate(-90)" ]
-                        (drawTree_ depth left)
+                        (drawTree_ depth ((quadrant + 1) % 4) left)
                     , g [ transform "translate(0.25, 0) scale(0.7) rotate(90)" ]
-                        (drawTree_ depth right)
+                        (drawTree_ depth ((quadrant - 1) % 4) right)
                     ]
     in
         if depth < 11 then
