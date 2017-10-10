@@ -84,6 +84,11 @@ pixel2svg { width, height, minX, minY, maxX, maxY } (PixelPoint { x, y }) =
     SvgPoint { x = x / width * (maxX - minX) + minX, y = y / height * (maxY - minY) + minY }
 
 
+inViewBox : SvgViewBox -> SvgPoint -> Bool
+inViewBox { width, height, minX, minY, maxX, maxY } (SvgPoint { x, y }) =
+    minX <= x && maxX >= x && minY <= y && maxY >= y
+
+
 type alias MouseEvent =
     { eventType : String
     , x : Float
@@ -130,7 +135,10 @@ update msg model =
                             pixel2svg svgViewBox (PixelPoint { x = event.x, y = event.y })
 
                         selecting =
-                            Just ( p, p )
+                            if inViewBox svgViewBox p then
+                                Just ( p, p )
+                            else
+                                Nothing
                     in
                         ( { model | selecting = selecting }, Cmd.none )
 
