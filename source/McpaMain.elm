@@ -288,6 +288,47 @@ drawTree_ depth tree =
             []
 
 
+clickBoxes : List (Html.Html Msg)
+clickBoxes =
+    [ rect
+        [ x "-0.5"
+        , y "-0.5"
+        , width "0.5"
+        , height "0.9"
+        , fill "blue"
+        , fillOpacity "0.2"
+        , strokeWidth "0.001"
+        , stroke "grey"
+        , Html.Events.onClick (KeyUp "ArrowLeft")
+        ]
+        []
+    , rect
+        [ x "0"
+        , y "-0.5"
+        , width "0.5"
+        , height "0.9"
+        , fill "red"
+        , fillOpacity "0.2"
+        , strokeWidth "0.001"
+        , stroke "grey"
+        , Html.Events.onClick (KeyUp "ArrowRight")
+        ]
+        []
+    , rect
+        [ x "-0.5"
+        , y "0.4"
+        , width "1"
+        , height "0.1"
+        , fill "purple"
+        , fillOpacity "0.2"
+        , strokeWidth "0.001"
+        , stroke "grey"
+        , Html.Events.onClick (KeyUp "ArrowDown")
+        ]
+        []
+    ]
+
+
 main : Program Never Model Msg
 main =
     Html.program
