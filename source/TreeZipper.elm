@@ -1,4 +1,4 @@
-module TreeZipper exposing (Position(..), TreeZipper, top, left, right, up, getTree, getData, getPosition)
+module TreeZipper exposing (Position(..), TreeZipper, start, moveToward, getTree, getData, getPosition)
 
 import DecodeTree exposing (Tree(..), TreeData)
 
@@ -19,9 +19,22 @@ type TreeZipper
     = TreeZipper Tree Context
 
 
-top : Tree -> TreeZipper
-top tree =
+start : Tree -> TreeZipper
+start tree =
     TreeZipper tree Top
+
+
+moveToward : Position -> TreeZipper -> TreeZipper
+moveToward dir zipper =
+    case dir of
+        Root ->
+            up zipper
+
+        LeftBranch ->
+            left zipper
+
+        RightBranch ->
+            right zipper
 
 
 left : TreeZipper -> TreeZipper

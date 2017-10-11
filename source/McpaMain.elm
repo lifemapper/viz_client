@@ -8,7 +8,7 @@ import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import ExampleTree
 import DecodeTree exposing (Tree(..), TreeData)
-import TreeZipper exposing (..)
+import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
 import Time exposing (Time)
 import Animation as A exposing (Animation)
 import AnimationFrame
@@ -68,13 +68,13 @@ updateAnimation msg ({ zipper, animationState } as model) =
                             ( model, Cmd.none )
 
                 KeyUp "ArrowLeft" ->
-                    if zipper /= left zipper then
+                    if zipper /= moveToward LeftBranch zipper then
                         ( { model | animationState = Start AnimateLeft }, Cmd.none )
                     else
                         ( model, Cmd.none )
 
                 KeyUp "ArrowRight" ->
-                    if zipper /= right zipper then
+                    if zipper /= moveToward RightBranch zipper then
                         ( { model | animationState = Start AnimateRight }, Cmd.none )
                     else
                         ( model, Cmd.none )
@@ -104,16 +104,16 @@ updateAnimation msg ({ zipper, animationState } as model) =
                     else
                         case dir of
                             AnimateUpLeft ->
-                                ( { model | animationState = Static, zipper = up zipper }, Cmd.none )
+                                ( { model | animationState = Static, zipper = moveToward Root zipper }, Cmd.none )
 
                             AnimateUpRight ->
-                                ( { model | animationState = Static, zipper = up zipper }, Cmd.none )
+                                ( { model | animationState = Static, zipper = moveToward Root zipper }, Cmd.none )
 
                             AnimateLeft ->
-                                ( { model | animationState = Static, zipper = left zipper }, Cmd.none )
+                                ( { model | animationState = Static, zipper = moveToward LeftBranch zipper }, Cmd.none )
 
                             AnimateRight ->
-                                ( { model | animationState = Static, zipper = right zipper }, Cmd.none )
+                                ( { model | animationState = Static, zipper = moveToward RightBranch zipper }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -183,7 +183,7 @@ view { zipper, animationState, mouseIn } =
                             , Translate (animation |> A.from 0.25 |> A.to 0 |> A.animate time)
                             ]
                     in
-                        ( transforms, up zipper |> getTree, getData zipper |> .cladeId )
+                        ( transforms, moveToward Root zipper |> getTree, getData zipper |> .cladeId )
 
                 Running AnimateUpRight time animation ->
                     let
@@ -193,7 +193,7 @@ view { zipper, animationState, mouseIn } =
                             , Translate (animation |> A.from -0.25 |> A.to 0 |> A.animate time)
                             ]
                     in
-                        ( transforms, up zipper |> getTree, getData zipper |> .cladeId )
+                        ( transforms, moveToward Root zipper |> getTree, getData zipper |> .cladeId )
     in
         Html.div
             [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
@@ -302,7 +302,13 @@ clickBoxes =
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( { animationState = Static, zipper = top ExampleTree.tree, mouseIn = False }, Cmd.none )
+        { init =
+            ( { animationState = Static
+              , zipper = TreeZipper.start ExampleTree.tree
+              , mouseIn = False
+              }
+            , Cmd.none
+            )
         , update = update
         , view = view
         , subscriptions =
