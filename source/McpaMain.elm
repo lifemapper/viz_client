@@ -2,7 +2,7 @@ module McpaMain exposing (..)
 
 import Html
 import McpaModel exposing (..)
-import McpaView
+import LinearTreeView
 
 
 main : Program Never Model Msg
@@ -10,6 +10,6 @@ main =
     Html.program
         { init = init
         , update = update
-        , view = McpaView.view
+        , view = LinearTreeView.view
         , subscriptions = subscriptions
         }
