@@ -121,7 +121,7 @@ drawTree totalLength tree zipper =
                 boxes =
                     if tree == getTree zipper then
                         [ rect
-                            [ x "0"
+                            [ x <| toString length
                             , y "0"
                             , width "100"
                             , height <| toString leftHeight
@@ -131,7 +131,7 @@ drawTree totalLength tree zipper =
                             ]
                             []
                         , rect
-                            [ x "0"
+                            [ x <| toString length
                             , y <| toString leftHeight
                             , width "100"
                             , height <| toString rightHeight
