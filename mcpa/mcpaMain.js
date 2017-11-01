@@ -30,7 +30,7 @@ function configureMap(element) {
 
     if (layers == null || layers.length === 0) {
         mapLayers[element._leaflet_id] = [
-            L.geoJSON(fakeData, {style: style(mapColumn)}).addTo(map)
+            L.geoJSON(ancPam, {style: style(mapColumn)}).addTo(map)
         ];
     } else {
         layers[0].setStyle(style(mapColumn));
@@ -63,7 +63,7 @@ function style(mapColumn) {
     };
 }
 
-var bbox = turf.bbox(fakeData);
+var bbox = turf.bbox(ancPam);
 
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(m) {

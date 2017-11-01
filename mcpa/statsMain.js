@@ -33,7 +33,7 @@ function configureMap(element) {
 
     if (layers == null || layers.length === 0) {
         mapLayers[element._leaflet_id] = [
-            L.geoJSON(fakeData, {style: style(sites)}).addTo(map)
+            L.geoJSON(ancPam, {style: style(sites)}).addTo(map)
         ];
     } else {
         layers[0].setStyle(style(sites));
@@ -54,14 +54,14 @@ function style(sites) {
 }
 
 var centers = turf.featureCollection(
-    turf.featureReduce(fakeData, function(centers, feature) {
+    turf.featureReduce(ancPam, function(centers, feature) {
         return centers.concat(
             turf.point([feature.properties.centerX, feature.properties.centerY], feature.properties)
         );
     }, [])
 );
 
-var bbox = turf.bbox(fakeData);
+var bbox = turf.bbox(ancPam);
 
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(m) {
