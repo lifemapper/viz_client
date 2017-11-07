@@ -1,34 +1,38 @@
 {-
-Copyright (C) 2017, University of Kansas Center for Research
+   Copyright (C) 2017, University of Kansas Center for Research
 
-Lifemapper Project, lifemapper [at] ku [dot] edu,
-Biodiversity Institute,
-1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
+   Lifemapper Project, lifemapper [at] ku [dot] edu,
+   Biodiversity Institute,
+   1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or (at
+   your option) any later version.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
 -}
+
+
 port module StatsMain exposing (..)
 
 import List.Extra as List
 import Maybe.Extra as Maybe
 import Html
 import Html.Attributes
+import Html.Events
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import ExampleStats exposing (exampleStats)
+import Csv exposing (Csv)
 
 
 type alias DataScale =
@@ -128,23 +132,41 @@ port sitesSelected : (List Int -> msg) -> Sub msg
 type alias Model =
     { selected : List Record
     , selecting : Maybe ( SvgPoint, SvgPoint )
-    , data : List Record
-    , scale : DataScale
+    , data : Csv
+    , xCol : Int
+    , yCol : Int
     }
 
 
 type Msg
     = MouseMsg MouseEvent
     | SitesSelectedMsg (List Int)
+    | XColSelectedMsg String
+    | YColSelectedMsg String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        XColSelectedMsg col ->
+            col
+                |> String.toInt
+                |> Result.toMaybe
+                |> Maybe.map (\i -> ( { model | xCol = i }, Cmd.none ))
+                |> Maybe.withDefault ( model, Cmd.none )
+
+        YColSelectedMsg col ->
+            col
+                |> String.toInt
+                |> Result.toMaybe
+                |> Maybe.map (\i -> ( { model | yCol = i }, Cmd.none ))
+                |> Maybe.withDefault ( model, Cmd.none )
+
         SitesSelectedMsg sites ->
             let
                 selected =
                     model.data
+                        |> recordsFromCsv model.xCol model.yCol
                         |> List.filter (\r -> List.member r.siteId sites)
             in
                 ( { model | selected = selected }, Cmd.none )
@@ -183,11 +205,17 @@ update msg model =
                     case model.selecting of
                         Just ( p1_, _ ) ->
                             let
+                                records =
+                                    recordsFromCsv model.xCol model.yCol model.data
+
+                                scale =
+                                    computeScale records
+
                                 p2_ =
                                     pixel2svg svgViewBox (PixelPoint { x = event.x, y = event.y })
 
                                 ( DataPoint p1, DataPoint p2 ) =
-                                    ( svg2data model.scale p1_, svg2data model.scale p2_ )
+                                    ( svg2data scale p1_, svg2data scale p2_ )
 
                                 ( x1, y1 ) =
                                     ( Basics.min p1.x p2.x, Basics.min p1.y p2.y )
@@ -196,7 +224,7 @@ update msg model =
                                     ( Basics.max p1.x p2.x, Basics.max p1.y p2.y )
 
                                 newlySelected =
-                                    model.data |> List.filter (\d -> d.x > x1 && d.x < x2 && d.y > y1 && d.y < y2)
+                                    records |> List.filter (\d -> d.x > x1 && d.x < x2 && d.y > y1 && d.y < y2)
 
                                 selected =
                                     if event.ctrlKey then
@@ -217,24 +245,29 @@ type alias Record =
     { siteId : Int, x : Float, y : Float }
 
 
-extractRecord : List String -> Maybe Record
-extractRecord record =
+extractRecord : Int -> Int -> List String -> Maybe Record
+extractRecord xCol yCol record =
     let
         siteId =
             List.getAt 0 record |> Result.fromMaybe "No SiteId in CSV" |> Result.andThen String.toInt
 
-        alpha =
-            List.getAt 3 record |> Result.fromMaybe "No alpha in CSV" |> Result.andThen String.toFloat
+        x =
+            List.getAt (xCol + 3) record |> Result.fromMaybe "missing column in CSV" |> Result.andThen String.toFloat
 
-        phi =
-            List.getAt 6 record |> Result.fromMaybe "No phi in CSV" |> Result.andThen String.toFloat
+        y =
+            List.getAt (yCol + 3) record |> Result.fromMaybe "missing column in CSV" |> Result.andThen String.toFloat
     in
-        Result.map3 Record siteId phi alpha |> Result.toMaybe
+        Result.map3 Record siteId x y |> Result.toMaybe
 
 
-data_ : List Record
-data_ =
-    List.map extractRecord exampleStats.records |> Maybe.values
+recordsFromCsv : Int -> Int -> Csv -> List Record
+recordsFromCsv xCol yCol csv =
+    List.map (extractRecord xCol yCol) csv.records |> Maybe.values
+
+
+variables : Csv -> List String
+variables csv =
+    List.drop 3 csv.headers
 
 
 agg : (number -> number -> number) -> List number -> Maybe number
@@ -247,9 +280,24 @@ agg fn xs =
             List.foldl fn x xs |> Just
 
 
-drawScatter : DataScale -> List Record -> List Record -> List (Svg msg)
-drawScatter scale data selected =
+drawScatter : Model -> List (Svg msg)
+drawScatter model =
     let
+        vars =
+            variables model.data
+
+        xVar =
+            List.getAt model.xCol vars |> Maybe.withDefault ""
+
+        yVar =
+            List.getAt model.yCol vars |> Maybe.withDefault ""
+
+        records =
+            recordsFromCsv model.xCol model.yCol model.data
+
+        scale =
+            computeScale records
+
         plot record =
             let
                 (SvgPoint point) =
@@ -260,21 +308,21 @@ drawScatter scale data selected =
                     , point.y |> toString |> cy
                     , r "0.006"
                     , fillOpacity "0.8"
-                    , if List.member record selected then
+                    , if List.member record model.selected then
                         fill "red"
                       else
                         fill "black"
                     ]
                     []
     in
-        ((g [] <| drawAxis scale.minX scale.maxX)
-            :: (g [ transform "rotate(90) scale(1,-1)" ] <| drawAxis scale.minY scale.maxY)
-            :: List.map plot data
+        ((g [] <| drawAxis xVar scale.minX scale.maxX)
+            :: (g [ transform "rotate(90) scale(1,1)" ] <| drawAxis yVar scale.minY scale.maxY)
+            :: List.map plot records
         )
 
 
-drawAxis : Float -> Float -> List (Svg msg)
-drawAxis min max =
+drawAxis : String -> Float -> Float -> List (Svg msg)
+drawAxis label min max =
     [ line [ x1 "0", x2 "1", y1 "0", y2 "0", strokeWidth "0.001", stroke "black" ] []
     , line [ x1 "0.1", x2 "0.1", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
     , line [ x1 "0.2", x2 "0.2", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
@@ -286,6 +334,7 @@ drawAxis min max =
     , line [ x1 "0.8", x2 "0.8", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
     , line [ x1 "0.9", x2 "0.9", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
     , line [ x1 "1.0", x2 "1.0", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
+    , text_ [ x "0.5", y "-0.02", fontSize "0.04" ] [ text label ]
     ]
 
 
@@ -322,6 +371,25 @@ view model =
 
         selectedSiteIds =
             model.selected |> List.map (.siteId >> toString) |> String.join " "
+
+        records =
+            recordsFromCsv model.xCol model.yCol model.data
+
+        availableVariables =
+            variables model.data
+
+        variableSelector selected select =
+            Html.select [ Html.Events.onInput select ]
+                (availableVariables
+                    |> List.indexedMap
+                        (\i v ->
+                            Html.option
+                                [ Html.Attributes.selected (i == selected)
+                                , Html.Attributes.value (toString i)
+                                ]
+                                [ Html.text v ]
+                        )
+                )
     in
         Html.div
             -- [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
@@ -334,20 +402,35 @@ view model =
                 , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
                 ]
                 []
-            , svg
-                [ width <| toString svgViewBox.width
-                , height <| toString svgViewBox.height
-                , viewBox <| svgViewBox2String svgViewBox
-                , Html.Attributes.id "plot"
+            , Html.div []
+                [ Html.p []
+                    [ variableSelector model.yCol YColSelectedMsg
+                    , Html.text " vs "
+                    , variableSelector model.xCol XColSelectedMsg
+                    ]
+                , svg
+                    [ width <| toString svgViewBox.width
+                    , height <| toString svgViewBox.height
+                    , viewBox <| svgViewBox2String svgViewBox
+                    , Html.Attributes.id "plot"
+                    ]
+                    ([ g [ transform "" ] <| (drawScatter model) ] ++ selectionBox)
                 ]
-                ([ g [ transform "" ] <| (drawScatter model.scale model.data model.selected) ] ++ selectionBox)
             ]
 
 
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( { selected = [], selecting = Nothing, data = data_, scale = computeScale data_ }, Cmd.none )
+        { init =
+            ( { selected = []
+              , selecting = Nothing
+              , data = exampleStats
+              , xCol = 0
+              , yCol = 3
+              }
+            , Cmd.none
+            )
         , update = update
         , view = view
         , subscriptions =
