@@ -56,10 +56,10 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.animationState of
         Start _ ->
-            AnimationFrame.times CurrentTick
+            AnimationFrame.times (AnimationMsg << CurrentTick)
 
         Running _ _ _ ->
-            AnimationFrame.times CurrentTick
+            AnimationFrame.times (AnimationMsg << CurrentTick)
 
         _ ->
             Sub.none
@@ -79,12 +79,16 @@ type AnimationDirection
 
 
 type Msg
-    = KeyUp String
-    | CurrentTick Time
-    | SetMouseIn Bool
+    = SetMouseIn Bool
     | JumpUp
     | JumpLeft
     | JumpRight
+    | AnimationMsg AnimationMsg
+
+
+type AnimationMsg
+    = KeyUp String
+    | CurrentTick Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -102,11 +106,11 @@ update msg model =
         JumpRight ->
             ( { model | zipper = moveToward RightBranch model.zipper }, Cmd.none )
 
-        _ ->
-            updateAnimation msg model
+        AnimationMsg msg_ ->
+            updateAnimation msg_ model
 
 
-updateAnimation : Msg -> Model -> ( Model, Cmd Msg )
+updateAnimation : AnimationMsg -> Model -> ( Model, Cmd Msg )
 updateAnimation msg ({ zipper, animationState } as model) =
     case animationState of
         Static ->
@@ -148,7 +152,7 @@ updateAnimation msg ({ zipper, animationState } as model) =
                     in
                         ( { model | animationState = Running dir time animation }, Cmd.none )
 
-                _ ->
+                KeyUp _ ->
                     ( model, Cmd.none )
 
         Running dir _ animation ->
@@ -170,5 +174,5 @@ updateAnimation msg ({ zipper, animationState } as model) =
                             AnimateRight ->
                                 ( { model | animationState = Static, zipper = moveToward RightBranch zipper }, Cmd.none )
 
-                _ ->
+                KeyUp _ ->
                     ( model, Cmd.none )
