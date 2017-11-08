@@ -22,7 +22,7 @@
 -}
 
 
-module McpaView exposing (view)
+module FractalTreeView exposing (view)
 
 import Html
 import Html.Attributes

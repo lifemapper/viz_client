@@ -25,7 +25,6 @@ module McpaMain exposing (..)
 import Html
 import McpaModel exposing (..)
 import LinearTreeView
-import McpaView
 
 
 main : Program Never Model Msg
