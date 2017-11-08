@@ -99,7 +99,7 @@ svgViewBox =
     { width = 800
     , height = 800
     , minX = -0.1
-    , minY = -0.1
+    , minY = 0
     , maxX = 1.1
     , maxY = 1.1
     }
@@ -315,27 +315,35 @@ drawScatter model =
                     ]
                     []
     in
-        ((g [] <| drawAxis xVar scale.minX scale.maxX)
-            :: (g [ transform "rotate(90) scale(1,1)" ] <| drawAxis yVar scale.minY scale.maxY)
-            :: List.map plot records
+        drawXAxis xVar scale.minX scale.maxX
+            ++ drawYAxis yVar scale.minY scale.maxY
+            ++ List.map plot records
+
+
+drawXAxis : String -> Float -> Float -> List (Svg msg)
+drawXAxis label min max =
+    let
+        ticks =
+            List.range 1 10
+                |> List.map (toFloat >> ((*) 0.1) >> toString)
+                |> List.map (\x -> line [ x1 x, x2 x, y1 "1", y2 "1.02", strokeWidth "0.001", stroke "black" ] [])
+    in
+        (line [ x1 "0", x2 "1", y1 "1", y2 "1", strokeWidth "0.001", stroke "black" ] []
+            :: ticks
         )
 
 
-drawAxis : String -> Float -> Float -> List (Svg msg)
-drawAxis label min max =
-    [ line [ x1 "0", x2 "1", y1 "0", y2 "0", strokeWidth "0.001", stroke "black" ] []
-    , line [ x1 "0.1", x2 "0.1", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
-    , line [ x1 "0.2", x2 "0.2", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
-    , line [ x1 "0.3", x2 "0.3", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
-    , line [ x1 "0.4", x2 "0.4", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
-    , line [ x1 "0.5", x2 "0.5", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
-    , line [ x1 "0.6", x2 "0.6", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
-    , line [ x1 "0.7", x2 "0.7", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
-    , line [ x1 "0.8", x2 "0.8", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
-    , line [ x1 "0.9", x2 "0.9", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
-    , line [ x1 "1.0", x2 "1.0", y1 "0", y2 "-0.02", strokeWidth "0.001", stroke "black" ] []
-    , text_ [ x "0.5", y "-0.02", fontSize "0.04" ] [ text label ]
-    ]
+drawYAxis : String -> Float -> Float -> List (Svg msg)
+drawYAxis label min max =
+    let
+        ticks =
+            List.range 1 10
+                |> List.map (toFloat >> ((*) 0.1) >> ((-) 1) >> toString)
+                |> List.map (\y -> line [ y1 y, y2 y, x1 "0", x2 "-0.02", strokeWidth "0.001", stroke "black" ] [])
+    in
+        (line [ y1 "0", y2 "1", x1 "0", x2 "0", strokeWidth "0.001", stroke "black" ] []
+            :: ticks
+        )
 
 
 svgViewBox2String : SvgViewBox -> String
@@ -403,7 +411,7 @@ view model =
                 ]
                 []
             , Html.div []
-                [ Html.p []
+                [ Html.p [ Html.Attributes.style [ ( "text-align", "center" ), ( "margin-bottom", "0" ) ] ]
                     [ variableSelector model.yCol YColSelectedMsg
                     , Html.text " vs "
                     , variableSelector model.xCol XColSelectedMsg
