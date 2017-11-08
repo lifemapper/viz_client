@@ -1,31 +1,32 @@
 {-
-Copyright (C) 2017, University of Kansas Center for Research
+   Copyright (C) 2017, University of Kansas Center for Research
 
-Lifemapper Project, lifemapper [at] ku [dot] edu,
-Biodiversity Institute,
-1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
+   Lifemapper Project, lifemapper [at] ku [dot] edu,
+   Biodiversity Institute,
+   1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or (at
+   your option) any later version.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
 -}
+
+
 module LinearTreeView exposing (view)
 
 import Html
 import Html.Attributes
 import Html.Events
-import Json.Decode as Decode
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
@@ -50,19 +51,28 @@ view { root, zipper } =
 
         mapClade =
             getData zipper |> .cladeId
+
+        clickBox =
+            rect
+                [ x "0"
+                , y "0"
+                , width "100"
+                , height "100"
+                , fill "grey"
+                , fillOpacity "0.01"
+                , Html.Events.onClick JumpUp
+                ]
+                []
     in
-        Html.div
-            [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
-            , Html.Attributes.style [ ( "display", "flex" ), ( "flex-direction", "flex-row" ) ]
-            ]
+        Html.div [ Html.Attributes.style [ ( "display", "flex" ), ( "flex-direction", "flex-row" ) ] ]
             [ svg
                 [ width "800"
                 , height "800"
                 , viewBox ("0 0 100 100")
                 , Html.Attributes.style [ ( "background", "white" ), ( "font-family", "sans-serif" ) ]
-                , Html.Events.onClick (KeyUp "ArrowDown")
+                  -- , Html.Events.onClick JumpUp
                 ]
-                treeSvg
+                (clickBox :: treeSvg)
             , Html.div
                 [ Html.Attributes.class "leaflet-map"
                 , Html.Attributes.attribute "data-map-column" (mapClade |> toString)
@@ -149,7 +159,7 @@ drawTree totalLength tree zipper =
                             , height <| toString leftHeight
                             , fill "blue"
                             , fillOpacity "0.2"
-                            , Html.Events.onClick (KeyUp "ArrowLeft")
+                            , Html.Events.onClick JumpLeft
                             ]
                             []
                         , rect
@@ -159,7 +169,7 @@ drawTree totalLength tree zipper =
                             , height <| toString rightHeight
                             , fill "red"
                             , fillOpacity "0.2"
-                            , Html.Events.onClick (KeyUp "ArrowRight")
+                            , Html.Events.onClick JumpRight
                             ]
                             []
                         ]
