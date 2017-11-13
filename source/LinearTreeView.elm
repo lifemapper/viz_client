@@ -27,15 +27,17 @@ module LinearTreeView exposing (view)
 import Html
 import Html.Attributes
 import Html.Events
+import Dict
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
 import DecodeTree exposing (Tree(..), TreeData)
 import McpaModel exposing (..)
+import ExampleMcpa exposing (McpaData)
 
 
 view : Model -> Html.Html Msg
-view { root, zipper } =
+view { root, zipper, mcpaData } =
     let
         treeDepth_ =
             treeDepth root
@@ -47,7 +49,7 @@ view { root, zipper } =
             treeLength root
 
         ( treeHeight, treeSvg ) =
-            drawTree treeLength_ root zipper
+            drawTree treeLength_ mcpaData root zipper
 
         mapClade =
             getData zipper |> .cladeId
@@ -64,15 +66,18 @@ view { root, zipper } =
                 ]
                 []
     in
-        Html.div [ Html.Attributes.style [ ( "display", "flex" ), ( "flex-direction", "flex-row" ) ] ]
-            [ svg
+        Html.div []
+            [ Html.p []
+                []
+            , svg
                 [ width "800"
                 , height "800"
                 , viewBox ("0 0 100 100")
                 , Html.Attributes.style [ ( "background", "white" ), ( "font-family", "sans-serif" ) ]
                   -- , Html.Events.onClick JumpUp
                 ]
-                (clickBox :: treeSvg)
+                -- (clickBox :: treeSvg)
+                treeSvg
             , Html.div
                 [ Html.Attributes.class "leaflet-map"
                 , Html.Attributes.attribute "data-map-column" (mapClade |> toString)
@@ -121,8 +126,8 @@ scaleLength totalLength thisLength =
     80 * thisLength / totalLength
 
 
-drawTree : Float -> Tree -> TreeZipper -> ( Float, List (Svg Msg) )
-drawTree totalLength tree zipper =
+drawTree : Float -> McpaData -> Tree -> TreeZipper -> ( Float, List (Svg Msg) )
+drawTree totalLength mcpaData tree zipper =
     case tree of
         Leaf data ->
             let
@@ -139,16 +144,22 @@ drawTree totalLength tree zipper =
         Node data left right ->
             let
                 ( leftHeight, leftNodes ) =
-                    drawTree totalLength left zipper
+                    drawTree totalLength mcpaData left zipper
 
                 ( rightHeight, rightNodes ) =
-                    drawTree totalLength right zipper
+                    drawTree totalLength mcpaData right zipper
 
                 thisHeight =
                     leftHeight + rightHeight
 
                 length =
                     data.length |> Maybe.map (scaleLength totalLength) |> Maybe.withDefault 10
+
+                color =
+                    Dict.get data.cladeId mcpaData
+                        |> Maybe.andThen (.pValue >> Dict.get "ECO_NUM - 7")
+                        |> Maybe.map ((*) 255 >> round >> (\red -> "rgb(" ++ (toString red) ++ "," ++ (toString (255 - red)) ++ ",0)"))
+                        |> Maybe.withDefault "#000"
 
                 boxes =
                     if tree == getTree zipper then
@@ -183,7 +194,7 @@ drawTree totalLength tree zipper =
                         , y1 <| toString (thisHeight / 2.0)
                         , y2 <| toString (thisHeight / 2.0)
                         , strokeWidth "0.1"
-                        , stroke "black"
+                        , stroke color
                         ]
                         []
                   , line
@@ -192,11 +203,11 @@ drawTree totalLength tree zipper =
                         , y1 (toString (leftHeight / 2))
                         , y2 (toString (leftHeight + rightHeight / 2))
                         , strokeWidth "0.1"
-                        , stroke "black"
+                        , stroke color
                         ]
                         []
                   , g [ transform <| "translate(" ++ (toString length) ++ ",0)" ] leftNodes
                   , g [ transform <| "translate(" ++ (toString length) ++ "," ++ (toString leftHeight) ++ ")" ] rightNodes
                   ]
-                    ++ boxes
+                    -- ++ boxes
                 )

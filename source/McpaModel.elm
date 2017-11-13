@@ -25,6 +25,7 @@
 module McpaModel exposing (..)
 
 import ExampleTree
+import ExampleMcpa
 import DecodeTree exposing (Tree)
 import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
 import Animation as A exposing (Animation)
@@ -36,6 +37,7 @@ import Ease
 type alias Model =
     { zipper : TreeZipper
     , root : Tree
+    , mcpaData : ExampleMcpa.McpaData
     , animationState : AnimationState
     , mouseIn : Bool
     }
@@ -46,6 +48,7 @@ init =
     ( { animationState = Static
       , zipper = TreeZipper.start ExampleTree.tree
       , root = ExampleTree.tree
+      , mcpaData = ExampleMcpa.exampleMcpa
       , mouseIn = False
       }
     , Cmd.none
