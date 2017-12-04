@@ -28,16 +28,16 @@ import Html
 import Html.Attributes
 import Html.Events
 import Dict
+import List.Extra as List
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
 import DecodeTree exposing (Tree(..), TreeData)
 import McpaModel exposing (..)
-import ExampleMcpa exposing (McpaData)
 
 
 view : Model -> Html.Html Msg
-view { root, zipper, mcpaData } =
+view ({ root, zipper, mcpaData, selectedVariable } as model) =
     let
         treeDepth_ =
             treeDepth root
@@ -48,8 +48,25 @@ view { root, zipper, mcpaData } =
         treeLength_ =
             treeLength root
 
-        ( treeHeight, treeSvg ) =
-            drawTree treeLength_ mcpaData root zipper
+        ( treeHeight, grads, treeSvg ) =
+            drawTree model treeLength_ "#ccc" root
+
+        gradDefs =
+            grads
+                |> List.map
+                    (\( cladeId, startColor, endColor ) ->
+                        linearGradient
+                            [ id <| "grad-" ++ (toString cladeId)
+                            , x1 "0%"
+                            , y1 "0%"
+                            , x2 "100%"
+                            , y2 "0%"
+                            ]
+                            [ stop [ offset "0%", stopColor startColor ] []
+                            , stop [ offset "100%", stopColor endColor ] []
+                            ]
+                    )
+                |> defs []
 
         mapClade =
             getData zipper |> .cladeId
@@ -65,19 +82,52 @@ view { root, zipper, mcpaData } =
                 , Html.Events.onClick JumpUp
                 ]
                 []
+
+        select =
+            String.toInt
+                >> Result.toMaybe
+                >> Maybe.andThen (\i -> List.getAt i model.mcpaVariables)
+                >> Maybe.withDefault ""
+                >> SelectVariable
+
+        variableSelector =
+            Html.select [ Html.Events.onInput select ]
+                (model.mcpaVariables
+                    |> List.indexedMap
+                        (\i v ->
+                            Html.option
+                                [ Html.Attributes.selected (v == selectedVariable)
+                                , Html.Attributes.value (toString i)
+                                ]
+                                [ Html.text v ]
+                        )
+                )
+
+        border v =
+            if v == selectedVariable then
+                Html.Attributes.style [ ( "border", "1px solid black" ) ]
+            else
+                Html.Attributes.style [ ( "border", "none" ) ]
     in
         Html.div []
             [ Html.p []
-                []
+                [ variableSelector ]
             , svg
                 [ width "800"
                 , height "800"
                 , viewBox ("0 0 100 100")
-                , Html.Attributes.style [ ( "background", "white" ), ( "font-family", "sans-serif" ) ]
+                , Html.Attributes.style [ ( "background", "#000" ), ( "font-family", "sans-serif" ) ]
                   -- , Html.Events.onClick JumpUp
                 ]
                 -- (clickBox :: treeSvg)
-                treeSvg
+                [ gradDefs, g [ transform "translate(5,5)" ] treeSvg ]
+            , Html.ul [ Html.Attributes.style [ ( "display", "inline-block" ), ( "list-style", "none" ) ] ]
+                (model.mcpaVariables
+                    |> List.map
+                        (\v ->
+                            Html.li [ Html.Events.onClick (SelectVariable v), border v ] [ Html.text v ]
+                        )
+                )
             , Html.div
                 [ Html.Attributes.class "leaflet-map"
                 , Html.Attributes.attribute "data-map-column" (mapClade |> toString)
@@ -126,8 +176,15 @@ scaleLength totalLength thisLength =
     80 * thisLength / totalLength
 
 
-drawTree : Float -> McpaData -> Tree -> TreeZipper -> ( Float, List (Svg Msg) )
-drawTree totalLength mcpaData tree zipper =
+computeColor : Model -> Int -> String
+computeColor model cladeId =
+    Dict.get ( cladeId, "P-Values", model.selectedVariable ) model.mcpaData
+        |> Maybe.map ((*) 255 >> round >> (\green -> "rgb(" ++ (toString <| 255 - green) ++ "," ++ (toString green) ++ ",0)"))
+        |> Maybe.withDefault "#ccc"
+
+
+drawTree : Model -> Float -> String -> Tree -> ( Float, List ( Int, String, String ), List (Svg Msg) )
+drawTree model totalLength parentColor tree =
     case tree of
         Leaf data ->
             let
@@ -135,19 +192,30 @@ drawTree totalLength mcpaData tree zipper =
                     data.length |> Maybe.map (scaleLength totalLength) |> Maybe.withDefault 10
             in
                 ( 1
-                , [ line [ x1 "0", x2 (toString length), y1 "0.5", y2 "0.5", strokeWidth "0.1", stroke "black" ] []
-                  , text_ [ x (toString (length + 2)), y "0.75", fontSize "0.8" ]
+                , [ ( data.cladeId, parentColor, "#ccc" ) ]
+                , [ rect
+                        [ x "0"
+                        , width (toString length)
+                        , y "0.45"
+                        , height "0.1"
+                        , fill ("url(#grad-" ++ (toString data.cladeId) ++ ")")
+                        ]
+                        []
+                  , text_ [ x (toString (length + 2)), y "0.75", fontSize "0.8", stroke "none", fill "#ccc" ]
                         [ text data.name ]
                   ]
                 )
 
         Node data left right ->
             let
-                ( leftHeight, leftNodes ) =
-                    drawTree totalLength mcpaData left zipper
+                color =
+                    computeColor model data.cladeId
 
-                ( rightHeight, rightNodes ) =
-                    drawTree totalLength mcpaData right zipper
+                ( leftHeight, leftGrads, leftNodes ) =
+                    drawTree model totalLength color left
+
+                ( rightHeight, rightGrads, rightNodes ) =
+                    drawTree model totalLength color right
 
                 thisHeight =
                     leftHeight + rightHeight
@@ -155,14 +223,11 @@ drawTree totalLength mcpaData tree zipper =
                 length =
                     data.length |> Maybe.map (scaleLength totalLength) |> Maybe.withDefault 10
 
-                color =
-                    Dict.get data.cladeId mcpaData
-                        |> Maybe.andThen (.pValue >> Dict.get "ECO_NUM - 7")
-                        |> Maybe.map ((*) 255 >> round >> (\red -> "rgb(" ++ (toString red) ++ "," ++ (toString (255 - red)) ++ ",0)"))
-                        |> Maybe.withDefault "#000"
+                thisGrad =
+                    ( data.cladeId, parentColor, color )
 
                 boxes =
-                    if tree == getTree zipper then
+                    if tree == getTree model.zipper then
                         [ rect
                             [ x <| toString length
                             , y "0"
@@ -188,13 +253,14 @@ drawTree totalLength mcpaData tree zipper =
                         []
             in
                 ( thisHeight
-                , [ line
-                        [ x1 "0"
-                        , x2 (toString length)
-                        , y1 <| toString (thisHeight / 2.0)
-                        , y2 <| toString (thisHeight / 2.0)
-                        , strokeWidth "0.1"
-                        , stroke color
+                , thisGrad :: (leftGrads ++ rightGrads)
+                , [ rect
+                        [ x "0"
+                        , width (toString length)
+                        , height "0.1"
+                        , y <| toString (thisHeight / 2.0 - 0.05)
+                        , strokeWidth "0.01"
+                        , fill ("url(#grad-" ++ (toString data.cladeId) ++ ")")
                         ]
                         []
                   , line
@@ -206,8 +272,15 @@ drawTree totalLength mcpaData tree zipper =
                         , stroke color
                         ]
                         []
+                  , circle
+                        [ cx (toString length)
+                        , cy <| toString (thisHeight / 2.0)
+                        , r "0.3"
+                        , fill color
+                        ]
+                        []
                   , g [ transform <| "translate(" ++ (toString length) ++ ",0)" ] leftNodes
                   , g [ transform <| "translate(" ++ (toString length) ++ "," ++ (toString leftHeight) ++ ")" ] rightNodes
                   ]
-                    -- ++ boxes
+                  -- ++ boxes
                 )

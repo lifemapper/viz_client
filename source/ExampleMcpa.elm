@@ -36,125 +36,61 @@ nan =
 
 
 type alias McpaData =
-    Dict.Dict Int
-        { bh : Dict.Dict String Bool
-        , observed : Dict.Dict String Float
-        , pValue : Dict.Dict String Float
-        }
+    Dict.Dict ( Int, String, String ) Float
 
 
-exampleMcpa : McpaData
+parseCsv : Csv.Csv -> Result String ( List String, McpaData )
+parseCsv { headers, records } =
+    let
+        variables =
+            headers |> List.drop 2
+
+        data =
+            List.foldl (\record -> Result.andThen (parseRecord variables record)) (Ok Dict.empty) records
+    in
+        data |> Result.map ((,) variables)
+
+
+exampleMcpa : ( List String, McpaData )
 exampleMcpa =
     let
         result =
             Csv.parse exampleCsv
                 |> Result.mapError toString
-                |> Result.andThen
-                    (\{ headers, records } ->
-                        records
-                            |> List.map (parseRecord (headers |> List.drop 2))
-                            |> Result.combine
-                    )
-                |> Result.map
-                    (List.foldl
-                        (\{ cladeId, values } records ->
-                            Dict.update cladeId
-                                (Maybe.map
-                                    (\{ bh, observed, pValue } ->
-                                        Just
-                                            { bh = Dict.union bh values.bh
-                                            , observed = Dict.union observed values.observed
-                                            , pValue = Dict.union pValue values.pValue
-                                            }
-                                    )
-                                    >> Maybe.withDefault (Just { bh = Dict.empty, observed = Dict.empty, pValue = Dict.empty })
-                                )
-                                records
-                        )
-                        Dict.empty
-                    )
+                |> Result.andThen parseCsv
     in
         case result of
-            Ok records ->
-                records
+            Ok result ->
+                result
 
             Err errs ->
                 Debug.crash <| toString errs
 
 
-type alias McpaRecord =
-    { cladeId : Int
-    , values :
-        { bh : Dict.Dict String Bool
-        , observed : Dict.Dict String Float
-        , pValue : Dict.Dict String Float
-        }
-    }
-
-
-parseRecord : List String -> List String -> Result String McpaRecord
-parseRecord headers record =
+parseRecord : List String -> List String -> McpaData -> Result String McpaData
+parseRecord variables record result =
     case record of
-        cladeIdStr :: valueTypeStr :: valueStrs ->
+        cladeIdStr :: valueType :: valueStrs ->
             let
                 cladeId =
                     String.toInt cladeIdStr
 
-                nothing =
-                    { observed = Dict.empty, pValue = Dict.empty, bh = Dict.empty }
+                valueToFloat s =
+                    case s of
+                        "nan" ->
+                            Ok nan
+
+                        _ ->
+                            String.toFloat s
 
                 values =
-                    case valueTypeStr of
-                        "Observed" ->
-                            let
-                                strToValue s =
-                                    case s of
-                                        "nan" ->
-                                            Just nan
+                    valueStrs |> List.map valueToFloat |> Result.combine
 
-                                        f ->
-                                            String.toFloat f |> Result.toMaybe
-                            in
-                                { nothing
-                                    | observed =
-                                        valueStrs
-                                            |> List.filterMap strToValue
-                                            |> List.map2 (,) headers
-                                            |> Dict.fromList
-                                }
-
-                        "P-Values" ->
-                            let
-                                strToValue s =
-                                    case s of
-                                        "nan" ->
-                                            Just nan
-
-                                        f ->
-                                            String.toFloat f |> Result.toMaybe
-                            in
-                                { nothing
-                                    | pValue =
-                                        valueStrs
-                                            |> List.filterMap strToValue
-                                            |> List.map2 (,) headers
-                                            |> Dict.fromList
-                                }
-
-                        "BH Significant" ->
-                            { nothing
-                                | bh =
-                                    valueStrs
-                                        |> List.map ((==) "1")
-                                        |> List.map2 (,) headers
-                                        |> Dict.fromList
-                            }
-
-                        other ->
-                            nothing
+                makeDict cladeId values =
+                    List.map2 (,) variables values
+                        |> (result |> List.foldl (\( var, val ) -> Dict.insert ( cladeId, valueType, var ) val))
             in
-                String.toInt cladeIdStr
-                    |> Result.map (\cladeId -> { values = values, cladeId = cladeId })
+                Result.map2 makeDict cladeId values
 
         _ ->
             Err "bad csv"

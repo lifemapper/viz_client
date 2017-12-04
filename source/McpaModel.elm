@@ -37,7 +37,9 @@ import Ease
 type alias Model =
     { zipper : TreeZipper
     , root : Tree
+    , mcpaVariables : List String
     , mcpaData : ExampleMcpa.McpaData
+    , selectedVariable : String
     , animationState : AnimationState
     , mouseIn : Bool
     }
@@ -45,14 +47,20 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { animationState = Static
-      , zipper = TreeZipper.start ExampleTree.tree
-      , root = ExampleTree.tree
-      , mcpaData = ExampleMcpa.exampleMcpa
-      , mouseIn = False
-      }
-    , Cmd.none
-    )
+    let
+        ( variables, data ) =
+            ExampleMcpa.exampleMcpa
+    in
+        ( { animationState = Static
+          , zipper = TreeZipper.start ExampleTree.tree
+          , root = ExampleTree.tree
+          , mcpaVariables = variables
+          , selectedVariable = "ECO_NUM - 7"
+          , mcpaData = data
+          , mouseIn = False
+          }
+        , Cmd.none
+        )
 
 
 subscriptions : Model -> Sub Msg
@@ -86,6 +94,7 @@ type Msg
     | JumpUp
     | JumpLeft
     | JumpRight
+    | SelectVariable String
     | AnimationMsg AnimationMsg
 
 
@@ -108,6 +117,9 @@ update msg model =
 
         JumpRight ->
             ( { model | zipper = moveToward RightBranch model.zipper }, Cmd.none )
+
+        SelectVariable v ->
+            ( { model | selectedVariable = v }, Cmd.none )
 
         AnimationMsg msg_ ->
             updateAnimation msg_ model
