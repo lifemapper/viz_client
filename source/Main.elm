@@ -136,13 +136,39 @@ type Msg
     | OpenNew
     | OpenNewOccurrenceSet
     | Tick Time.Time
-    | SetUser Login
+    | AuthMsg AuthMsg
+    | Nop
+
+
+type AuthMsg
+    = SetUser Login
     | UpdateUserName String
     | UpdatePassword String
     | DoLogin
     | DoLogOut
     | DoReload
-    | Nop
+
+
+authUpdate : Flags -> AuthMsg -> LoginInfo -> ( LoginInfo, Cmd AuthMsg )
+authUpdate flags msg loginInfo =
+    case msg of
+        SetUser user ->
+            ( { loginInfo | login = user }, Cmd.none )
+
+        UpdateUserName username ->
+            { loginInfo | username = username } ! []
+
+        UpdatePassword password ->
+            { loginInfo | password = password } ! []
+
+        DoLogin ->
+            loginInfo ! [ doLogin flags loginInfo ]
+
+        DoLogOut ->
+            loginInfo ! [ doLogOut flags ]
+
+        DoReload ->
+            loginInfo ! [ Nav.reload ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -217,41 +243,18 @@ update msg model =
             GotGridSets gridsets ->
                 ( { model | gridsets = GridSetsList gridsets }, Cmd.none )
 
-            SetUser user ->
-                let
-                    loginInfo =
-                        model.loginInfo
-                in
-                    ( { model | loginInfo = { loginInfo | login = user } }, Cmd.none )
-
-            UpdateUserName username ->
-                let
-                    loginInfo =
-                        model.loginInfo
-                in
-                    { model | loginInfo = { loginInfo | username = username } } ! []
-
-            UpdatePassword password ->
-                let
-                    loginInfo =
-                        model.loginInfo
-                in
-                    { model | loginInfo = { loginInfo | password = password } } ! []
-
-            DoLogin ->
-                model ! [ doLogin model.flags model.loginInfo ]
-
-            DoLogOut ->
-                model ! [ doLogOut model.flags ]
-
-            DoReload ->
-                model ! [ Nav.reload ]
-
             Nop ->
                 ( model, Cmd.none )
 
+            AuthMsg msg_ ->
+                let
+                    ( loginInfo, cmd_ ) =
+                        authUpdate model.flags msg_ model.loginInfo
+                in
+                    { model | loginInfo = loginInfo } ! [ Cmd.map AuthMsg cmd_ ]
 
-doLogin : Flags -> LoginInfo -> Cmd Msg
+
+doLogin : Flags -> LoginInfo -> Cmd AuthMsg
 doLogin { apiRoot } { username, password } =
     Http.request
         { method = "POST"
@@ -269,7 +272,7 @@ doLogin { apiRoot } { username, password } =
         |> Http.send gotLoginResult
 
 
-doLogOut : Flags -> Cmd Msg
+doLogOut : Flags -> Cmd AuthMsg
 doLogOut { apiRoot } =
     Http.request
         { method = "GET"
@@ -283,7 +286,7 @@ doLogOut { apiRoot } =
         |> Http.send gotLoginResult
 
 
-gotLoginResult : Result Http.Error String -> Msg
+gotLoginResult : Result Http.Error String -> AuthMsg
 gotLoginResult result =
     case result of
         Ok string ->
@@ -293,13 +296,13 @@ gotLoginResult result =
             if bad.status.code == 403 then
                 SetUser BadLogin
             else
-                Debug.log "Error checking logged in user" (toString bad) |> always Nop
+                Debug.log "Error checking logged in user" (toString bad) |> always (SetUser BadLogin)
 
         Err err ->
-            Debug.log "Error checking logged in user" (toString err) |> always Nop
+            Debug.log "Error checking logged in user" (toString err) |> always (SetUser BadLogin)
 
 
-getUser : Flags -> Cmd Msg
+getUser : Flags -> Cmd AuthMsg
 getUser { apiRoot } =
     Http.request
         { method = "GET"
@@ -313,7 +316,7 @@ getUser { apiRoot } =
         |> Http.send gotUser
 
 
-gotUser : Result Http.Error String -> Msg
+gotUser : Result Http.Error String -> AuthMsg
 gotUser result =
     case result of
         Ok string ->
@@ -326,7 +329,7 @@ gotUser result =
                 SetUser NotLoggedIn
 
         Err err ->
-            Debug.log "Error checking logged in user" (toString err) |> always Nop
+            Debug.log "Error checking logged in user" (toString err) |> always (SetUser NotLoggedIn)
 
 
 getGridSets : Flags -> Login -> Cmd Msg
@@ -425,7 +428,7 @@ resultsLink model { modificationTime, id } =
             [ Html.text modificationTime ]
 
 
-userLink : LoginInfo -> List (Html Msg)
+userLink : LoginInfo -> List (Html AuthMsg)
 userLink loginInfo =
     let
         style =
@@ -449,12 +452,8 @@ userLink loginInfo =
                 ]
                 []
             , Html.button
-                [ Html.Events.onClick
-                    (if loginInfo.login == LoggingIn then
-                        Nop
-                     else
-                        DoLogin
-                    )
+                [ Html.Events.onClick DoLogin
+                , Html.Attributes.disabled (loginInfo.login == LoggingIn)
                 , style
                 ]
                 [ Html.text "Login" ]
@@ -490,7 +489,7 @@ title user =
 drawer : Model -> List (Html Msg)
 drawer model =
     [ Layout.title [] [ title model.loginInfo.login ]
-    , Layout.navigation [] (userLink model.loginInfo)
+    , Layout.navigation [] (userLink model.loginInfo |> List.map (Html.map AuthMsg))
     , Layout.navigation [] [ newLink model ]
     , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
@@ -559,7 +558,7 @@ start flags location =
             }
                 ! [ Material.init Mdl
                   , getGridSets flags Unknown
-                  , getUser flags
+                  , getUser flags |> Cmd.map AuthMsg
                   , msg
                   ]
 
