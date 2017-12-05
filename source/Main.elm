@@ -25,7 +25,6 @@
 module Main exposing (..)
 
 import Time
-import Regex
 import Material
 import Material.Layout as Layout
 import Material.Typography as Typo
@@ -34,8 +33,6 @@ import Material.Helpers exposing (lift)
 import Material.Spinner as Loading
 import Material.Color as Color
 import Html exposing (Html)
-import Html.Attributes
-import Html.Events
 import Navigation as Nav exposing (Location)
 import UrlParser as Url exposing ((</>))
 import Http
@@ -44,6 +41,7 @@ import NewSDM
 import SDMResults
 import NewOccurrenceSet
 import ProgramFlags exposing (Flags)
+import Authentication exposing (..)
 import Decoder
     exposing
         ( AtomObjectRecord
@@ -101,21 +99,6 @@ type GridSets
     | GridSetsList (List AtomObjectRecord)
 
 
-type Login
-    = Unknown
-    | LoggingIn
-    | NotLoggedIn
-    | LoggedIn String
-    | BadLogin
-
-
-type alias LoginInfo =
-    { username : String
-    , password : String
-    , login : Login
-    }
-
-
 type alias Model =
     { mdl : Material.Model
     , page : SDMPage
@@ -138,37 +121,6 @@ type Msg
     | Tick Time.Time
     | AuthMsg AuthMsg
     | Nop
-
-
-type AuthMsg
-    = SetUser Login
-    | UpdateUserName String
-    | UpdatePassword String
-    | DoLogin
-    | DoLogOut
-    | DoReload
-
-
-authUpdate : Flags -> AuthMsg -> LoginInfo -> ( LoginInfo, Cmd AuthMsg )
-authUpdate flags msg loginInfo =
-    case msg of
-        SetUser user ->
-            ( { loginInfo | login = user }, Cmd.none )
-
-        UpdateUserName username ->
-            { loginInfo | username = username } ! []
-
-        UpdatePassword password ->
-            { loginInfo | password = password } ! []
-
-        DoLogin ->
-            loginInfo ! [ doLogin flags loginInfo ]
-
-        DoLogOut ->
-            loginInfo ! [ doLogOut flags ]
-
-        DoReload ->
-            loginInfo ! [ Nav.reload ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -252,84 +204,6 @@ update msg model =
                         authUpdate model.flags msg_ model.loginInfo
                 in
                     { model | loginInfo = loginInfo } ! [ Cmd.map AuthMsg cmd_ ]
-
-
-doLogin : Flags -> LoginInfo -> Cmd AuthMsg
-doLogin { apiRoot } { username, password } =
-    Http.request
-        { method = "POST"
-        , headers = []
-        , url = Regex.replace Regex.All (Regex.regex "v2/$") (\_ -> "login") apiRoot
-        , body =
-            Http.multipartBody
-                [ Http.stringPart "userid" username
-                , Http.stringPart "pword" password
-                ]
-        , expect = Http.expectString
-        , timeout = Nothing
-        , withCredentials = True
-        }
-        |> Http.send gotLoginResult
-
-
-doLogOut : Flags -> Cmd AuthMsg
-doLogOut { apiRoot } =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = Regex.replace Regex.All (Regex.regex "v2/$") (\_ -> "logout") apiRoot
-        , body = Http.emptyBody
-        , expect = Http.expectString
-        , timeout = Nothing
-        , withCredentials = True
-        }
-        |> Http.send gotLoginResult
-
-
-gotLoginResult : Result Http.Error String -> AuthMsg
-gotLoginResult result =
-    case result of
-        Ok string ->
-            DoReload
-
-        Err (Http.BadStatus bad) ->
-            if bad.status.code == 403 then
-                SetUser BadLogin
-            else
-                Debug.log "Error checking logged in user" (toString bad) |> always (SetUser BadLogin)
-
-        Err err ->
-            Debug.log "Error checking logged in user" (toString err) |> always (SetUser BadLogin)
-
-
-getUser : Flags -> Cmd AuthMsg
-getUser { apiRoot } =
-    Http.request
-        { method = "GET"
-        , headers = []
-        , url = Regex.replace Regex.All (Regex.regex "v2/$") (\_ -> "login") apiRoot
-        , body = Http.emptyBody
-        , expect = Http.expectString
-        , timeout = Nothing
-        , withCredentials = True
-        }
-        |> Http.send gotUser
-
-
-gotUser : Result Http.Error String -> AuthMsg
-gotUser result =
-    case result of
-        Ok string ->
-            if String.startsWith "Welcome " string then
-                string
-                    |> String.dropLeft (String.length "Welcome ")
-                    |> LoggedIn
-                    |> SetUser
-            else
-                SetUser NotLoggedIn
-
-        Err err ->
-            Debug.log "Error checking logged in user" (toString err) |> always (SetUser NotLoggedIn)
 
 
 getGridSets : Flags -> Login -> Cmd Msg
@@ -428,54 +302,6 @@ resultsLink model { modificationTime, id } =
             [ Html.text modificationTime ]
 
 
-userLink : LoginInfo -> List (Html AuthMsg)
-userLink loginInfo =
-    let
-        style =
-            Html.Attributes.style [ ( "margin", "2px 5px" ) ]
-
-        loginForm =
-            [ Html.input
-                [ Html.Attributes.type_ "text"
-                , Html.Attributes.placeholder "Username"
-                , Html.Attributes.value loginInfo.username
-                , style
-                , Html.Events.onInput UpdateUserName
-                ]
-                []
-            , Html.input
-                [ Html.Attributes.type_ "password"
-                , Html.Attributes.placeholder "Password"
-                , Html.Attributes.value loginInfo.password
-                , style
-                , Html.Events.onInput UpdatePassword
-                ]
-                []
-            , Html.button
-                [ Html.Events.onClick DoLogin
-                , Html.Attributes.disabled (loginInfo.login == LoggingIn)
-                , style
-                ]
-                [ Html.text "Login" ]
-            ]
-    in
-        case loginInfo.login of
-            LoggedIn userName ->
-                [ Layout.link [ Options.onClick DoLogOut, Options.css "cursor" "pointer" ] [ Html.text "Logout" ] ]
-
-            BadLogin ->
-                (Html.p [ style ] [ Html.text "Invalid username or password." ] :: loginForm)
-
-            Unknown ->
-                []
-
-            NotLoggedIn ->
-                loginForm
-
-            LoggingIn ->
-                loginForm
-
-
 title : Login -> Html msg
 title user =
     case user of
@@ -554,7 +380,7 @@ start flags location =
             , page = page
             , gridsets = GridSetsLoading
             , flags = flags
-            , loginInfo = { username = "", password = "", login = Unknown }
+            , loginInfo = initLoginInfo
             }
                 ! [ Material.init Mdl
                   , getGridSets flags Unknown
