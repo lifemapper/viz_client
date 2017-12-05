@@ -1,28 +1,31 @@
 {-
-Copyright (C) 2017, University of Kansas Center for Research
+   Copyright (C) 2017, University of Kansas Center for Research
 
-Lifemapper Project, lifemapper [at] ku [dot] edu,
-Biodiversity Institute,
-1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
+   Lifemapper Project, lifemapper [at] ku [dot] edu,
+   Biodiversity Institute,
+   1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or (at
+   your option) any later version.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
 -}
+
+
 module Main exposing (..)
 
 import Time
+import Regex
 import Material
 import Material.Layout as Layout
 import Material.Typography as Typo
@@ -31,6 +34,8 @@ import Material.Helpers exposing (lift)
 import Material.Spinner as Loading
 import Material.Color as Color
 import Html exposing (Html)
+import Html.Attributes
+import Html.Events
 import Navigation as Nav exposing (Location)
 import UrlParser as Url exposing ((</>))
 import Http
@@ -53,6 +58,14 @@ type SDMPage
     | SDMResults Int SDMResults.Model
     | NewOccurrenceSet NewOccurrenceSet.Model
     | PageNotFound
+
+
+type Login
+    = Unknown
+    | LoggingIn
+    | NotLoggedIn
+    | LoggedIn String
+    | BadLogin
 
 
 initResultsPage : Flags -> Int -> ( SDMPage, Cmd Msg )
@@ -96,11 +109,19 @@ type GridSets
     | GridSetsList (List AtomObjectRecord)
 
 
+type alias LoginInfo =
+    { username : String
+    , password : String
+    }
+
+
 type alias Model =
     { mdl : Material.Model
     , page : SDMPage
+    , user : Login
     , gridsets : GridSets
     , flags : Flags
+    , loginInfo : LoginInfo
     }
 
 
@@ -115,6 +136,12 @@ type Msg
     | OpenNew
     | OpenNewOccurrenceSet
     | Tick Time.Time
+    | SetUser Login
+    | UpdateUserName String
+    | UpdatePassword String
+    | DoLogin
+    | DoLogOut
+    | DoReload
     | Nop
 
 
@@ -185,27 +212,140 @@ update msg model =
                 model ! [ Nav.newUrl "#new-species-data/" ]
 
             Tick _ ->
-                ( model, getGridSets model.flags )
+                ( model, getGridSets model.flags model.user )
+
+            SetUser user ->
+                ( { model | user = user }, Cmd.none )
 
             GotGridSets gridsets ->
                 ( { model | gridsets = GridSetsList gridsets }, Cmd.none )
+
+            UpdateUserName username ->
+                let
+                    loginInfo =
+                        model.loginInfo
+                in
+                    { model | loginInfo = { loginInfo | username = username } } ! []
+
+            UpdatePassword password ->
+                let
+                    loginInfo =
+                        model.loginInfo
+                in
+                    { model | loginInfo = { loginInfo | password = password } } ! []
+
+            DoLogin ->
+                model ! [ doLogin model.flags model.loginInfo ]
+
+            DoLogOut ->
+                model ! [ doLogOut model.flags ]
+
+            DoReload ->
+                model ! [ Nav.reload ]
 
             Nop ->
                 ( model, Cmd.none )
 
 
-getGridSets : Flags -> Cmd Msg
-getGridSets { apiRoot } =
+doLogin : Flags -> LoginInfo -> Cmd Msg
+doLogin { apiRoot } { username, password } =
+    Http.request
+        { method = "POST"
+        , headers = []
+        , url = Regex.replace Regex.All (Regex.regex "v2/$") (\_ -> "login") apiRoot
+        , body =
+            Http.multipartBody
+                [ Http.stringPart "userid" username
+                , Http.stringPart "pword" password
+                ]
+        , expect = Http.expectString
+        , timeout = Nothing
+        , withCredentials = True
+        }
+        |> Http.send gotLoginResult
+
+
+doLogOut : Flags -> Cmd Msg
+doLogOut { apiRoot } =
     Http.request
         { method = "GET"
-        , headers = [ Http.header "Accept" "application/json" ]
-        , url = apiRoot ++ "gridset?user=anon"
+        , headers = []
+        , url = Regex.replace Regex.All (Regex.regex "v2/$") (\_ -> "logout") apiRoot
         , body = Http.emptyBody
-        , expect = Http.expectJson decodeAtomList
+        , expect = Http.expectString
         , timeout = Nothing
-        , withCredentials = False
+        , withCredentials = True
         }
-        |> Http.send gotGridSets
+        |> Http.send gotLoginResult
+
+
+gotLoginResult : Result Http.Error String -> Msg
+gotLoginResult result =
+    case result of
+        Ok string ->
+            DoReload
+
+        Err (Http.BadStatus bad) ->
+            if bad.status.code == 403 then
+                SetUser BadLogin
+            else
+                Debug.log "Error checking logged in user" (toString bad) |> always Nop
+
+        Err err ->
+            Debug.log "Error checking logged in user" (toString err) |> always Nop
+
+
+getUser : Flags -> Cmd Msg
+getUser { apiRoot } =
+    Http.request
+        { method = "GET"
+        , headers = []
+        , url = Regex.replace Regex.All (Regex.regex "v2/$") (\_ -> "login") apiRoot
+        , body = Http.emptyBody
+        , expect = Http.expectString
+        , timeout = Nothing
+        , withCredentials = True
+        }
+        |> Http.send gotUser
+
+
+gotUser : Result Http.Error String -> Msg
+gotUser result =
+    case result of
+        Ok string ->
+            if String.startsWith "Welcome " string then
+                string
+                    |> String.dropLeft (String.length "Welcome ")
+                    |> LoggedIn
+                    |> SetUser
+            else
+                SetUser NotLoggedIn
+
+        Err err ->
+            Debug.log "Error checking logged in user" (toString err) |> always Nop
+
+
+getGridSets : Flags -> Login -> Cmd Msg
+getGridSets { apiRoot } login =
+    let
+        user =
+            case login of
+                LoggedIn user ->
+                    user
+
+                _ ->
+                    "anon"
+    in
+        Http.request
+            { method = "GET"
+            , headers = [ Http.header "Accept" "application/json" ]
+            , url = apiRoot ++ "gridset?user=" ++ user
+            , body = Http.emptyBody
+            , expect = Http.expectJson decodeAtomList
+            , timeout = Nothing
+            , withCredentials = False
+            }
+            |> Http.send gotGridSets
 
 
 gotGridSets : Result Http.Error AtomList -> Msg
@@ -281,9 +421,72 @@ resultsLink model { modificationTime, id } =
             [ Html.text modificationTime ]
 
 
+userLink : Login -> LoginInfo -> List (Html Msg)
+userLink user loginInfo =
+    let
+        style =
+            Html.Attributes.style [ ( "margin", "2px 5px" ) ]
+
+        loginForm =
+            [ Html.input
+                [ Html.Attributes.type_ "text"
+                , Html.Attributes.placeholder "Username"
+                , Html.Attributes.value loginInfo.username
+                , style
+                , Html.Events.onInput UpdateUserName
+                ]
+                []
+            , Html.input
+                [ Html.Attributes.type_ "password"
+                , Html.Attributes.placeholder "Password"
+                , Html.Attributes.value loginInfo.password
+                , style
+                , Html.Events.onInput UpdatePassword
+                ]
+                []
+            , Html.button
+                [ Html.Events.onClick
+                    (if user == LoggingIn then
+                        Nop
+                     else
+                        DoLogin
+                    )
+                , style
+                ]
+                [ Html.text "Login" ]
+            ]
+    in
+        case user of
+            LoggedIn userName ->
+                [ Layout.link [ Options.onClick DoLogOut, Options.css "cursor" "pointer" ] [ Html.text "Logout" ] ]
+
+            BadLogin ->
+                (Html.p [ style ] [ Html.text "Invalid username or password." ] :: loginForm)
+
+            Unknown ->
+                []
+
+            NotLoggedIn ->
+                loginForm
+
+            LoggingIn ->
+                loginForm
+
+
+title : Login -> Html msg
+title user =
+    case user of
+        LoggedIn userName ->
+            Html.text <| "Welcome, " ++ userName
+
+        _ ->
+            Html.text "Lifemapper SDM"
+
+
 drawer : Model -> List (Html Msg)
 drawer model =
-    [ Layout.title [] [ Html.text "Lifemapper SDM" ]
+    [ Layout.title [] [ title model.user ]
+    , Layout.navigation [] (userLink model.user model.loginInfo)
     , Layout.navigation [] [ newLink model ]
     , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
@@ -346,11 +549,14 @@ start flags location =
         |> \( page, msg ) ->
             { mdl = Material.model
             , page = page
+            , user = Unknown
             , gridsets = GridSetsLoading
             , flags = flags
+            , loginInfo = { username = "", password = "" }
             }
                 ! [ Material.init Mdl
-                  , getGridSets flags
+                  , getGridSets flags Unknown
+                  , getUser flags
                   , msg
                   ]
 
