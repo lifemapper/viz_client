@@ -41,7 +41,7 @@ import NewSDM
 import SDMResults
 import NewOccurrenceSet
 import ProgramFlags exposing (Flags)
-import Authentication exposing (..)
+import Authentication as Auth
 import Decoder
     exposing
         ( AtomObjectRecord
@@ -104,7 +104,7 @@ type alias Model =
     , page : SDMPage
     , gridsets : GridSets
     , flags : Flags
-    , loginInfo : LoginState
+    , login : Auth.Model
     }
 
 
@@ -119,7 +119,7 @@ type Msg
     | OpenNew
     | OpenNewOccurrenceSet
     | Tick Time.Time
-    | AuthMsg AuthMsg
+    | AuthMsg Auth.Msg
     | Nop
 
 
@@ -190,7 +190,7 @@ update msg model =
                 model ! [ Nav.newUrl "#new-species-data/" ]
 
             Tick _ ->
-                ( model, getGridSets model.flags model.loginInfo )
+                ( model, getGridSets model.flags model.login )
 
             GotGridSets gridsets ->
                 ( { model | gridsets = GridSetsList gridsets }, Cmd.none )
@@ -200,17 +200,17 @@ update msg model =
 
             AuthMsg msg_ ->
                 let
-                    ( loginInfo, cmd_ ) =
-                        authUpdate model.flags msg_ model.loginInfo
+                    ( login, cmd_ ) =
+                        Auth.update model.flags msg_ model.login
                 in
-                    { model | loginInfo = loginInfo } ! [ Cmd.map AuthMsg cmd_ ]
+                    { model | login = login } ! [ Cmd.map AuthMsg cmd_ ]
 
 
-getGridSets : Flags -> LoginState -> Cmd Msg
+getGridSets : Flags -> Auth.Model -> Cmd Msg
 getGridSets { apiRoot } login =
     let
         user =
-            getUserName login |> Maybe.withDefault "anon"
+            Auth.getUserName login |> Maybe.withDefault "anon"
     in
         Http.request
             { method = "GET"
@@ -297,9 +297,9 @@ resultsLink model { modificationTime, id } =
             [ Html.text modificationTime ]
 
 
-title : LoginState -> Html msg
-title user =
-    getUserName user
+title : Auth.Model -> Html msg
+title login =
+    Auth.getUserName login
         |> Maybe.map (\userName -> "Welcome, " ++ userName)
         |> Maybe.withDefault "Lifemapper SDM"
         |> Html.text
@@ -307,8 +307,8 @@ title user =
 
 drawer : Model -> List (Html Msg)
 drawer model =
-    [ Layout.title [] [ title model.loginInfo ]
-    , Layout.navigation [] (userLink model.loginInfo |> List.map (Html.map AuthMsg))
+    [ Layout.title [] [ title model.login ]
+    , Layout.navigation [] (Auth.view model.login |> List.map (Html.map AuthMsg))
     , Layout.navigation [] [ newLink model ]
     , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
@@ -373,11 +373,11 @@ start flags location =
             , page = page
             , gridsets = GridSetsLoading
             , flags = flags
-            , loginInfo = initLoginInfo
+            , login = Auth.init
             }
                 ! [ Material.init Mdl
-                  , getGridSets flags initLoginInfo
-                  , getUser flags |> Cmd.map AuthMsg
+                  , getGridSets flags Auth.init
+                  , Auth.requestUser flags |> Cmd.map AuthMsg
                   , msg
                   ]
 

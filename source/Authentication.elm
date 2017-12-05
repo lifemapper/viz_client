@@ -22,7 +22,7 @@
 -}
 
 
-module Authentication exposing (LoginState, AuthMsg, authUpdate, userLink, getUser, initLoginInfo, getUserName)
+module Authentication exposing (Model, Msg, update, view, init, requestUser, getUserName)
 
 import Regex
 import ProgramFlags exposing (Flags)
@@ -42,19 +42,23 @@ type alias LoginFields =
     }
 
 
-type LoginState
+type State
     = Unknown
     | NotLoggedIn LoginFields
     | LoggingIn LoginFields
     | LoggedIn String
 
 
-initLoginInfo : LoginState
-initLoginInfo =
+type alias Model =
+    State
+
+
+init : Model
+init =
     Unknown
 
 
-type AuthMsg
+type Msg
     = IsLoggedIn String
     | LoginFailed
     | IsAnon
@@ -65,7 +69,7 @@ type AuthMsg
     | DoReload
 
 
-getUserName : LoginState -> Maybe String
+getUserName : State -> Maybe String
 getUserName state =
     case state of
         LoggedIn username ->
@@ -75,8 +79,8 @@ getUserName state =
             Nothing
 
 
-authUpdate : Flags -> AuthMsg -> LoginState -> ( LoginState, Cmd AuthMsg )
-authUpdate flags msg state =
+update : Flags -> Msg -> State -> ( State, Cmd Msg )
+update flags msg state =
     case msg of
         IsLoggedIn user ->
             LoggedIn user ! []
@@ -123,7 +127,7 @@ authUpdate flags msg state =
             NotLoggedIn { username = "", password = "", rejected = False } ! []
 
 
-doLogin : Flags -> LoginFields -> Cmd AuthMsg
+doLogin : Flags -> LoginFields -> Cmd Msg
 doLogin { apiRoot } { username, password } =
     Http.request
         { method = "POST"
@@ -141,7 +145,7 @@ doLogin { apiRoot } { username, password } =
         |> Http.send gotLoginResult
 
 
-doLogOut : Flags -> Cmd AuthMsg
+doLogOut : Flags -> Cmd Msg
 doLogOut { apiRoot } =
     Http.request
         { method = "GET"
@@ -155,7 +159,7 @@ doLogOut { apiRoot } =
         |> Http.send gotLoginResult
 
 
-gotLoginResult : Result Http.Error String -> AuthMsg
+gotLoginResult : Result Http.Error String -> Msg
 gotLoginResult result =
     case result of
         Ok string ->
@@ -171,8 +175,8 @@ gotLoginResult result =
             Debug.log "Error checking logged in user" (toString err) |> always LoginFailed
 
 
-getUser : Flags -> Cmd AuthMsg
-getUser { apiRoot } =
+requestUser : Flags -> Cmd Msg
+requestUser { apiRoot } =
     Http.request
         { method = "GET"
         , headers = []
@@ -185,7 +189,7 @@ getUser { apiRoot } =
         |> Http.send gotUser
 
 
-gotUser : Result Http.Error String -> AuthMsg
+gotUser : Result Http.Error String -> Msg
 gotUser result =
     case result of
         Ok string ->
@@ -200,8 +204,8 @@ gotUser result =
             Debug.log "Error checking logged in user" (toString err) |> always LoginFailed
 
 
-userLink : LoginState -> List (Html AuthMsg)
-userLink state =
+view : State -> List (Html Msg)
+view state =
     let
         style =
             Html.Attributes.style [ ( "margin", "2px 5px" ) ]
