@@ -210,12 +210,7 @@ getGridSets : Flags -> LoginState -> Cmd Msg
 getGridSets { apiRoot } login =
     let
         user =
-            case login of
-                LoggedIn user ->
-                    user
-
-                _ ->
-                    "anon"
+            getUserName login |> Maybe.withDefault "anon"
     in
         Http.request
             { method = "GET"
@@ -304,12 +299,10 @@ resultsLink model { modificationTime, id } =
 
 title : LoginState -> Html msg
 title user =
-    case user of
-        LoggedIn userName ->
-            Html.text <| "Welcome, " ++ userName
-
-        _ ->
-            Html.text "Lifemapper SDM"
+    getUserName user
+        |> Maybe.map (\userName -> "Welcome, " ++ userName)
+        |> Maybe.withDefault "Lifemapper SDM"
+        |> Html.text
 
 
 drawer : Model -> List (Html Msg)
@@ -383,7 +376,7 @@ start flags location =
             , loginInfo = initLoginInfo
             }
                 ! [ Material.init Mdl
-                  , getGridSets flags Unknown
+                  , getGridSets flags initLoginInfo
                   , getUser flags |> Cmd.map AuthMsg
                   , msg
                   ]

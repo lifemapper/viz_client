@@ -22,7 +22,7 @@
 -}
 
 
-module Authentication exposing (LoginState(..), AuthMsg, authUpdate, userLink, getUser, initLoginInfo)
+module Authentication exposing (LoginState, AuthMsg, authUpdate, userLink, getUser, initLoginInfo, getUserName)
 
 import Regex
 import ProgramFlags exposing (Flags)
@@ -63,6 +63,16 @@ type AuthMsg
     | DoLogin
     | DoLogOut
     | DoReload
+
+
+getUserName : LoginState -> Maybe String
+getUserName state =
+    case state of
+        LoggedIn username ->
+            Just username
+
+        _ ->
+            Nothing
 
 
 authUpdate : Flags -> AuthMsg -> LoginState -> ( LoginState, Cmd AuthMsg )
