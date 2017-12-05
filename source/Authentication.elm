@@ -22,7 +22,7 @@
 -}
 
 
-module Authentication exposing (Model, Msg, update, view, init, requestUser, getUserName)
+module Authentication exposing (Model, Msg, update, view, init, getUserName)
 
 import Regex
 import ProgramFlags exposing (Flags)
@@ -53,9 +53,9 @@ type alias Model =
     State
 
 
-init : Model
-init =
-    Unknown
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+    ( Unknown, requestUser flags )
 
 
 type Msg

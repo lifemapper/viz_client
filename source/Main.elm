@@ -366,20 +366,30 @@ view model =
 
 start : Flags -> Location -> ( Model, Cmd Msg )
 start flags location =
-    location2Page flags location
-        |> Maybe.withDefault ( PageNotFound, Cmd.none )
-        |> \( page, msg ) ->
+    let
+        ( login, authInitCmd ) =
+            Auth.init flags
+
+        ( page, cmd ) =
+            location2Page flags location
+                |> Maybe.withDefault ( PageNotFound, Cmd.none )
+
+        model =
             { mdl = Material.model
             , page = page
             , gridsets = GridSetsLoading
             , flags = flags
-            , login = Auth.init
+            , login = login
             }
-                ! [ Material.init Mdl
-                  , getGridSets flags Auth.init
-                  , Auth.requestUser flags |> Cmd.map AuthMsg
-                  , msg
-                  ]
+
+        cmds =
+            [ Material.init Mdl
+            , getGridSets flags login
+            , Cmd.map AuthMsg authInitCmd
+            , cmd
+            ]
+    in
+        model ! cmds
 
 
 subscriptions : Model -> Sub Msg
