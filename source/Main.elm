@@ -104,7 +104,7 @@ type alias Model =
     , page : SDMPage
     , gridsets : GridSets
     , flags : Flags
-    , loginInfo : LoginInfo
+    , loginInfo : LoginState
     }
 
 
@@ -190,7 +190,7 @@ update msg model =
                 model ! [ Nav.newUrl "#new-species-data/" ]
 
             Tick _ ->
-                ( model, getGridSets model.flags model.loginInfo.login )
+                ( model, getGridSets model.flags model.loginInfo )
 
             GotGridSets gridsets ->
                 ( { model | gridsets = GridSetsList gridsets }, Cmd.none )
@@ -206,7 +206,7 @@ update msg model =
                     { model | loginInfo = loginInfo } ! [ Cmd.map AuthMsg cmd_ ]
 
 
-getGridSets : Flags -> Login -> Cmd Msg
+getGridSets : Flags -> LoginState -> Cmd Msg
 getGridSets { apiRoot } login =
     let
         user =
@@ -302,7 +302,7 @@ resultsLink model { modificationTime, id } =
             [ Html.text modificationTime ]
 
 
-title : Login -> Html msg
+title : LoginState -> Html msg
 title user =
     case user of
         LoggedIn userName ->
@@ -314,7 +314,7 @@ title user =
 
 drawer : Model -> List (Html Msg)
 drawer model =
-    [ Layout.title [] [ title model.loginInfo.login ]
+    [ Layout.title [] [ title model.loginInfo ]
     , Layout.navigation [] (userLink model.loginInfo |> List.map (Html.map AuthMsg))
     , Layout.navigation [] [ newLink model ]
     , Layout.navigation [] [ newOccurrenceSetLink model ]

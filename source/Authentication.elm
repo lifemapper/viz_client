@@ -22,7 +22,7 @@
 -}
 
 
-module Authentication exposing (..)
+module Authentication exposing (LoginState(..), AuthMsg, authUpdate, userLink, getUser, initLoginInfo)
 
 import Regex
 import ProgramFlags exposing (Flags)
@@ -35,28 +35,29 @@ import Material.Options as Options
 import Navigation as Nav
 
 
-type Login
-    = Unknown
-    | LoggingIn
-    | NotLoggedIn
-    | LoggedIn String
-    | BadLogin
-
-
-type alias LoginInfo =
+type alias LoginFields =
     { username : String
     , password : String
-    , login : Login
+    , rejected : Bool
     }
 
 
-initLoginInfo : LoginInfo
+type LoginState
+    = Unknown
+    | NotLoggedIn LoginFields
+    | LoggingIn LoginFields
+    | LoggedIn String
+
+
+initLoginInfo : LoginState
 initLoginInfo =
-    { username = "", password = "", login = Unknown }
+    Unknown
 
 
 type AuthMsg
-    = SetUser Login
+    = IsLoggedIn String
+    | LoginFailed
+    | IsAnon
     | UpdateUserName String
     | UpdatePassword String
     | DoLogin
@@ -64,29 +65,55 @@ type AuthMsg
     | DoReload
 
 
-authUpdate : Flags -> AuthMsg -> LoginInfo -> ( LoginInfo, Cmd AuthMsg )
-authUpdate flags msg loginInfo =
+authUpdate : Flags -> AuthMsg -> LoginState -> ( LoginState, Cmd AuthMsg )
+authUpdate flags msg state =
     case msg of
-        SetUser user ->
-            ( { loginInfo | login = user }, Cmd.none )
+        IsLoggedIn user ->
+            LoggedIn user ! []
 
         UpdateUserName username ->
-            { loginInfo | username = username } ! []
+            case state of
+                NotLoggedIn fields ->
+                    NotLoggedIn { fields | username = username } ! []
+
+                _ ->
+                    state ! []
 
         UpdatePassword password ->
-            { loginInfo | password = password } ! []
+            case state of
+                NotLoggedIn fields ->
+                    NotLoggedIn { fields | password = password } ! []
+
+                _ ->
+                    state ! []
 
         DoLogin ->
-            loginInfo ! [ doLogin flags loginInfo ]
+            case state of
+                NotLoggedIn fields ->
+                    LoggingIn fields ! [ doLogin flags fields ]
+
+                _ ->
+                    state ! []
 
         DoLogOut ->
-            loginInfo ! [ doLogOut flags ]
+            state ! [ doLogOut flags ]
 
         DoReload ->
-            loginInfo ! [ Nav.reload ]
+            state ! [ Nav.reload ]
+
+        LoginFailed ->
+            case state of
+                LoggingIn fields ->
+                    NotLoggedIn { fields | rejected = True } ! []
+
+                _ ->
+                    NotLoggedIn { username = "", password = "", rejected = False } ! []
+
+        IsAnon ->
+            NotLoggedIn { username = "", password = "", rejected = False } ! []
 
 
-doLogin : Flags -> LoginInfo -> Cmd AuthMsg
+doLogin : Flags -> LoginFields -> Cmd AuthMsg
 doLogin { apiRoot } { username, password } =
     Http.request
         { method = "POST"
@@ -126,12 +153,12 @@ gotLoginResult result =
 
         Err (Http.BadStatus bad) ->
             if bad.status.code == 403 then
-                SetUser BadLogin
+                LoginFailed
             else
-                Debug.log "Error checking logged in user" (toString bad) |> always (SetUser BadLogin)
+                Debug.log "Error checking logged in user" (toString bad) |> always LoginFailed
 
         Err err ->
-            Debug.log "Error checking logged in user" (toString err) |> always (SetUser BadLogin)
+            Debug.log "Error checking logged in user" (toString err) |> always LoginFailed
 
 
 getUser : Flags -> Cmd AuthMsg
@@ -155,26 +182,25 @@ gotUser result =
             if String.startsWith "Welcome " string then
                 string
                     |> String.dropLeft (String.length "Welcome ")
-                    |> LoggedIn
-                    |> SetUser
+                    |> IsLoggedIn
             else
-                SetUser NotLoggedIn
+                IsAnon
 
         Err err ->
-            Debug.log "Error checking logged in user" (toString err) |> always (SetUser NotLoggedIn)
+            Debug.log "Error checking logged in user" (toString err) |> always LoginFailed
 
 
-userLink : LoginInfo -> List (Html AuthMsg)
-userLink loginInfo =
+userLink : LoginState -> List (Html AuthMsg)
+userLink state =
     let
         style =
             Html.Attributes.style [ ( "margin", "2px 5px" ) ]
 
-        loginForm =
+        loginFormEls username password disableButton =
             [ Html.input
                 [ Html.Attributes.type_ "text"
                 , Html.Attributes.placeholder "Username"
-                , Html.Attributes.value loginInfo.username
+                , Html.Attributes.value username
                 , style
                 , Html.Events.onInput UpdateUserName
                 ]
@@ -182,31 +208,36 @@ userLink loginInfo =
             , Html.input
                 [ Html.Attributes.type_ "password"
                 , Html.Attributes.placeholder "Password"
-                , Html.Attributes.value loginInfo.password
+                , Html.Attributes.value password
                 , style
                 , Html.Events.onInput UpdatePassword
                 ]
                 []
             , Html.button
                 [ Html.Events.onClick DoLogin
-                , Html.Attributes.disabled (loginInfo.login == LoggingIn)
+                , Html.Attributes.disabled disableButton
                 , style
                 ]
                 [ Html.text "Login" ]
             ]
+
+        loginForm { username, password, rejected } disableButton =
+            if rejected then
+                (Html.p [ style ] [ Html.text "Invalid username or password." ]
+                    :: (loginFormEls username password disableButton)
+                )
+            else
+                loginFormEls username password disableButton
     in
-        case loginInfo.login of
+        case state of
             LoggedIn userName ->
                 [ Layout.link [ Options.onClick DoLogOut, Options.css "cursor" "pointer" ] [ Html.text "Logout" ] ]
-
-            BadLogin ->
-                (Html.p [ style ] [ Html.text "Invalid username or password." ] :: loginForm)
 
             Unknown ->
                 []
 
-            NotLoggedIn ->
-                loginForm
+            NotLoggedIn loginInfo ->
+                loginForm loginInfo False
 
-            LoggingIn ->
-                loginForm
+            LoggingIn loginInfo ->
+                loginForm loginInfo True
