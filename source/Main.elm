@@ -60,14 +60,6 @@ type SDMPage
     | PageNotFound
 
 
-type Login
-    = Unknown
-    | LoggingIn
-    | NotLoggedIn
-    | LoggedIn String
-    | BadLogin
-
-
 initResultsPage : Flags -> Int -> ( SDMPage, Cmd Msg )
 initResultsPage flags gridsetId =
     ( SDMResults.init flags gridsetId |> SDMResults gridsetId, Cmd.none )
@@ -109,16 +101,24 @@ type GridSets
     | GridSetsList (List AtomObjectRecord)
 
 
+type Login
+    = Unknown
+    | LoggingIn
+    | NotLoggedIn
+    | LoggedIn String
+    | BadLogin
+
+
 type alias LoginInfo =
     { username : String
     , password : String
+    , login : Login
     }
 
 
 type alias Model =
     { mdl : Material.Model
     , page : SDMPage
-    , user : Login
     , gridsets : GridSets
     , flags : Flags
     , loginInfo : LoginInfo
@@ -212,13 +212,17 @@ update msg model =
                 model ! [ Nav.newUrl "#new-species-data/" ]
 
             Tick _ ->
-                ( model, getGridSets model.flags model.user )
-
-            SetUser user ->
-                ( { model | user = user }, Cmd.none )
+                ( model, getGridSets model.flags model.loginInfo.login )
 
             GotGridSets gridsets ->
                 ( { model | gridsets = GridSetsList gridsets }, Cmd.none )
+
+            SetUser user ->
+                let
+                    loginInfo =
+                        model.loginInfo
+                in
+                    ( { model | loginInfo = { loginInfo | login = user } }, Cmd.none )
 
             UpdateUserName username ->
                 let
@@ -421,8 +425,8 @@ resultsLink model { modificationTime, id } =
             [ Html.text modificationTime ]
 
 
-userLink : Login -> LoginInfo -> List (Html Msg)
-userLink user loginInfo =
+userLink : LoginInfo -> List (Html Msg)
+userLink loginInfo =
     let
         style =
             Html.Attributes.style [ ( "margin", "2px 5px" ) ]
@@ -446,7 +450,7 @@ userLink user loginInfo =
                 []
             , Html.button
                 [ Html.Events.onClick
-                    (if user == LoggingIn then
+                    (if loginInfo.login == LoggingIn then
                         Nop
                      else
                         DoLogin
@@ -456,7 +460,7 @@ userLink user loginInfo =
                 [ Html.text "Login" ]
             ]
     in
-        case user of
+        case loginInfo.login of
             LoggedIn userName ->
                 [ Layout.link [ Options.onClick DoLogOut, Options.css "cursor" "pointer" ] [ Html.text "Logout" ] ]
 
@@ -485,8 +489,8 @@ title user =
 
 drawer : Model -> List (Html Msg)
 drawer model =
-    [ Layout.title [] [ title model.user ]
-    , Layout.navigation [] (userLink model.user model.loginInfo)
+    [ Layout.title [] [ title model.loginInfo.login ]
+    , Layout.navigation [] (userLink model.loginInfo)
     , Layout.navigation [] [ newLink model ]
     , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
@@ -549,10 +553,9 @@ start flags location =
         |> \( page, msg ) ->
             { mdl = Material.model
             , page = page
-            , user = Unknown
             , gridsets = GridSetsLoading
             , flags = flags
-            , loginInfo = { username = "", password = "" }
+            , loginInfo = { username = "", password = "", login = Unknown }
             }
                 ! [ Material.init Mdl
                   , getGridSets flags Unknown
