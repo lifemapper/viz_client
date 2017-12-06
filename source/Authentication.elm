@@ -204,8 +204,8 @@ gotUser result =
             Debug.log "Error checking logged in user" (toString err) |> always LoginFailed
 
 
-view : State -> List (Html Msg)
-view state =
+view : String -> State -> List (Html Msg)
+view signUpHref state =
     let
         style =
             Html.Attributes.style [ ( "margin", "2px 5px" ) ]
@@ -233,6 +233,9 @@ view state =
                 , style
                 ]
                 [ Html.text "Login" ]
+            , Html.p
+                [ Html.Attributes.style [ ( "text-align", "right" ), ( "margin-right", "5px" ) ] ]
+                [ Html.a [ Html.Attributes.href signUpHref ] [ Html.text "sign up" ] ]
             ]
 
         loginForm { username, password, rejected } disableButton =

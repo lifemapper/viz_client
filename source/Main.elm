@@ -40,6 +40,7 @@ import Page
 import NewSDM
 import SDMResults
 import NewOccurrenceSet
+import SignUp
 import ProgramFlags exposing (Flags)
 import Authentication as Auth
 import Decoder
@@ -55,6 +56,7 @@ type SDMPage
     = NewSDM NewSDM.Model
     | SDMResults Int SDMResults.Model
     | NewOccurrenceSet NewOccurrenceSet.Model
+    | SignUp SignUp.Model
     | PageNotFound
 
 
@@ -81,6 +83,15 @@ initNewOccurrenceSetPage flags =
         ( NewOccurrenceSet model_, Cmd.none )
 
 
+initSignUpPage : Flags -> ( SDMPage, Cmd Msg )
+initSignUpPage flags =
+    let
+        ( model_, msg_ ) =
+            SignUp.init flags
+    in
+        ( SignUp model_, Cmd.map SignUpMsg msg_ )
+
+
 location2Page : Flags -> Location -> Maybe ( SDMPage, Cmd Msg )
 location2Page flags location =
     let
@@ -89,6 +100,7 @@ location2Page flags location =
                 [ Url.map (initNewSDMPage flags) Url.top
                 , Url.map (initResultsPage flags) (Url.s "results" </> Url.int)
                 , Url.map (initNewOccurrenceSetPage flags) (Url.s "new-species-data")
+                , Url.map (initSignUpPage flags) (Url.s "sign-up")
                 ]
     in
         Url.parseHash route location
@@ -113,6 +125,7 @@ type Msg
     | NewSDMMsg NewSDM.Msg
     | SDMResultsMsg SDMResults.Msg
     | NewOccurrenceSetMsg NewOccurrenceSet.Msg
+    | SignUpMsg SignUp.Msg
     | GotGridSets (List AtomObjectRecord)
     | UrlChange Location
     | OpenExisting Int
@@ -161,6 +174,18 @@ update msg model =
 
                 _ ->
                     \msg_ model -> ( model, Cmd.none )
+
+        liftedSignUpUpdate =
+            case model.page of
+                SignUp model_ ->
+                    lift
+                        (always model_)
+                        (\m x -> { m | page = SignUp x })
+                        SignUpMsg
+                        SignUp.update
+
+                _ ->
+                    \msg_ model -> ( model, Cmd.none )
     in
         case msg of
             Mdl msg_ ->
@@ -174,6 +199,9 @@ update msg model =
 
             NewOccurrenceSetMsg msg_ ->
                 liftedNewOccurrenceSetUpdate msg_ model
+
+            SignUpMsg msg_ ->
+                liftedSignUpUpdate msg_ model
 
             UrlChange location ->
                 location2Page model.flags location
@@ -308,7 +336,7 @@ title login =
 drawer : Model -> List (Html Msg)
 drawer model =
     [ Layout.title [] [ title model.login ]
-    , Layout.navigation [] (Auth.view model.login |> List.map (Html.map AuthMsg))
+    , Layout.navigation [] (Auth.view "#sign-up/" model.login |> List.map (Html.map AuthMsg))
     , Layout.navigation [] [ newLink model ]
     , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
@@ -332,6 +360,9 @@ pageImplementation p =
 
         NewOccurrenceSet model_ ->
             Page.lift NewOccurrenceSet.page (always model_) NewOccurrenceSetMsg
+
+        SignUp model_ ->
+            Page.lift SignUp.page (always model_) SignUpMsg
 
         PageNotFound ->
             { view = always <| Options.div [] []
