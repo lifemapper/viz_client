@@ -191,10 +191,10 @@ gotSignUpResult result =
             if err.status.code == 409 then
                 Conflicted
             else
-                Debug.log "Error signing up" (toString err) |> always Nop
+                Debug.log "Error signing up" (toString err) |> always SignUpFailed
 
         Err err ->
-            Debug.log "Error signing up" (toString err) |> always Nop
+            Debug.log "Error signing up" (toString err) |> always SignUpFailed
 
 
 type alias FieldInfo =
