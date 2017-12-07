@@ -140,7 +140,7 @@ doLogin { apiRoot } { username, password } =
                 ]
         , expect = Http.expectString
         , timeout = Nothing
-        , withCredentials = True
+        , withCredentials = False
         }
         |> Http.send gotLoginResult
 
@@ -154,7 +154,7 @@ doLogOut { apiRoot } =
         , body = Http.emptyBody
         , expect = Http.expectString
         , timeout = Nothing
-        , withCredentials = True
+        , withCredentials = False
         }
         |> Http.send gotLoginResult
 
@@ -184,7 +184,7 @@ requestUser { apiRoot } =
         , body = Http.emptyBody
         , expect = Http.expectString
         , timeout = Nothing
-        , withCredentials = True
+        , withCredentials = False
         }
         |> Http.send gotUser
 

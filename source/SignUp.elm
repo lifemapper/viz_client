@@ -177,7 +177,7 @@ doPost model =
                 ]
         , expect = Http.expectString
         , timeout = Nothing
-        , withCredentials = True
+        , withCredentials = False
         }
         |> Http.send gotSignUpResult
 
