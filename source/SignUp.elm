@@ -15,6 +15,7 @@ import Material.Options as Options
 import Material.Card as Card
 import Material.Textfield as Textfield
 import Material.Toggles as Toggles
+import Material.Typography as Typo
 import ProgramFlags exposing (Flags)
 import Page exposing (Page)
 
@@ -203,17 +204,17 @@ type alias FieldInfo =
 
 fields : List FieldInfo
 fields =
-    [ ( .username, (\m x -> { m | username = x }), "User Name", [ requireField, maxLength 20, minLength 5 ] )
-    , ( .email, (\m x -> { m | email = x }), "Email Address", [ requireField, maxLength 64, minLength 9 ] )
-    , ( .firstName, (\m x -> { m | firstName = x }), "First Name", [ requireField, maxLength 50, minLength 2 ] )
-    , ( .lastName, (\m x -> { m | lastName = x }), "Last Name", [ requireField, maxLength 50, minLength 2 ] )
+    [ ( .username, (\m x -> { m | username = x }), "User Name *", [ requireField, maxLength 20, minLength 5 ] )
+    , ( .email, (\m x -> { m | email = x }), "Email Address *", [ requireField, maxLength 64, minLength 9 ] )
+    , ( .firstName, (\m x -> { m | firstName = x }), "First Name *", [ requireField, maxLength 50, minLength 2 ] )
+    , ( .lastName, (\m x -> { m | lastName = x }), "Last Name *", [ requireField, maxLength 50, minLength 2 ] )
     , ( .institution, (\m x -> { m | institution = x }), "Institution", [] )
     , ( .address1, (\m x -> { m | address1 = x }), "Address", [] )
     , ( .address2, (\m x -> { m | address2 = x }), "Address", [] )
     , ( .address3, (\m x -> { m | address3 = x }), "Address", [] )
     , ( .phoneNumber, (\m x -> { m | phoneNumber = x }), "Phone Number", [ maxLength 20, minLength 10 ] )
-    , ( .password, (\m x -> { m | password = x }), "Password", [ requireField, maxLength 32, minLength 8 ] )
-    , ( .confirmPassword, (\m x -> { m | confirmPassword = x }), "Confirm Password", [ requireField, checkPasswords ] )
+    , ( .password, (\m x -> { m | password = x }), "Password *", [ requireField, maxLength 32, minLength 8 ] )
+    , ( .confirmPassword, (\m x -> { m | confirmPassword = x }), "Confirm Password *", [ requireField, checkPasswords ] )
     ]
 
 
@@ -329,6 +330,11 @@ errorMessage model =
         Options.span [] []
 
 
+requiredMessage : Html msg
+requiredMessage =
+    Options.styled Html.p [ Typo.caption ] [ Html.text "* required field." ]
+
+
 view : Model -> Html Msg
 view model =
     Card.view
@@ -338,7 +344,7 @@ view model =
         ]
         [ Card.title []
             [ Card.head [] [ Html.text "New User Information" ] ]
-        , Card.text [] ((fields |> List.indexedMap (textfield model)) ++ [ checkbox model ])
+        , Card.text [] ((fields |> List.indexedMap (textfield model)) ++ [ requiredMessage, checkbox model ])
         , Card.actions [ Card.border ]
             [ button model, errorMessage model ]
         ]
