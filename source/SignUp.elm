@@ -212,7 +212,7 @@ fields =
     , ( .address1, (\m x -> { m | address1 = x }), "Address", [] )
     , ( .address2, (\m x -> { m | address2 = x }), "Address", [] )
     , ( .address3, (\m x -> { m | address3 = x }), "Address", [] )
-    , ( .phoneNumber, (\m x -> { m | phoneNumber = x }), "Phone Number", [ maxLength 20, minLength 10 ] )
+    -- , ( .phoneNumber, (\m x -> { m | phoneNumber = x }), "Phone Number", [ maxLength 20, minLength 10 ] )
     , ( .password, (\m x -> { m | password = x }), "Password *", [ requireField, maxLength 32, minLength 8 ] )
     , ( .confirmPassword, (\m x -> { m | confirmPassword = x }), "Confirm Password *", [ requireField, checkPasswords ] )
     ]
