@@ -338,7 +338,7 @@ drawer model =
     [ Layout.title [] [ title model.login ]
     , Layout.navigation [] (Auth.view "#sign-up/" model.login |> List.map (Html.map AuthMsg))
     , Layout.navigation [] [ newLink model ]
-    , Layout.navigation [] [ newOccurrenceSetLink model ]
+    -- , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
     , case model.gridsets of
         GridSetsLoading ->
