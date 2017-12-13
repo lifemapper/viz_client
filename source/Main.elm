@@ -237,13 +237,18 @@ update msg model =
 getGridSets : Flags -> Auth.Model -> Cmd Msg
 getGridSets { apiRoot } login =
     let
-        user =
-            Auth.getUserName login |> Maybe.withDefault "anon"
+        url =
+            case Auth.getUserName login of
+                Nothing ->
+                    apiRoot ++ "gridset?user=anon"
+
+                _ ->
+                    apiRoot ++ "gridset"
     in
         Http.request
             { method = "GET"
             , headers = [ Http.header "Accept" "application/json" ]
-            , url = apiRoot ++ "gridset?user=" ++ user
+            , url = url
             , body = Http.emptyBody
             , expect = Http.expectJson decodeAtomList
             , timeout = Nothing
@@ -338,7 +343,7 @@ drawer model =
     [ Layout.title [] [ title model.login ]
     , Layout.navigation [] (Auth.view "#sign-up/" model.login |> List.map (Html.map AuthMsg))
     , Layout.navigation [] [ newLink model ]
-    -- , Layout.navigation [] [ newOccurrenceSetLink model ]
+      -- , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
     , case model.gridsets of
         GridSetsLoading ->
