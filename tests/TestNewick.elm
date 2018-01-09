@@ -1,4 +1,4 @@
-module Example exposing (..)
+module TestNewick exposing (..)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
@@ -214,10 +214,10 @@ suite =
                         ExampleTrees.heucheraString
                         (Newick.unparse ExampleTrees.heucheraNewick)
             ]
-        , describe "Fuzzing tests"
-            -- Skipping these because there is ambiguity in the Newick grammar
-            -- that breaks the tests.
-            [ skip <| fuzz fuzzTree "Fuzz tree parsing" <|
-                \tree -> Expect.equal (Ok tree) (tryParse Newick.tree (Newick.unparse tree))
-            ]
+          -- , describe "Fuzzing tests"
+          --     -- Skipping these because there is ambiguity in the Newick grammar
+          --     -- that breaks the tests.
+          --     [ skip <| fuzz fuzzTree "Fuzz tree parsing" <|
+          --         \tree -> Expect.equal (Ok tree) (tryParse Newick.tree (Newick.unparse tree))
+          --     ]
         ]
