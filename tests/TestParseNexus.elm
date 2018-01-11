@@ -1,3 +1,5 @@
+module TestParseNexus exposing (..)
+
 {-
    Copyright (C) 2018, University of Kansas Center for Research
 
@@ -21,47 +23,18 @@
    02110-1301, USA.
 -}
 
-
-module TaxLabels exposing (TaxLabel, taxLabels)
-
-import Combine exposing (..)
-
-
-type alias Name =
-    String
+import Expect exposing (Expectation)
+import Fuzz exposing (Fuzzer)
+import Test exposing (..)
+import ParseNexusTree exposing (parseNexusTree)
+import Combine
+import ExampleTrees exposing (heucheraNexus, heucheraNexusParsed)
 
 
-type alias Squid =
-    String
-
-
-type alias TaxLabel =
-    { name : Name
-    , squid : Maybe Squid
-    }
-
-
-taxLabels : Parser s (List TaxLabel)
-taxLabels =
-    string "TAXLABELS"
-        *> whitespace1
-        *> sepBy whitespace1 taxLabel
-        <* whitespace
-        <* string ";"
-
-
-taxLabel : Parser s TaxLabel
-taxLabel =
-    name |> andThen (\name -> (maybe (whitespace *> squid)) |> map (\squid -> { name = name, squid = squid }))
-
-
-name : Parser s Name
-name =
-    regex "[_a-zA-Z0-9']+"
-
-
-squid : Parser s Squid
-squid =
-    string "[&squid="
-        *> regex "[0-9a-fA-F]*"
-        <* string "]"
+suite : Test
+suite =
+    describe "Parsing Nexus Trees"
+        [ test "heuchera in nexus file" <|
+            \_ ->
+                Expect.equal (Ok heucheraNexusParsed) (parseNexusTree heucheraNexus)
+        ]
