@@ -42,4 +42,10 @@ suite =
                     Expect.equal ExampleTrees.heucheraBinary
                         (newick2Binary ExampleTrees.taxLabelsParsed ExampleTrees.heucheraNewick)
             ]
+        , describe "Heuchera tree 2"
+            [ test "newick2Binary" <|
+                \_ ->
+                    Expect.equal ExampleTrees.heucheraBinary2
+                        (newick2Binary ExampleTrees.taxLabelsParsed ExampleTrees.heucheraNewick2)
+            ]
         ]

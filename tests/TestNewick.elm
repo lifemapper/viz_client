@@ -237,6 +237,18 @@ suite =
                         ExampleTrees.heucheraString
                         (Newick.unparse ExampleTrees.heucheraNewick)
             ]
+        , describe "Heuchera tree 2"
+            [ test "Parsing Huechera tree" <|
+                \_ ->
+                    Expect.equal
+                        (Ok ExampleTrees.heucheraNewick2)
+                        (tryParse Newick.tree ExampleTrees.heucheraString2)
+            , test "Unparse Heuchera tree" <|
+                \_ ->
+                    Expect.equal
+                        ExampleTrees.heucheraString2
+                        (Newick.unparse ExampleTrees.heucheraNewick2)
+            ]
           -- , describe "Fuzzing tests"
           --     -- Skipping these because there is ambiguity in the Newick grammar
           --     -- that breaks the tests.

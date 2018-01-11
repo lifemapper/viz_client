@@ -83,11 +83,14 @@ nodeIdRegex =
     regex "Node_(\\d+)"
 
 
+cladeIdOnlyRegex : Regex
+cladeIdOnlyRegex =
+    regex "^(\\d+)$"
+
+
 name2Id : String -> Maybe Int
 name2Id name =
-    name
-        |> find (AtMost 1) nodeIdRegex
-        |> List.getAt 0
+    Maybe.or (name |> find (AtMost 1) nodeIdRegex |> List.getAt 0) (name |> find (AtMost 1) cladeIdOnlyRegex |> List.getAt 0)
         |> Maybe.map .submatches
         |> Maybe.andThen (List.getAt 0)
         |> Maybe.join
