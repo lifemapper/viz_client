@@ -33,4 +33,7 @@ clean:
 	rm -f sdm.tar.gz sdm/elm.js
 	rm -f mcpa.tar.gz mcpa/elm.js
 
-.PHONY: all clean
+test: source/Decoder.elm source/* tests/*.elm
+	elm test
+
+.PHONY: all debug clean test

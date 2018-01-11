@@ -14,6 +14,7 @@ install:
   - npm install -g elm@0.18.0
   - npm install -g ahultgren/swagger-elm#v0.3.0
   - npm install -g elm-format@0.5.2
+  - npm install -g elm-test@0.18.12
   - |
     if [ ! -d libsysconfcpus/bin ];
     then
@@ -27,6 +28,7 @@ install:
 
 script:
   - libsysconfcpus/bin/sysconfcpus -n 2 make
+  - libsysconfcpus/bin/sysconfcpus -n 2 make test
 
 deploy:
   provider: releases
