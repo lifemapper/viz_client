@@ -1,3 +1,5 @@
+module TestNewick exposing (..)
+
 {-
    Copyright (C) 2018, University of Kansas Center for Research
 
@@ -20,9 +22,6 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 -}
-
-
-module TestNewick exposing (..)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
