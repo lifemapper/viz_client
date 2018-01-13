@@ -35,7 +35,7 @@ suite =
     describe "Decode Mcpa JSON"
         [ test "heuchera mcpa" <|
             \_ ->
-                Expect.equal (Ok decodedMcpa) (decodeString decodeMcpa exampleMcpa)
+                Expect.equal (Ok ( exampleMcpaVariables, decodedMcpa )) (decodeString decodeMcpa exampleMcpa)
         ]
 
 
@@ -1147,3 +1147,51 @@ decodedMcpa =
         , ( ( 112, "P-Values", "LandCover_5_Shrubs" ), 0 )
         , ( ( 112, "P-Values", "LandCover_6_Herbaceous" ), 0 )
         ]
+
+
+exampleMcpaVariables : List String
+exampleMcpaVariables =
+    [ "GTOPO30_ELEVATION"
+    , "GTOPO30_SLOPE_reduced"
+    , "GTOPO30_ASPECT_reduced"
+    , "LandCover_1_Needleleaf"
+    , "LandCover_2_Evergreenbroadleaf"
+    , "LandCover_3_Deciduousbroadleaf"
+    , "LandCover_4_Mixedtrees"
+    , "LandCover_5_Shrubs"
+    , "LandCover_6_Herbaceous"
+    , "ISRICSOILGRIDS_new_average_phx10percent_reduced"
+    , "ISRICSOILGRIDS_new_average_soilorganiccarboncontent_reduced"
+    , "ISRICSOILGRIDS_new_average_sandpercent_reduced"
+    , "ISRICSOILGRIDS_new_average_coarsefragmentpercent_reduced"
+    , "ISRICSOILGRIDS_new_average_bulkdensity_reduced"
+    , "ISRICSOILGRIDS_new_average_claypercent_reduced"
+    , "ISRICSOILGRIDS_new_average_siltpercent_reduced"
+    , "BIOCLIM_1"
+    , "BIOCLIM_2"
+    , "BIOCLIM_3"
+    , "BIOCLIM_4"
+    , "BIOCLIM_5"
+    , "BIOCLIM_6"
+    , "BIOCLIM_7"
+    , "BIOCLIM_8"
+    , "BIOCLIM_9"
+    , "BIOCLIM_10"
+    , "BIOCLIM_11"
+    , "BIOCLIM_12"
+    , "BIOCLIM_13"
+    , "BIOCLIM_14"
+    , "BIOCLIM_15"
+    , "BIOCLIM_16"
+    , "BIOCLIM_17"
+    , "BIOCLIM_18"
+    , "BIOCLIM_19"
+    , "ENV - Adjusted R-squared"
+    , "ECO_NAME - Gulf Of California Xeric Scrub"
+    , "ECO_NAME - GREAT BASIN"
+    , "ECO_NAME - EAST ASIA"
+    , "ECO_NAME - ROCKIES"
+    , "ECO_NAME - EASTERN NA AND PLAINS"
+    , "ECO_NAME - Sierra Madre Oriental Pine-Oak Forests"
+    , "BG - Adjusted R-squared"
+    ]

@@ -28,7 +28,6 @@ import Dict exposing (Dict)
 import List.Extra as List
 import Result.Extra as Result
 import Json.Decode as Decode exposing (Decoder)
-import McpaTypes exposing (..)
 
 
 type alias VarName =
@@ -49,7 +48,7 @@ type alias RawData =
     }
 
 
-decodeMcpa : Decoder McpaData
+decodeMcpa : Decoder ( List VarName, McpaData )
 decodeMcpa =
     decodeRawData |> Decode.andThen rawDataToMcpa
 
@@ -71,7 +70,7 @@ decodeData =
     Decode.list (Decode.list (Decode.list Decode.float))
 
 
-rawDataToMcpa : RawData -> Decoder McpaData
+rawDataToMcpa : RawData -> Decoder ( List VarName, McpaData )
 rawDataToMcpa { headers, data } =
     let
         cladeIds =
@@ -94,9 +93,11 @@ rawDataToMcpa { headers, data } =
                 Decode.fail err
 
 
-groupMcpaData : List Int -> List VarName -> List VarType -> List (List (List Float)) -> McpaData
+groupMcpaData : List Int -> List VarName -> List VarType -> List (List (List Float)) -> ( List VarName, McpaData )
 groupMcpaData cladeIds variables valueTypes data =
-    List.zip cladeIds data |> List.foldl (groupMcpaDataVars variables valueTypes) Dict.empty
+    ( variables
+    , List.zip cladeIds data |> List.foldl (groupMcpaDataVars variables valueTypes) Dict.empty
+    )
 
 
 groupMcpaDataVars : List VarName -> List VarType -> ( Int, List (List Float) ) -> McpaData -> McpaData

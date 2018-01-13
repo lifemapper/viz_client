@@ -27,9 +27,9 @@ import McpaModel exposing (..)
 import FractalTreeView
 
 
-main : Program Never Model Msg
+main : Program Flags Model Msg
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , update = update
         , view = FractalTreeView.view

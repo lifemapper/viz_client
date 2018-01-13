@@ -24,9 +24,10 @@
 
 module McpaModel exposing (..)
 
-import ExampleTree
-import ExampleMcpa
+import DecodeMcpa exposing (McpaData, decodeMcpa)
 import DecodeTree exposing (Tree)
+import ParseNexusTree exposing (parseNexusTree)
+import Json.Decode exposing (Value, decodeValue)
 import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
 import Animation as A exposing (Animation)
 import AnimationFrame
@@ -34,26 +35,45 @@ import Time exposing (Time)
 import Ease
 
 
+type alias Flags =
+    { mcpaMatrix : Value
+    , taxonTree : String
+    }
+
+
 type alias Model =
     { zipper : TreeZipper
     , root : Tree
     , mcpaVariables : List String
-    , mcpaData : ExampleMcpa.McpaData
+    , mcpaData : McpaData
     , selectedVariable : String
     , animationState : AnimationState
     , mouseIn : Bool
     }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Flags -> ( Model, Cmd Msg )
+init flags =
     let
         ( variables, data ) =
-            ExampleMcpa.exampleMcpa
+            case decodeValue decodeMcpa flags.mcpaMatrix of
+                Ok result ->
+                    result
+
+                Err err ->
+                    Debug.crash "failed to decode MCPA matrix" err
+
+        root =
+            case parseNexusTree flags.taxonTree of
+                Ok tree ->
+                    tree
+
+                Err err ->
+                    Debug.crash "failed parsing Nexus tree data" err
     in
         ( { animationState = Static
-          , zipper = TreeZipper.start ExampleTree.tree
-          , root = ExampleTree.tree
+          , zipper = TreeZipper.start root
+          , root = root
           , mcpaVariables = variables
           , selectedVariable = "ECO_NUM - 7"
           , mcpaData = data
