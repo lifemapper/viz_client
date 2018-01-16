@@ -111,7 +111,10 @@ leaf =
 
 name : Parser s Name
 name =
-    regex "[_a-zA-Z0-9']*"
+    choice
+        [ regex "[^']+" |> between (string "'") (string "'")
+        , regex "[_a-zA-Z0-9']*"
+        ]
 
 
 internal : () -> Parser s SubTree

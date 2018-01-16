@@ -61,7 +61,7 @@ init flags =
                     result
 
                 Err err ->
-                    Debug.crash "failed to decode MCPA matrix" err
+                    Debug.crash ("failed to decode MCPA matrix: " ++ err)
 
         root =
             case parseNexusTree flags.taxonTree of
@@ -69,7 +69,7 @@ init flags =
                     tree
 
                 Err err ->
-                    Debug.crash "failed parsing Nexus tree data" err
+                    Debug.crash ("failed parsing Nexus tree data: " ++ err)
     in
         ( { animationState = Static
           , zipper = TreeZipper.start root

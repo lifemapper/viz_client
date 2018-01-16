@@ -51,7 +51,7 @@ tryParse parser input =
             Ok result
 
         Err ( _, stream, errors ) ->
-            Err (input ++ " " ++ String.join " or " errors)
+            Err ((String.left 20 stream.input) ++ " " ++ String.join " or " errors)
 
 
 parseNexusTree : String -> Result String Binary.Tree

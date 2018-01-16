@@ -57,7 +57,10 @@ taxLabel =
 
 name : Parser s Name
 name =
-    regex "[_a-zA-Z0-9']+"
+    choice
+        [ regex "[^']+" |> between (string "'") (string "'")
+        , regex "[_a-zA-Z0-9']+"
+        ]
 
 
 squid : Parser s Squid
