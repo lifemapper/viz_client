@@ -8,6 +8,7 @@ node_js:
 cache:
   directories:
     - elm-stuff/packages
+    - tests/elm-stuff/packages
     - libsysconfcpus
 
 install:
