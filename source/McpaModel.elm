@@ -24,10 +24,9 @@
 
 module McpaModel exposing (..)
 
-import DecodeMcpa exposing (McpaData, decodeMcpa)
+import ParseMcpa exposing (McpaData, parseMcpa)
 import DecodeTree exposing (Tree)
 import ParseNexusTree exposing (parseNexusTree)
-import Json.Decode exposing (Value, decodeValue)
 import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
 import Animation as A exposing (Animation)
 import AnimationFrame
@@ -36,7 +35,7 @@ import Ease
 
 
 type alias Flags =
-    { mcpaMatrix : Value
+    { mcpaMatrix : String
     , taxonTree : String
     }
 
@@ -56,7 +55,7 @@ init : Flags -> ( Model, Cmd Msg )
 init flags =
     let
         ( variables, data ) =
-            case decodeValue decodeMcpa flags.mcpaMatrix of
+            case parseMcpa flags.mcpaMatrix of
                 Ok result ->
                     result
 
