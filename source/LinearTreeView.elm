@@ -236,6 +236,7 @@ drawTree model totalLength parentColor tree =
                         , cy <| toString (thisHeight / 2.0)
                         , r "0.3"
                         , fill color
+                        , Html.Events.onClick <| SelectNode data.cladeId
                         ]
                         []
                   , g [ transform <| "translate(" ++ (toString length) ++ ",0)" ] leftNodes

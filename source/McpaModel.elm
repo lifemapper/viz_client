@@ -90,7 +90,7 @@ init flags =
           , zipper = TreeZipper.start root
           , treeInfo = treeInfo
           , mcpaVariables = variables
-          , selectedVariable = "ECO_NUM - 7"
+          , selectedVariable = List.head variables |> Maybe.withDefault ""
           , mcpaData = data
           , mouseIn = False
           }
@@ -130,6 +130,7 @@ type Msg
     | JumpLeft
     | JumpRight
     | SelectVariable String
+    | SelectNode Int
     | AnimationMsg AnimationMsg
 
 
@@ -155,6 +156,9 @@ update msg model =
 
         SelectVariable v ->
             ( { model | selectedVariable = v }, Cmd.none )
+
+        SelectNode cladeId ->
+            model ! []
 
         AnimationMsg msg_ ->
             updateAnimation msg_ model
