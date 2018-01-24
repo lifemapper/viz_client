@@ -37,19 +37,10 @@ import McpaModel exposing (..)
 
 
 view : Model -> Html.Html Msg
-view ({ root, zipper, mcpaData, selectedVariable } as model) =
+view ({ treeInfo, zipper, mcpaData, selectedVariable } as model) =
     let
-        treeDepth_ =
-            treeDepth root
-
-        treeBreadth_ =
-            treeBreadth root
-
-        treeLength_ =
-            treeLength root
-
         ( treeHeight, grads, treeSvg ) =
-            drawTree model treeLength_ "#ccc" root
+            drawTree model treeInfo.length "#ccc" treeInfo.root
 
         gradDefs =
             grads
@@ -137,38 +128,6 @@ view ({ root, zipper, mcpaData, selectedVariable } as model) =
             ]
 
 
-treeLength : Tree -> Float
-treeLength tree =
-    case tree of
-        Leaf { length } ->
-            length |> Maybe.withDefault 0
-
-        Node { length } left right ->
-            let
-                thisLength =
-                    length |> Maybe.withDefault 0
-            in
-                thisLength + Basics.max (treeLength left) (treeLength right)
-
-
-treeDepth : Tree -> Int
-treeDepth tree =
-    case tree of
-        Leaf _ ->
-            1
-
-        Node _ left right ->
-            1 + Basics.max (treeDepth left) (treeDepth right)
-
-
-treeBreadth : Tree -> Int
-treeBreadth tree =
-    case tree of
-        Leaf _ ->
-            1
-
-        Node _ left right ->
-            (treeBreadth left) + (treeBreadth right)
 
 
 scaleLength : Float -> Float -> Float

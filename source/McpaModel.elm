@@ -28,6 +28,7 @@ import ParseMcpa exposing (McpaData, parseMcpa)
 import DecodeTree exposing (Tree)
 import ParseNexusTree exposing (parseNexusTree)
 import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
+import TreeMetrics exposing (..)
 import Animation as A exposing (Animation)
 import AnimationFrame
 import Time exposing (Time)
@@ -40,9 +41,17 @@ type alias Flags =
     }
 
 
+type alias TreeInfo =
+    { root : Tree
+    , length : Float
+    , depth : Int
+    , breadth : Int
+    }
+
+
 type alias Model =
     { zipper : TreeZipper
-    , root : Tree
+    , treeInfo : TreeInfo
     , mcpaVariables : List String
     , mcpaData : McpaData
     , selectedVariable : String
@@ -69,10 +78,17 @@ init flags =
 
                 Err err ->
                     Debug.crash ("failed parsing Nexus tree data: " ++ err)
+
+        treeInfo =
+            { root = root
+            , length = treeLength root
+            , depth = treeDepth root
+            , breadth = treeBreadth root
+            }
     in
         ( { animationState = Static
           , zipper = TreeZipper.start root
-          , root = root
+          , treeInfo = treeInfo
           , mcpaVariables = variables
           , selectedVariable = "ECO_NUM - 7"
           , mcpaData = data
