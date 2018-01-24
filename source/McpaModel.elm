@@ -55,6 +55,7 @@ type alias Model =
     , mcpaVariables : List String
     , mcpaData : McpaData
     , selectedVariable : String
+    , showBranchLengths : Bool
     , animationState : AnimationState
     , mouseIn : Bool
     }
@@ -91,6 +92,7 @@ init flags =
           , treeInfo = treeInfo
           , mcpaVariables = variables
           , selectedVariable = List.head variables |> Maybe.withDefault ""
+          , showBranchLengths = False
           , mcpaData = data
           , mouseIn = False
           }
@@ -130,6 +132,7 @@ type Msg
     | JumpLeft
     | JumpRight
     | SelectVariable String
+    | ToggleShowLengths
     | SelectNode Int
     | AnimationMsg AnimationMsg
 
@@ -156,6 +159,9 @@ update msg model =
 
         SelectVariable v ->
             ( { model | selectedVariable = v }, Cmd.none )
+
+        ToggleShowLengths ->
+            ( { model | showBranchLengths = not model.showBranchLengths }, Cmd.none )
 
         SelectNode cladeId ->
             model ! []
