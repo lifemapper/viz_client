@@ -28,10 +28,9 @@ import Html
 import Html.Attributes
 import Html.Events
 import Dict
-import List.Extra as List
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
-import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
+import Formatting as F exposing ((<>))
 import DecodeTree exposing (Tree(..), TreeData)
 import McpaModel exposing (..)
 
@@ -59,9 +58,6 @@ view ({ treeInfo, zipper, mcpaData, selectedVariable } as model) =
                     )
                 |> defs []
 
-        mapClade =
-            getData zipper |> .cladeId
-
         clickBox =
             rect
                 [ x "0"
@@ -73,17 +69,28 @@ view ({ treeInfo, zipper, mcpaData, selectedVariable } as model) =
                 , Html.Events.onClick JumpUp
                 ]
                 []
-
-        border v =
-            if v == selectedVariable then
-                Html.Attributes.style [ ( "border", "1px solid black" ) ]
-            else
-                Html.Attributes.style [ ( "border", "none" ) ]
     in
-        Html.div [ Html.Attributes.style [ ( "display", "flex" ), ( "font-family", "sans-serif" ) ] ]
+        Html.div
+            [ Html.Attributes.style
+                [ ( "display", "flex" )
+                , ( "justify-content", "space-between" )
+                , ( "font-family", "sans-serif" )
+                ]
+            ]
             [ Html.div
                 [ Html.Attributes.style [ ( "height", "100vh" ), ( "display", "flex" ), ( "flex-direction", "column" ) ] ]
-                [ Html.p [ Html.Events.onClick ToggleShowLengths ] [ Html.text "Show branch lengths" ]
+                [ Html.p [ Html.Attributes.style [ ( "text-align", "right" ) ] ]
+                    [ Html.label []
+                        [ Html.input
+                            [ Html.Attributes.type_ "checkbox"
+                            , Html.Attributes.checked model.showBranchLengths
+                            , Html.Attributes.readonly True
+                            , Html.Events.onClick ToggleShowLengths
+                            ]
+                            []
+                        , Html.text "Show branch lengths"
+                        ]
+                    ]
                 , Html.div [ Html.Attributes.style [ ( "margin-bottom", "20px" ), ( "overflow-y", "scroll" ) ] ]
                     [ svg
                         [ width "800"
@@ -96,19 +103,91 @@ view ({ treeInfo, zipper, mcpaData, selectedVariable } as model) =
                         (gradDefs :: treeSvg)
                     ]
                 ]
-            , Html.ul [ Html.Attributes.style [ ( "display", "inline-block" ), ( "list-style", "none" ) ] ]
-                (model.mcpaVariables
-                    |> List.map
-                        (\v ->
-                            Html.li [ Html.Events.onClick (SelectVariable v), border v ] [ Html.text v ]
-                        )
+            , Html.table []
+                ([ Html.tr [] [ Html.th [ Html.Attributes.colspan 2 ] [ Html.text "MCPA data for Selected Node" ] ]
+                 , Html.tr [] [ Html.th [] [ Html.text "Observed (p-value)" ], Html.th [] [ Html.text "Variable" ] ]
+                 ]
+                    ++ (model.mcpaVariables |> List.map (drawVariable model))
                 )
             , Html.div
                 [ Html.Attributes.class "leaflet-map"
-                , Html.Attributes.attribute "data-map-column" (mapClade |> toString)
+                , Html.Attributes.attribute "data-map-column"
+                    (model.selectedNode |> Maybe.map toString |> Maybe.withDefault "")
                 , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
                 ]
                 []
+            ]
+
+
+barGraph : ( Float, Float ) -> Html.Html Msg
+barGraph ( observedValue, pValue ) =
+    let
+        width =
+            (1.0 - e ^ (-1.0 * abs observedValue) |> (*) 100 |> toString) ++ "%"
+
+        opacity =
+            1.0 - (pValue / 1.2)
+
+        background =
+            computeColor_ opacity observedValue
+    in
+        Html.div
+            [ Html.Attributes.style
+                [ ( "width", width )
+                , ( "height", "100%" )
+                , ( "position", "absolute" )
+                , ( "top", "0" )
+                , ( "background-color", background )
+                , ( "z-index", "-1" )
+                ]
+            ]
+            []
+
+
+variableFormatter : ( Float, Float ) -> String
+variableFormatter ( observed, pValue ) =
+    F.print (F.roundTo 3 <> F.s " (" <> F.roundTo 3 <> F.s ") ") observed pValue
+
+
+drawVariable : Model -> String -> Html.Html Msg
+drawVariable model var =
+    let
+        significant =
+            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "BH Significant", var ) model.mcpaData)
+
+        observed =
+            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "Observed", var ) model.mcpaData)
+
+        pValue =
+            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "Observed", var ) model.mcpaData)
+
+        fontWeight =
+            if significant |> Maybe.map ((>) 0.5) |> Maybe.withDefault False then
+                ( "font-weight", "bold" )
+            else
+                ( "font-weight", "normal" )
+
+        bg =
+            if var == model.selectedVariable then
+                [ ( "background", "linear-gradient(to right, #f00, #0f0)" ) ]
+            else
+                []
+
+        bar =
+            Maybe.map2 (,) observed pValue |> Maybe.map (List.singleton << barGraph) |> Maybe.withDefault []
+
+        values =
+            Maybe.map2 (,) observed pValue
+                |> Maybe.map variableFormatter
+                |> Maybe.withDefault ""
+    in
+        Html.tr
+            [ Html.Events.onClick (SelectVariable var)
+            , Html.Attributes.title ("Click to color tree according to " ++ var)
+            ]
+            [ Html.td [ Html.Attributes.style (( "text-align", "right" ) :: ( "padding-right", "12px" ) :: bg) ]
+                [ Html.text values ]
+            , Html.td [ Html.Attributes.style [ ( "position", "relative" ), fontWeight ] ] (bar ++ [ Html.text var ])
             ]
 
 
@@ -117,10 +196,30 @@ scaleLength totalLength thisLength =
     30 * thisLength / totalLength
 
 
-computeColor : Model -> Int -> String
-computeColor model cladeId =
-    Dict.get ( cladeId, "P-Values", model.selectedVariable ) model.mcpaData
-        |> Maybe.map ((*) 255 >> round >> (\green -> "rgb(" ++ (toString <| 255 - green) ++ "," ++ (toString green) ++ ",0)"))
+logistic : Float -> Float
+logistic x =
+    1.0 / (1.0 + e ^ (-3.0 * x))
+
+
+computeColor_ : Float -> Float -> String
+computeColor_ opacity value =
+    let
+        v =
+            logistic value * 256 |> round
+
+        r =
+            256 - v |> toString
+
+        g =
+            v |> toString
+    in
+        "rgba(" ++ r ++ "," ++ g ++ ",0," ++ (toString opacity) ++ ")"
+
+
+computeColor : Float -> Model -> Int -> String
+computeColor opacity model cladeId =
+    Dict.get ( cladeId, "Observed", model.selectedVariable ) model.mcpaData
+        |> Maybe.map (computeColor_ 1.0)
         |> Maybe.withDefault "#ccc"
 
 
@@ -153,7 +252,7 @@ drawTree model totalLength parentColor tree =
         Node data left right ->
             let
                 color =
-                    computeColor model data.cladeId
+                    computeColor 1.0 model data.cladeId
 
                 ( leftHeight, leftGrads, leftNodes ) =
                     drawTree model totalLength color left
@@ -174,7 +273,7 @@ drawTree model totalLength parentColor tree =
                     ( data.cladeId, parentColor, color )
 
                 boxes =
-                    if tree == getTree model.zipper then
+                    if model.selectedNode == Just data.cladeId then
                         [ rect
                             [ x <| toString length
                             , y "0"
@@ -224,11 +323,11 @@ drawTree model totalLength parentColor tree =
                   , circle
                         [ cx (toString length)
                         , cy <| toString (thisHeight / 2.0)
-                        , r "0.15"
+                        , r "0.3"
                         , fill color
                         , Html.Events.onClick <| SelectNode data.cladeId
                         ]
                         []
                   ]
-                  -- ++ boxes
+                    ++ boxes
                 )

@@ -55,6 +55,7 @@ type alias Model =
     , mcpaVariables : List String
     , mcpaData : McpaData
     , selectedVariable : String
+    , selectedNode : Maybe Int
     , showBranchLengths : Bool
     , animationState : AnimationState
     , mouseIn : Bool
@@ -92,6 +93,7 @@ init flags =
           , treeInfo = treeInfo
           , mcpaVariables = variables
           , selectedVariable = List.head variables |> Maybe.withDefault ""
+          , selectedNode = Nothing
           , showBranchLengths = False
           , mcpaData = data
           , mouseIn = False
@@ -164,7 +166,7 @@ update msg model =
             ( { model | showBranchLengths = not model.showBranchLengths }, Cmd.none )
 
         SelectNode cladeId ->
-            model ! []
+            ( { model | selectedNode = Just cladeId }, Cmd.none )
 
         AnimationMsg msg_ ->
             updateAnimation msg_ model

@@ -46,46 +46,69 @@ function configureMap(element) {
     console.log("updating leaflet id", element._leaflet_id);
 
     var layers = mapLayers[element._leaflet_id];
-    // if (layers != null) {
-    //     layers.forEach(function(layer) {  map.removeLayer(layer); });
-    // }
+    if (layers != null) {
+        layers.forEach(function(layer) {  map.removeLayer(layer); });
+    }
 
-    var mapColumn  = element.dataset["mapColumn"];
+    const node = nodeLookup.find(function(d) { return d.header == element.dataset["mapColumn"]; });
+    const dataColumn = node && node.index;
 
     console.log("adding layer");
 
-    if (layers == null || layers.length === 0) {
+    // if (layers == null || layers.length === 0) {
         mapLayers[element._leaflet_id] = [
-            L.geoJSON(ancPam, {style: style(mapColumn)}).addTo(map)
+            L.geoJSON(ancPam, {
+                style: style(dataColumn),
+                filter: function(feature) {
+                    const data = feature.properties.data;
+                    for (let key in data) {
+                        if (data[key].includes(dataColumn)) return true;
+                    }
+                    return false;
+                }
+            }).addTo(map)
         ];
-    } else {
-        layers[0].setStyle(style(mapColumn));
-    }
+    // } else {
+    //     layers[0].setStyle(style(dataColumn));
+    // }
 }
 
-function style(mapColumn) {
+function style(dataColumn) {
     return function(feature) {
-        const p = feature.properties[mapColumn];
-        const style = {
+        const data = feature.properties.data;
+
+        if (data["1"] && data["1"].includes(dataColumn)) {
+            return {
+                fillOpacity: 0.6,
+                stroke: false,
+                fill: true,
+                fillColor: "blue"
+            };
+        }
+
+        if (data["-1"] && data["-1"].includes(dataColumn)) {
+            return {
+                fillOpacity: 0.6,
+                stroke: false,
+                fill: true,
+                fillColor: "red"
+            };
+        }
+
+        if (data["2"] && data["2"].includes(dataColumn)) {
+            return {
+                fillOpacity: 0.6,
+                stroke: false,
+                fill: true,
+                fillColor: "purple"
+            };
+        }
+
+        return {
             fillOpacity: 0.6,
             stroke: false,
-            fill: true
+            fill: false
         };
-        switch(p) {
-        case 1:
-            Object.assign(style, {fillColor: "blue"});
-            break;
-        case -1:
-            Object.assign(style, {fillColor: "red"});
-            break;
-        case 2:
-            Object.assign(style, {fillColor: "purple"});
-            break;
-        default:
-            Object.assign(style, {fill: false});
-            break;
-        }
-        return style;
     };
 }
 
