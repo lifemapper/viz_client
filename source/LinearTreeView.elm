@@ -159,10 +159,10 @@ drawVariable model var =
             model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "Observed", var ) model.mcpaData)
 
         pValue =
-            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "Observed", var ) model.mcpaData)
+            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "P-Values", var ) model.mcpaData)
 
         fontWeight =
-            if significant |> Maybe.map ((>) 0.5) |> Maybe.withDefault False then
+            if significant |> Maybe.map ((<) 0.5) |> Maybe.withDefault False then
                 ( "font-weight", "bold" )
             else
                 ( "font-weight", "normal" )
