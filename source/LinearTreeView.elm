@@ -28,6 +28,7 @@ import Html
 import Html.Attributes
 import Html.Events
 import Dict
+import List.Extra as List
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Formatting as F exposing ((<>))
@@ -58,6 +59,42 @@ view ({ treeInfo, zipper, mcpaData, selectedVariable } as model) =
                     )
                 |> defs []
 
+        select =
+            String.toInt
+                >> Result.toMaybe
+                >> Maybe.andThen (\i -> List.getAt i model.mcpaVariables)
+                >> Maybe.withDefault ""
+                >> SelectVariable
+
+        variableSelector =
+            Html.div [ Html.Attributes.style [ ( "margin-bottom", "8px" ) ] ]
+                [ Html.select [ Html.Events.onInput select ]
+                    (model.mcpaVariables
+                        |> List.indexedMap
+                            (\i v ->
+                                Html.option
+                                    [ Html.Attributes.selected (v == selectedVariable)
+                                    , Html.Attributes.value (toString i)
+                                    ]
+                                    [ Html.text v ]
+                            )
+                    )
+                ]
+
+        showBranchLengths =
+            Html.div []
+                [ Html.label []
+                    [ Html.input
+                        [ Html.Attributes.type_ "checkbox"
+                        , Html.Attributes.checked model.showBranchLengths
+                        , Html.Attributes.readonly True
+                        , Html.Events.onClick ToggleShowLengths
+                        ]
+                        []
+                    , Html.text "Show branch lengths"
+                    ]
+                ]
+
         clickBox =
             rect
                 [ x "0"
@@ -79,18 +116,14 @@ view ({ treeInfo, zipper, mcpaData, selectedVariable } as model) =
             ]
             [ Html.div
                 [ Html.Attributes.style [ ( "height", "100vh" ), ( "display", "flex" ), ( "flex-direction", "column" ) ] ]
-                [ Html.p [ Html.Attributes.style [ ( "text-align", "right" ) ] ]
-                    [ Html.label []
-                        [ Html.input
-                            [ Html.Attributes.type_ "checkbox"
-                            , Html.Attributes.checked model.showBranchLengths
-                            , Html.Attributes.readonly True
-                            , Html.Events.onClick ToggleShowLengths
-                            ]
-                            []
-                        , Html.text "Show branch lengths"
+                [ Html.div
+                    [ Html.Attributes.style
+                        [ ( "display", "flex" )
+                        , ( "justify-content", "space-between" )
+                        , ( "flex-shrink", "0" )
                         ]
                     ]
+                    [ variableSelector, showBranchLengths ]
                 , Html.div [ Html.Attributes.style [ ( "margin-bottom", "20px" ), ( "overflow-y", "scroll" ) ] ]
                     [ svg
                         [ width "800"
@@ -167,12 +200,6 @@ drawVariable model var =
             else
                 ( "font-weight", "normal" )
 
-        bg =
-            if var == model.selectedVariable then
-                [ ( "background", "linear-gradient(to right, #f00, #0f0)" ) ]
-            else
-                []
-
         bar =
             Maybe.map2 (,) observed pValue |> Maybe.map (List.singleton << barGraph) |> Maybe.withDefault []
 
@@ -181,11 +208,8 @@ drawVariable model var =
                 |> Maybe.map variableFormatter
                 |> Maybe.withDefault ""
     in
-        Html.tr
-            [ Html.Events.onClick (SelectVariable var)
-            , Html.Attributes.title ("Click to color tree according to " ++ var)
-            ]
-            [ Html.td [ Html.Attributes.style (( "text-align", "right" ) :: ( "padding-right", "12px" ) :: bg) ]
+        Html.tr []
+            [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ), ( "padding-right", "12px" ) ] ]
                 [ Html.text values ]
             , Html.td [ Html.Attributes.style [ ( "position", "relative" ), fontWeight ] ] (bar ++ [ Html.text var ])
             ]
@@ -279,9 +303,8 @@ drawTree model totalLength parentColor tree =
                             , y "0"
                             , width "100"
                             , height <| toString leftHeight
-                            , fill "blue"
-                            , fillOpacity "0.2"
-                            , Html.Events.onClick JumpLeft
+                            , fill "#00f"
+                            , fillOpacity "0.5"
                             ]
                             []
                         , rect
@@ -289,9 +312,8 @@ drawTree model totalLength parentColor tree =
                             , y <| toString leftHeight
                             , width "100"
                             , height <| toString rightHeight
-                            , fill "red"
-                            , fillOpacity "0.2"
-                            , Html.Events.onClick JumpRight
+                            , fill "#f00"
+                            , fillOpacity "0.5"
                             ]
                             []
                         ]
@@ -300,34 +322,34 @@ drawTree model totalLength parentColor tree =
             in
                 ( thisHeight
                 , thisGrad :: (leftGrads ++ rightGrads)
-                , [ g [ transform <| "translate(" ++ (toString length) ++ ",0)" ] leftNodes
-                  , g [ transform <| "translate(" ++ (toString length) ++ "," ++ (toString leftHeight) ++ ")" ] rightNodes
-                  , rect
-                        [ x "0"
-                        , width (toString length)
-                        , height "0.05"
-                        , y <| toString (thisHeight / 2.0 - 0.05)
-                        , strokeWidth "0.01"
-                        , fill ("url(#grad-" ++ (toString data.cladeId) ++ ")")
-                        ]
-                        []
-                  , line
-                        [ x1 (toString length)
-                        , x2 (toString length)
-                        , y1 (toString (leftHeight / 2))
-                        , y2 (toString (leftHeight + rightHeight / 2))
-                        , strokeWidth "0.05"
-                        , stroke color
-                        ]
-                        []
-                  , circle
-                        [ cx (toString length)
-                        , cy <| toString (thisHeight / 2.0)
-                        , r "0.3"
-                        , fill color
-                        , Html.Events.onClick <| SelectNode data.cladeId
-                        ]
-                        []
-                  ]
-                    ++ boxes
+                , boxes
+                    ++ [ g [ transform <| "translate(" ++ (toString length) ++ ",0)" ] leftNodes
+                       , g [ transform <| "translate(" ++ (toString length) ++ "," ++ (toString leftHeight) ++ ")" ] rightNodes
+                       , rect
+                            [ x "0"
+                            , width (toString length)
+                            , height "0.05"
+                            , y <| toString (thisHeight / 2.0 - 0.05)
+                            , strokeWidth "0.01"
+                            , fill ("url(#grad-" ++ (toString data.cladeId) ++ ")")
+                            ]
+                            []
+                       , line
+                            [ x1 (toString length)
+                            , x2 (toString length)
+                            , y1 (toString (leftHeight / 2))
+                            , y2 (toString (leftHeight + rightHeight / 2))
+                            , strokeWidth "0.05"
+                            , stroke color
+                            ]
+                            []
+                       , circle
+                            [ cx (toString length)
+                            , cy <| toString (thisHeight / 2.0)
+                            , r "0.3"
+                            , fill color
+                            , Html.Events.onClick <| SelectNode data.cladeId
+                            ]
+                            []
+                       ]
                 )
