@@ -22,7 +22,7 @@
 -}
 
 
-module LinearTreeView exposing (drawTree, computeColor)
+module LinearTreeView exposing (drawTree, computeColor, gradientDefinitions)
 
 import Html.Events
 import Svg exposing (..)
@@ -63,6 +63,24 @@ type alias TreeConfig msg =
     , selectedNode : Maybe Int
     , selectNode : Int -> msg
     }
+
+
+gradientDefinitions : List ( Int, String, String ) -> Svg msg
+gradientDefinitions =
+    defs []
+        << List.map
+            (\( cladeId, startColor, endColor ) ->
+                linearGradient
+                    [ id <| "grad-" ++ (toString cladeId)
+                    , x1 "0%"
+                    , y1 "0%"
+                    , x2 "100%"
+                    , y2 "0%"
+                    ]
+                    [ stop [ offset "0%", stopColor startColor ] []
+                    , stop [ offset "100%", stopColor endColor ] []
+                    ]
+            )
 
 
 drawTree : TreeConfig msg -> String -> Tree -> ( Float, List ( Int, String, String ), List (Svg msg) )

@@ -33,7 +33,7 @@ import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Formatting as F exposing ((<>))
 import McpaModel exposing (..)
-import LinearTreeView exposing (drawTree, computeColor)
+import LinearTreeView exposing (drawTree, computeColor, gradientDefinitions)
 
 
 view : Model -> Html.Html Msg
@@ -57,21 +57,7 @@ view ({ treeInfo, zipper, mcpaData, selectedVariable } as model) =
                 treeInfo.root
 
         gradDefs =
-            grads
-                |> List.map
-                    (\( cladeId, startColor, endColor ) ->
-                        linearGradient
-                            [ id <| "grad-" ++ (toString cladeId)
-                            , x1 "0%"
-                            , y1 "0%"
-                            , x2 "100%"
-                            , y2 "0%"
-                            ]
-                            [ stop [ offset "0%", stopColor startColor ] []
-                            , stop [ offset "100%", stopColor endColor ] []
-                            ]
-                    )
-                |> defs []
+            gradientDefinitions grads
 
         select =
             String.toInt
