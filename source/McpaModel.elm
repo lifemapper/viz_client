@@ -25,6 +25,7 @@
 module McpaModel exposing (..)
 
 import ParseMcpa exposing (McpaData, parseMcpa)
+import ParseAncState exposing (AncStateData, parseAncState)
 import DecodeTree exposing (Tree)
 import ParseNexusTree exposing (parseNexusTree)
 import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
@@ -38,6 +39,7 @@ import Ease
 type alias Flags =
     { mcpaMatrix : String
     , taxonTree : String
+    , ancState : String
     }
 
 
@@ -53,6 +55,8 @@ type alias Model =
     { zipper : TreeZipper
     , treeInfo : TreeInfo
     , mcpaVariables : List String
+    , ancStateVars : List String
+    , ancState : AncStateData
     , mcpaData : McpaData
     , selectedVariable : String
     , selectedNode : Maybe Int
@@ -73,6 +77,14 @@ init flags =
                 Err err ->
                     Debug.crash ("failed to decode MCPA matrix: " ++ err)
 
+        ( ancStateVars, ancState ) =
+            case parseAncState flags.ancState of
+                Ok result ->
+                    result
+
+                Err err ->
+                    Debug.crash ("failed to decode ancState matrix: " ++ err)
+
         root =
             case parseNexusTree flags.taxonTree of
                 Ok tree ->
@@ -92,10 +104,12 @@ init flags =
           , zipper = TreeZipper.start root
           , treeInfo = treeInfo
           , mcpaVariables = variables
+          , ancStateVars = ancStateVars
           , selectedVariable = List.head variables |> Maybe.withDefault ""
           , selectedNode = Nothing
           , showBranchLengths = False
           , mcpaData = data
+          , ancState = ancState
           , mouseIn = False
           }
         , Cmd.none
