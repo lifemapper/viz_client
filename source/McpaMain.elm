@@ -26,7 +26,7 @@ module McpaMain exposing (..)
 
 import Html
 import McpaModel exposing (..)
-import LinearTreeView
+import McpaView exposing (view)
 
 
 main : Program Flags Model Msg
@@ -34,6 +34,6 @@ main =
     Html.programWithFlags
         { init = init
         , update = update
-        , view = LinearTreeView.view
+        , view = view
         , subscriptions = subscriptions
         }

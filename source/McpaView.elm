@@ -22,7 +22,7 @@
 -}
 
 
-module AncStateTreeView exposing (view)
+module McpaView exposing (view)
 
 import Html
 import Html.Attributes
@@ -33,14 +33,14 @@ import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Formatting as F exposing ((<>))
 import McpaModel exposing (..)
-import LinearTreeView exposing (computeColor, drawTree)
+import LinearTreeView exposing (drawTree, computeColor)
 
 
 view : Model -> Html.Html Msg
-view ({ treeInfo, zipper, ancState, selectedVariable } as model) =
+view ({ treeInfo, zipper, mcpaData, selectedVariable } as model) =
     let
         computeColor_ opacity cladeId =
-            Dict.get ( cladeId, model.selectedVariable ) model.ancState
+            Dict.get ( cladeId, "Observed", model.selectedVariable ) model.mcpaData
                 |> Maybe.map (computeColor 1.0)
                 |> Maybe.withDefault "#ccc"
 
@@ -76,14 +76,14 @@ view ({ treeInfo, zipper, ancState, selectedVariable } as model) =
         select =
             String.toInt
                 >> Result.toMaybe
-                >> Maybe.andThen (\i -> List.getAt i model.ancStateVars)
+                >> Maybe.andThen (\i -> List.getAt i model.mcpaVariables)
                 >> Maybe.withDefault ""
                 >> SelectVariable
 
         variableSelector =
             Html.div [ Html.Attributes.style [ ( "margin-bottom", "8px" ) ] ]
                 [ Html.select [ Html.Events.onInput select ]
-                    (model.ancStateVars
+                    (model.mcpaVariables
                         |> List.indexedMap
                             (\i v ->
                                 Html.option
@@ -151,10 +151,10 @@ view ({ treeInfo, zipper, ancState, selectedVariable } as model) =
                     ]
                 ]
             , Html.table []
-                ([ Html.tr [] [ Html.th [ Html.Attributes.colspan 2 ] [ Html.text "Ancestral data for Selected Node" ] ]
-                 , Html.tr [] [ Html.th [] [ Html.text "Value" ], Html.th [] [ Html.text "Variable" ] ]
+                ([ Html.tr [] [ Html.th [ Html.Attributes.colspan 2 ] [ Html.text "MCPA data for Selected Node" ] ]
+                 , Html.tr [] [ Html.th [] [ Html.text "Observed (p-value)" ], Html.th [] [ Html.text "Variable" ] ]
                  ]
-                    ++ (model.ancStateVars |> List.map (drawVariable model))
+                    ++ (model.mcpaVariables |> List.map (drawVariable model))
                 )
             , Html.div
                 [ Html.Attributes.class "leaflet-map"
@@ -166,14 +166,17 @@ view ({ treeInfo, zipper, ancState, selectedVariable } as model) =
             ]
 
 
-barGraph : Float -> Html.Html Msg
-barGraph value =
+barGraph : ( Float, Float ) -> Html.Html Msg
+barGraph ( observedValue, pValue ) =
     let
         width =
-            (1.0 - e ^ (-1.0 * abs value) |> (*) 100 |> toString) ++ "%"
+            (1.0 - e ^ (-1.0 * abs observedValue) |> (*) 100 |> toString) ++ "%"
+
+        opacity =
+            1.0 - (pValue / 1.2)
 
         background =
-            computeColor 1.0 value
+            computeColor opacity observedValue
     in
         Html.div
             [ Html.Attributes.style
@@ -188,25 +191,34 @@ barGraph value =
             []
 
 
-variableFormatter : Float -> String
-variableFormatter value =
-    F.print (F.roundTo 3) value
+variableFormatter : ( Float, Float ) -> String
+variableFormatter ( observed, pValue ) =
+    F.print (F.roundTo 3 <> F.s " (" <> F.roundTo 3 <> F.s ") ") observed pValue
 
 
 drawVariable : Model -> String -> Html.Html Msg
 drawVariable model var =
     let
-        value =
-            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, var ) model.ancState)
+        significant =
+            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "BH Significant", var ) model.mcpaData)
+
+        observed =
+            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "Observed", var ) model.mcpaData)
+
+        pValue =
+            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "P-Values", var ) model.mcpaData)
 
         fontWeight =
-            ( "font-weight", "normal" )
+            if significant |> Maybe.map ((<) 0.5) |> Maybe.withDefault False then
+                ( "font-weight", "bold" )
+            else
+                ( "font-weight", "normal" )
 
         bar =
-            value |> Maybe.map (List.singleton << barGraph) |> Maybe.withDefault []
+            Maybe.map2 (,) observed pValue |> Maybe.map (List.singleton << barGraph) |> Maybe.withDefault []
 
         values =
-            value
+            Maybe.map2 (,) observed pValue
                 |> Maybe.map variableFormatter
                 |> Maybe.withDefault ""
     in

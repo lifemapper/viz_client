@@ -22,197 +22,12 @@
 -}
 
 
-module LinearTreeView exposing (view)
+module LinearTreeView exposing (drawTree, computeColor)
 
-import Html
-import Html.Attributes
 import Html.Events
-import Dict
-import List.Extra as List
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
-import Formatting as F exposing ((<>))
 import DecodeTree exposing (Tree(..), TreeData)
-import McpaModel exposing (..)
-
-
-view : Model -> Html.Html Msg
-view ({ treeInfo, zipper, mcpaData, selectedVariable } as model) =
-    let
-        ( treeHeight, grads, treeSvg ) =
-            drawTree model treeInfo.length "#ccc" treeInfo.root
-
-        gradDefs =
-            grads
-                |> List.map
-                    (\( cladeId, startColor, endColor ) ->
-                        linearGradient
-                            [ id <| "grad-" ++ (toString cladeId)
-                            , x1 "0%"
-                            , y1 "0%"
-                            , x2 "100%"
-                            , y2 "0%"
-                            ]
-                            [ stop [ offset "0%", stopColor startColor ] []
-                            , stop [ offset "100%", stopColor endColor ] []
-                            ]
-                    )
-                |> defs []
-
-        select =
-            String.toInt
-                >> Result.toMaybe
-                >> Maybe.andThen (\i -> List.getAt i model.mcpaVariables)
-                >> Maybe.withDefault ""
-                >> SelectVariable
-
-        variableSelector =
-            Html.div [ Html.Attributes.style [ ( "margin-bottom", "8px" ) ] ]
-                [ Html.select [ Html.Events.onInput select ]
-                    (model.mcpaVariables
-                        |> List.indexedMap
-                            (\i v ->
-                                Html.option
-                                    [ Html.Attributes.selected (v == selectedVariable)
-                                    , Html.Attributes.value (toString i)
-                                    ]
-                                    [ Html.text v ]
-                            )
-                    )
-                ]
-
-        showBranchLengths =
-            Html.div []
-                [ Html.label []
-                    [ Html.input
-                        [ Html.Attributes.type_ "checkbox"
-                        , Html.Attributes.checked model.showBranchLengths
-                        , Html.Attributes.readonly True
-                        , Html.Events.onClick ToggleShowLengths
-                        ]
-                        []
-                    , Html.text "Show branch lengths"
-                    ]
-                ]
-
-        clickBox =
-            rect
-                [ x "0"
-                , y "0"
-                , width "100"
-                , height "100"
-                , fill "grey"
-                , fillOpacity "0.01"
-                , Html.Events.onClick JumpUp
-                ]
-                []
-    in
-        Html.div
-            [ Html.Attributes.style
-                [ ( "display", "flex" )
-                , ( "justify-content", "space-between" )
-                , ( "font-family", "sans-serif" )
-                ]
-            ]
-            [ Html.div
-                [ Html.Attributes.style [ ( "height", "100vh" ), ( "display", "flex" ), ( "flex-direction", "column" ) ] ]
-                [ Html.div
-                    [ Html.Attributes.style
-                        [ ( "display", "flex" )
-                        , ( "justify-content", "space-between" )
-                        , ( "flex-shrink", "0" )
-                        ]
-                    ]
-                    [ variableSelector, showBranchLengths ]
-                , Html.div [ Html.Attributes.style [ ( "margin-bottom", "20px" ), ( "overflow-y", "scroll" ) ] ]
-                    [ svg
-                        [ width "800"
-                        , height (20 * treeHeight |> toString)
-                        , viewBox ("0 0 40 " ++ (toString treeHeight))
-                        , Html.Attributes.style [ ( "background", "#000" ), ( "font-family", "sans-serif" ) ]
-                          -- , Html.Events.onClick JumpUp
-                        ]
-                        -- (clickBox :: treeSvg)
-                        (gradDefs :: treeSvg)
-                    ]
-                ]
-            , Html.table []
-                ([ Html.tr [] [ Html.th [ Html.Attributes.colspan 2 ] [ Html.text "MCPA data for Selected Node" ] ]
-                 , Html.tr [] [ Html.th [] [ Html.text "Observed (p-value)" ], Html.th [] [ Html.text "Variable" ] ]
-                 ]
-                    ++ (model.mcpaVariables |> List.map (drawVariable model))
-                )
-            , Html.div
-                [ Html.Attributes.class "leaflet-map"
-                , Html.Attributes.attribute "data-map-column"
-                    (model.selectedNode |> Maybe.map toString |> Maybe.withDefault "")
-                , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
-                ]
-                []
-            ]
-
-
-barGraph : ( Float, Float ) -> Html.Html Msg
-barGraph ( observedValue, pValue ) =
-    let
-        width =
-            (1.0 - e ^ (-1.0 * abs observedValue) |> (*) 100 |> toString) ++ "%"
-
-        opacity =
-            1.0 - (pValue / 1.2)
-
-        background =
-            computeColor_ opacity observedValue
-    in
-        Html.div
-            [ Html.Attributes.style
-                [ ( "width", width )
-                , ( "height", "100%" )
-                , ( "position", "absolute" )
-                , ( "top", "0" )
-                , ( "background-color", background )
-                , ( "z-index", "-1" )
-                ]
-            ]
-            []
-
-
-variableFormatter : ( Float, Float ) -> String
-variableFormatter ( observed, pValue ) =
-    F.print (F.roundTo 3 <> F.s " (" <> F.roundTo 3 <> F.s ") ") observed pValue
-
-
-drawVariable : Model -> String -> Html.Html Msg
-drawVariable model var =
-    let
-        significant =
-            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "BH Significant", var ) model.mcpaData)
-
-        observed =
-            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "Observed", var ) model.mcpaData)
-
-        pValue =
-            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "P-Values", var ) model.mcpaData)
-
-        fontWeight =
-            if significant |> Maybe.map ((<) 0.5) |> Maybe.withDefault False then
-                ( "font-weight", "bold" )
-            else
-                ( "font-weight", "normal" )
-
-        bar =
-            Maybe.map2 (,) observed pValue |> Maybe.map (List.singleton << barGraph) |> Maybe.withDefault []
-
-        values =
-            Maybe.map2 (,) observed pValue
-                |> Maybe.map variableFormatter
-                |> Maybe.withDefault ""
-    in
-        Html.tr []
-            [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ), ( "padding-right", "12px" ) ] ]
-                [ Html.text values ]
-            , Html.td [ Html.Attributes.style [ ( "position", "relative" ), fontWeight ] ] (bar ++ [ Html.text var ])
-            ]
 
 
 scaleLength : Float -> Float -> Float
@@ -225,8 +40,8 @@ logistic x =
     1.0 / (1.0 + e ^ (-3.0 * x))
 
 
-computeColor_ : Float -> Float -> String
-computeColor_ opacity value =
+computeColor : Float -> Float -> String
+computeColor opacity value =
     let
         v =
             logistic value * 256 |> round
@@ -240,23 +55,26 @@ computeColor_ opacity value =
         "rgba(" ++ r ++ "," ++ g ++ ",0," ++ (toString opacity) ++ ")"
 
 
-computeColor : Float -> Model -> Int -> String
-computeColor opacity model cladeId =
-    Dict.get ( cladeId, "Observed", model.selectedVariable ) model.mcpaData
-        |> Maybe.map (computeColor_ 1.0)
-        |> Maybe.withDefault "#ccc"
+type alias TreeConfig msg =
+    { computeColor : Float -> Int -> String
+    , showBranchLengths : Bool
+    , treeDepth : Int
+    , totalLength : Float
+    , selectedNode : Maybe Int
+    , selectNode : Int -> msg
+    }
 
 
-drawTree : Model -> Float -> String -> Tree -> ( Float, List ( Int, String, String ), List (Svg Msg) )
-drawTree model totalLength parentColor tree =
+drawTree : TreeConfig msg -> String -> Tree -> ( Float, List ( Int, String, String ), List (Svg msg) )
+drawTree config parentColor tree =
     case tree of
         Leaf data ->
             let
                 length =
-                    if model.showBranchLengths then
-                        data.length |> Maybe.map (scaleLength totalLength) |> Maybe.withDefault 0
+                    if config.showBranchLengths then
+                        data.length |> Maybe.map (scaleLength config.totalLength) |> Maybe.withDefault 0
                     else
-                        30.0 / (toFloat model.treeInfo.depth)
+                        30 / (toFloat config.treeDepth)
             in
                 ( 1
                 , [ ( data.cladeId, parentColor, "#ccc" ) ]
@@ -276,28 +94,28 @@ drawTree model totalLength parentColor tree =
         Node data left right ->
             let
                 color =
-                    computeColor 1.0 model data.cladeId
+                    config.computeColor 1.0 data.cladeId
 
                 ( leftHeight, leftGrads, leftNodes ) =
-                    drawTree model totalLength color left
+                    drawTree config color left
 
                 ( rightHeight, rightGrads, rightNodes ) =
-                    drawTree model totalLength color right
+                    drawTree config color right
 
                 thisHeight =
                     leftHeight + rightHeight
 
                 length =
-                    if model.showBranchLengths then
-                        data.length |> Maybe.map (scaleLength totalLength) |> Maybe.withDefault 0
+                    if config.showBranchLengths then
+                        data.length |> Maybe.map (scaleLength config.totalLength) |> Maybe.withDefault 0
                     else
-                        30.0 / (toFloat model.treeInfo.depth)
+                        30 / (toFloat config.treeDepth)
 
                 thisGrad =
                     ( data.cladeId, parentColor, color )
 
                 boxes =
-                    if model.selectedNode == Just data.cladeId then
+                    if config.selectedNode == Just data.cladeId then
                         [ rect
                             [ x <| toString length
                             , y "0"
@@ -348,7 +166,7 @@ drawTree model totalLength parentColor tree =
                             , cy <| toString (thisHeight / 2.0)
                             , r "0.3"
                             , fill color
-                            , Html.Events.onClick <| SelectNode data.cladeId
+                            , Html.Events.onClick <| config.selectNode data.cladeId
                             ]
                             []
                        ]
