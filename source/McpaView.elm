@@ -29,7 +29,6 @@ import Html.Attributes
 import Dict
 import Formatting as F exposing ((<>))
 import McpaModel exposing (..)
-import LinearTreeView exposing (drawTree, computeColor, gradientDefinitions)
 import MultiSpeciesView
 
 
@@ -39,73 +38,21 @@ view model =
         selectData cladeId =
             Dict.get ( cladeId, "Observed", model.selectedVariable ) model.mcpaData
 
+        dataForVar var =
+            ( model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "Observed", var ) model.mcpaData)
+            , model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "P-Values", var ) model.mcpaData)
+            , model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "BH Significant", var ) model.mcpaData)
+            )
+
         tableHead =
             Html.thead []
                 [ Html.tr [] [ Html.th [ Html.Attributes.colspan 2 ] [ Html.text "MCPA data for Selected Node" ] ]
                 , Html.tr [] [ Html.th [] [ Html.text "Observed (p-value)" ], Html.th [] [ Html.text "Variable" ] ]
                 ]
     in
-        MultiSpeciesView.view model tableHead drawVariable model.mcpaVariables selectData
-
-
-barGraph : ( Float, Float ) -> Html.Html Msg
-barGraph ( observedValue, pValue ) =
-    let
-        width =
-            (1.0 - e ^ (-1.0 * abs observedValue) |> (*) 100 |> toString) ++ "%"
-
-        opacity =
-            1.0 - (pValue / 1.2)
-
-        background =
-            computeColor opacity observedValue
-    in
-        Html.div
-            [ Html.Attributes.style
-                [ ( "width", width )
-                , ( "height", "100%" )
-                , ( "position", "absolute" )
-                , ( "top", "0" )
-                , ( "background-color", background )
-                , ( "z-index", "-1" )
-                ]
-            ]
-            []
+        MultiSpeciesView.view model tableHead variableFormatter model.mcpaVariables selectData dataForVar
 
 
 variableFormatter : ( Float, Float ) -> String
 variableFormatter ( observed, pValue ) =
     F.print (F.roundTo 3 <> F.s " (" <> F.roundTo 3 <> F.s ") ") observed pValue
-
-
-drawVariable : Model -> String -> Html.Html Msg
-drawVariable model var =
-    let
-        significant =
-            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "BH Significant", var ) model.mcpaData)
-
-        observed =
-            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "Observed", var ) model.mcpaData)
-
-        pValue =
-            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "P-Values", var ) model.mcpaData)
-
-        fontWeight =
-            if significant |> Maybe.map ((<) 0.5) |> Maybe.withDefault False then
-                ( "font-weight", "bold" )
-            else
-                ( "font-weight", "normal" )
-
-        bar =
-            Maybe.map2 (,) observed pValue |> Maybe.map (List.singleton << barGraph) |> Maybe.withDefault []
-
-        values =
-            Maybe.map2 (,) observed pValue
-                |> Maybe.map variableFormatter
-                |> Maybe.withDefault ""
-    in
-        Html.tr []
-            [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ), ( "padding-right", "12px" ) ] ]
-                [ Html.text values ]
-            , Html.td [ Html.Attributes.style [ ( "position", "relative" ), fontWeight ] ] (bar ++ [ Html.text var ])
-            ]

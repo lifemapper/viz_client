@@ -29,7 +29,6 @@ import Html.Attributes
 import Dict
 import Formatting as F exposing ((<>))
 import McpaModel exposing (..)
-import LinearTreeView exposing (computeColor, drawTree, gradientDefinitions)
 import MultiSpeciesView
 
 
@@ -39,61 +38,21 @@ view model =
         selectData cladeId =
             Dict.get ( cladeId, model.selectedVariable ) model.ancState
 
+        dataForVar var =
+            ( model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, var ) model.ancState)
+            , Just 0.0
+            , Just 0.0
+            )
+
         tableHead =
             Html.thead []
                 [ Html.tr [] [ Html.th [ Html.Attributes.colspan 2 ] [ Html.text "Ancestral data for Selected Node" ] ]
                 , Html.tr [] [ Html.th [] [ Html.text "Value" ], Html.th [] [ Html.text "Variable" ] ]
                 ]
     in
-        MultiSpeciesView.view model tableHead drawVariable model.ancStateVars selectData
+        MultiSpeciesView.view model tableHead variableFormatter model.ancStateVars selectData dataForVar
 
 
-barGraph : Float -> Html.Html Msg
-barGraph value =
-    let
-        width =
-            (1.0 - e ^ (-1.0 * abs value) |> (*) 100 |> toString) ++ "%"
-
-        background =
-            computeColor 1.0 value
-    in
-        Html.div
-            [ Html.Attributes.style
-                [ ( "width", width )
-                , ( "height", "100%" )
-                , ( "position", "absolute" )
-                , ( "top", "0" )
-                , ( "background-color", background )
-                , ( "z-index", "-1" )
-                ]
-            ]
-            []
-
-
-variableFormatter : Float -> String
-variableFormatter value =
+variableFormatter : ( Float, Float ) -> String
+variableFormatter ( value, _ ) =
     F.print (F.roundTo 3) value
-
-
-drawVariable : Model -> String -> Html.Html Msg
-drawVariable model var =
-    let
-        value =
-            model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, var ) model.ancState)
-
-        fontWeight =
-            ( "font-weight", "normal" )
-
-        bar =
-            value |> Maybe.map (List.singleton << barGraph) |> Maybe.withDefault []
-
-        values =
-            value
-                |> Maybe.map variableFormatter
-                |> Maybe.withDefault ""
-    in
-        Html.tr []
-            [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ), ( "padding-right", "12px" ) ] ]
-                [ Html.text values ]
-            , Html.td [ Html.Attributes.style [ ( "position", "relative" ), fontWeight ] ] (bar ++ [ Html.text var ])
-            ]

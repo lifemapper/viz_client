@@ -34,8 +34,64 @@ import McpaModel exposing (..)
 import LinearTreeView exposing (computeColor, drawTree, gradientDefinitions)
 
 
-view : Model -> Html.Html Msg -> (Model -> String -> Html.Html Msg) -> List String -> (Int -> Maybe Float) -> Html.Html Msg
-view ({ selectedVariable, showBranchLengths, treeInfo, selectedNode } as model) tableHead drawVariable vars selectData =
+barGraph : ( Float, Float ) -> Html.Html Msg
+barGraph ( observedValue, pValue ) =
+    let
+        width =
+            (1.0 - e ^ (-1.0 * abs observedValue) |> (*) 100 |> toString) ++ "%"
+
+        opacity =
+            1.0 - (pValue / 1.2)
+
+        background =
+            computeColor opacity observedValue
+    in
+        Html.div
+            [ Html.Attributes.style
+                [ ( "width", width )
+                , ( "height", "100%" )
+                , ( "position", "absolute" )
+                , ( "top", "0" )
+                , ( "background-color", background )
+                , ( "z-index", "-1" )
+                ]
+            ]
+            []
+
+
+drawVariable : (( Float, Float ) -> String) -> String -> ( Maybe Float, Maybe Float, Maybe Float ) -> Html.Html Msg
+drawVariable formatter var ( observed, pValue, significant ) =
+    let
+        fontWeight =
+            if significant |> Maybe.map ((<) 0.5) |> Maybe.withDefault False then
+                ( "font-weight", "bold" )
+            else
+                ( "font-weight", "normal" )
+
+        bar =
+            Maybe.map2 (,) observed pValue |> Maybe.map (List.singleton << barGraph) |> Maybe.withDefault []
+
+        values =
+            Maybe.map2 (,) observed pValue
+                |> Maybe.map formatter
+                |> Maybe.withDefault ""
+    in
+        Html.tr []
+            [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ), ( "padding-right", "12px" ) ] ]
+                [ Html.text values ]
+            , Html.td [ Html.Attributes.style [ ( "position", "relative" ), fontWeight ] ] (bar ++ [ Html.text var ])
+            ]
+
+
+view :
+    Model
+    -> Html.Html Msg
+    -> (( Float, Float ) -> String)
+    -> List String
+    -> (Int -> Maybe Float)
+    -> (String -> ( Maybe Float, Maybe Float, Maybe Float ))
+    -> Html.Html Msg
+view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead variableFormatter vars selectData dataForVar =
     let
         computeColor_ opacity cladeId =
             selectData cladeId
@@ -134,7 +190,7 @@ view ({ selectedVariable, showBranchLengths, treeInfo, selectedNode } as model) 
                         (gradDefs :: treeSvg)
                     ]
                 ]
-            , Html.table [] (tableHead :: (vars |> List.map (drawVariable model)))
+            , Html.table [] (tableHead :: (vars |> List.map (\var -> dataForVar var |> drawVariable variableFormatter var)))
             , Html.div
                 [ Html.Attributes.class "leaflet-map"
                 , Html.Attributes.attribute "data-map-column"
