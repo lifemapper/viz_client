@@ -46,7 +46,13 @@ view model =
 
         tableHead =
             Html.thead []
-                [ Html.tr [] [ Html.th [ Html.Attributes.colspan 2 ] [ Html.text "Ancestral data for Selected Node" ] ]
+                [ Html.tr []
+                    [ Html.th
+                        [ Html.Attributes.colspan 2
+                        , Html.Attributes.style [ ( "text-decoration", "underline" ) ]
+                        ]
+                        [ Html.text "Ancestral data for Selected Node" ]
+                    ]
                 , Html.tr [] [ Html.th [] [ Html.text "Value" ], Html.th [] [ Html.text "Variable" ] ]
                 ]
     in

@@ -46,7 +46,13 @@ view model =
 
         tableHead =
             Html.thead []
-                [ Html.tr [] [ Html.th [ Html.Attributes.colspan 2 ] [ Html.text "MCPA data for Selected Node" ] ]
+                [ Html.tr []
+                    [ Html.th
+                        [ Html.Attributes.colspan 2
+                        , Html.Attributes.style [ ( "text-decoration", "underline" ) ]
+                        ]
+                        [ Html.text "MCPA data for Selected Node" ]
+                    ]
                 , Html.tr [] [ Html.th [] [ Html.text "Observed (p-value)" ], Html.th [] [ Html.text "Variable" ] ]
                 ]
     in
