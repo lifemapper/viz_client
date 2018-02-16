@@ -56,7 +56,7 @@ view model =
                 , Html.tr [] [ Html.th [] [ Html.text "Observed (p-value)" ], Html.th [] [ Html.text "Variable" ] ]
                 ]
     in
-        MultiSpeciesView.view model tableHead variableFormatter model.mcpaVariables selectData dataForVar
+        MultiSpeciesView.view model tableHead True variableFormatter model.mcpaVariables selectData dataForVar
 
 
 variableFormatter : ( Float, Float ) -> String

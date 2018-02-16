@@ -59,8 +59,8 @@ barGraph ( observedValue, pValue ) =
             []
 
 
-drawVariable : (( Float, Float ) -> String) -> String -> ( Maybe Float, Maybe Float, Maybe Float ) -> Html.Html Msg
-drawVariable formatter var ( observed, pValue, significant ) =
+drawVariable : Bool -> (( Float, Float ) -> String) -> String -> ( Maybe Float, Maybe Float, Maybe Float ) -> Html.Html Msg
+drawVariable showBarGraph formatter var ( observed, pValue, significant ) =
     let
         fontWeight =
             if significant |> Maybe.map ((<) 0.5) |> Maybe.withDefault False then
@@ -69,7 +69,10 @@ drawVariable formatter var ( observed, pValue, significant ) =
                 ( "font-weight", "normal" )
 
         bar =
-            Maybe.map2 (,) observed pValue |> Maybe.map (List.singleton << barGraph) |> Maybe.withDefault []
+            if showBarGraph then
+                Maybe.map2 (,) observed pValue |> Maybe.map (List.singleton << barGraph) |> Maybe.withDefault []
+            else
+                []
 
         values =
             Maybe.map2 (,) observed pValue
@@ -86,12 +89,13 @@ drawVariable formatter var ( observed, pValue, significant ) =
 view :
     Model
     -> Html.Html Msg
+    -> Bool
     -> (( Float, Float ) -> String)
     -> List String
     -> (Int -> Maybe Float)
     -> (String -> ( Maybe Float, Maybe Float, Maybe Float ))
     -> Html.Html Msg
-view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead variableFormatter vars selectData dataForVar =
+view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead showBarGraph variableFormatter vars selectData dataForVar =
     let
         computeColor_ opacity cladeId =
             selectData cladeId
@@ -190,7 +194,16 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead v
                         (gradDefs :: treeSvg)
                     ]
                 ]
-            , Html.table [] (tableHead :: (vars |> List.map (\var -> dataForVar var |> drawVariable variableFormatter var)))
+            , Html.table []
+                (tableHead
+                    :: (vars
+                            |> List.map
+                                (\var ->
+                                    dataForVar var
+                                        |> drawVariable showBarGraph variableFormatter var
+                                )
+                       )
+                )
             , Html.div
                 [ Html.Attributes.class "leaflet-map"
                 , Html.Attributes.attribute "data-map-column"

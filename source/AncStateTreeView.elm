@@ -64,7 +64,7 @@ view model =
                 , Html.tr [] [ Html.th [] [ Html.text "Value" ], Html.th [] [ Html.text "Variable" ] ]
                 ]
     in
-        MultiSpeciesView.view model tableHead variableFormatter model.ancStateVars selectData dataForVar
+        MultiSpeciesView.view model tableHead False variableFormatter model.ancStateVars selectData dataForVar
 
 
 variableFormatter : ( Float, Float ) -> String
