@@ -35,7 +35,9 @@ nan =
 
 
 type alias AncStateData =
-    Dict.Dict ( Int, String ) Float
+    { values : Dict.Dict ( Int, String ) Float
+    , ranges : Dict.Dict String ( Float, Float )
+    }
 
 
 parseCsv : Csv.Csv -> Result String ( List String, AncStateData )
@@ -44,8 +46,11 @@ parseCsv { headers, records } =
         variables =
             headers |> List.drop 1
 
+        empty =
+            AncStateData Dict.empty Dict.empty
+
         data =
-            List.foldl (\record -> Result.andThen (parseRecord variables record)) (Ok Dict.empty) records
+            List.foldl (\record -> Result.andThen (parseRecord variables record)) (Ok empty) records
     in
         data |> Result.map ((,) variables)
 
@@ -74,11 +79,35 @@ parseRecord variables record result =
                 values =
                     valueStrs |> List.map valueToFloat |> Result.combine
 
-                makeDict cladeId values =
+                insert cladeId values =
                     List.map2 (,) variables values
-                        |> (result |> List.foldl (\( var, val ) -> Dict.insert ( cladeId, var ) val))
+                        |> insertValues cladeId result
             in
-                Result.map2 makeDict cladeId values
+                Result.map2 insert cladeId values
 
         _ ->
             Err "bad csv"
+
+
+insertValues : Int -> AncStateData -> List ( String, Float ) -> AncStateData
+insertValues cladeId { values, ranges } pairs =
+    let
+        values_ =
+            List.foldl (\( var, val ) -> Dict.insert ( cladeId, var ) val) values pairs
+
+        ranges_ =
+            List.foldl updateRanges ranges pairs
+    in
+        { values = values_
+        , ranges = ranges_
+        }
+
+
+updateRanges : ( String, Float ) -> Dict.Dict String ( Float, Float ) -> Dict.Dict String ( Float, Float )
+updateRanges ( var, val ) ranges =
+    let
+        ( min_, max_ ) =
+            Dict.get var ranges
+                |> Maybe.withDefault ( val, val )
+    in
+        Dict.insert var ( min val min_, max val max_ ) ranges

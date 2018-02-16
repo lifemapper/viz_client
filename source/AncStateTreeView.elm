@@ -35,11 +35,19 @@ import MultiSpeciesView
 view : Model -> Html.Html Msg
 view model =
     let
+        ( min, max ) =
+            Dict.get model.selectedVariable model.ancState.ranges
+                |> Maybe.withDefault ( 0, 0 )
+
+        scaleData value =
+            2 * (value - min) / (max - min) - 1
+
         selectData cladeId =
-            Dict.get ( cladeId, model.selectedVariable ) model.ancState
+            Dict.get ( cladeId, model.selectedVariable ) model.ancState.values
+                |> Maybe.map scaleData
 
         dataForVar var =
-            ( model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, var ) model.ancState)
+            ( model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, var ) model.ancState.values)
             , Just 0.0
             , Just 0.0
             )
