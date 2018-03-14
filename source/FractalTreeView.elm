@@ -33,7 +33,7 @@ import Svg.Attributes exposing (..)
 import DecodeTree exposing (Tree(..), TreeData)
 import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
 import Animation as A exposing (Animation)
-import McpaModel exposing (..)
+import FractalTreeModel exposing (..)
 
 
 type Transform
