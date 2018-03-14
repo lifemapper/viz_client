@@ -8,7 +8,7 @@ debug: sdm.tar.gz mcpa.tar.gz
 sdm.tar.gz: sdm/elm.js sdm/*
 	tar -zcvf sdm.tar.gz --exclude=sdmFlagsOverride.js sdm
 
-mcpa.tar.gz: mcpa/elmAncState.js mcpa/elmTree.js mcpa/elmStats.js mcpa/elmFractalTree.js mcpa/*
+mcpa.tar.gz: mcpa/elmAncState.js mcpa/elmMcpa.js mcpa/elmStats.js mcpa/elmFractalTree.js mcpa/*
 	tar -zcvf mcpa.tar.gz mcpa
 
 sdm/elm.js: source/Decoder.elm source/*
@@ -17,8 +17,8 @@ sdm/elm.js: source/Decoder.elm source/*
 mcpa/elmStats.js: source/Decoder.elm source/*
 	elm-make source/StatsMain.elm $(ELMFLAGS) --output=mcpa/elmStats.js
 
-mcpa/elmTree.js: source/Decoder.elm source/*
-	elm-make source/McpaMain.elm $(ELMFLAGS) --output=mcpa/elmTree.js
+mcpa/elmMcpa.js: source/Decoder.elm source/*
+	elm-make source/McpaMain.elm $(ELMFLAGS) --output=mcpa/elmMcpa.js
 
 mcpa/elmAncState.js: source/Decoder.elm source/*
 	elm-make source/AncStateMain.elm $(ELMFLAGS) --output=mcpa/elmAncState.js
