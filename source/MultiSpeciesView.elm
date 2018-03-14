@@ -152,18 +152,6 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead s
                     , Html.text "Show branch lengths"
                     ]
                 ]
-
-        clickBox =
-            rect
-                [ x "0"
-                , y "0"
-                , width "100"
-                , height "100"
-                , fill "grey"
-                , fillOpacity "0.01"
-                , Html.Events.onClick JumpUp
-                ]
-                []
     in
         Html.div
             [ Html.Attributes.style

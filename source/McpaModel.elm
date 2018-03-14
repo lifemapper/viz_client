@@ -28,12 +28,7 @@ import ParseMcpa exposing (McpaData, parseMcpa)
 import ParseAncState exposing (AncStateData, parseAncState)
 import DecodeTree exposing (Tree)
 import ParseNexusTree exposing (parseNexusTree)
-import TreeZipper exposing (TreeZipper, Position(..), moveToward, getTree, getData, getPosition)
 import TreeMetrics exposing (..)
-import Animation as A exposing (Animation)
-import AnimationFrame
-import Time exposing (Time)
-import Ease
 
 
 type alias Flags =
@@ -52,8 +47,7 @@ type alias TreeInfo =
 
 
 type alias Model =
-    { zipper : TreeZipper
-    , treeInfo : TreeInfo
+    { treeInfo : TreeInfo
     , mcpaVariables : List String
     , ancStateVars : List String
     , ancState : AncStateData
@@ -61,8 +55,6 @@ type alias Model =
     , selectedVariable : String
     , selectedNode : Maybe Int
     , showBranchLengths : Bool
-    , animationState : AnimationState
-    , mouseIn : Bool
     }
 
 
@@ -100,9 +92,7 @@ init flags =
             , breadth = treeBreadth root
             }
     in
-        ( { animationState = Static
-          , zipper = TreeZipper.start root
-          , treeInfo = treeInfo
+        ( { treeInfo = treeInfo
           , mcpaVariables = variables
           , ancStateVars = ancStateVars
           , selectedVariable = List.head variables |> Maybe.withDefault ""
@@ -110,7 +100,6 @@ init flags =
           , showBranchLengths = False
           , mcpaData = data
           , ancState = ancState
-          , mouseIn = False
           }
         , Cmd.none
         )
@@ -118,61 +107,18 @@ init flags =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.animationState of
-        Start _ ->
-            AnimationFrame.times (AnimationMsg << CurrentTick)
-
-        Running _ _ _ ->
-            AnimationFrame.times (AnimationMsg << CurrentTick)
-
-        _ ->
-            Sub.none
-
-
-type AnimationState
-    = Start AnimationDirection
-    | Running AnimationDirection Time Animation
-    | Static
-
-
-type AnimationDirection
-    = AnimateUpLeft
-    | AnimateUpRight
-    | AnimateLeft
-    | AnimateRight
+    Sub.none
 
 
 type Msg
-    = SetMouseIn Bool
-    | JumpUp
-    | JumpLeft
-    | JumpRight
-    | SelectVariable String
+    = SelectVariable String
     | ToggleShowLengths
     | SelectNode Int
-    | AnimationMsg AnimationMsg
-
-
-type AnimationMsg
-    = KeyUp String
-    | CurrentTick Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        SetMouseIn mouseIn ->
-            ( { model | mouseIn = mouseIn }, Cmd.none )
-
-        JumpUp ->
-            ( { model | zipper = moveToward Root model.zipper }, Cmd.none )
-
-        JumpLeft ->
-            ( { model | zipper = moveToward LeftBranch model.zipper }, Cmd.none )
-
-        JumpRight ->
-            ( { model | zipper = moveToward RightBranch model.zipper }, Cmd.none )
-
         SelectVariable v ->
             ( { model | selectedVariable = v }, Cmd.none )
 
@@ -181,74 +127,3 @@ update msg model =
 
         SelectNode cladeId ->
             ( { model | selectedNode = Just cladeId }, Cmd.none )
-
-        AnimationMsg msg_ ->
-            updateAnimation msg_ model
-
-
-updateAnimation : AnimationMsg -> Model -> ( Model, Cmd Msg )
-updateAnimation msg ({ zipper, animationState } as model) =
-    case animationState of
-        Static ->
-            case msg of
-                KeyUp "ArrowDown" ->
-                    case getPosition zipper of
-                        LeftBranch ->
-                            ( { model | animationState = Start AnimateUpLeft }, Cmd.none )
-
-                        RightBranch ->
-                            ( { model | animationState = Start AnimateUpRight }, Cmd.none )
-
-                        Root ->
-                            ( model, Cmd.none )
-
-                KeyUp "ArrowLeft" ->
-                    if zipper /= moveToward LeftBranch zipper then
-                        ( { model | animationState = Start AnimateLeft }, Cmd.none )
-                    else
-                        ( model, Cmd.none )
-
-                KeyUp "ArrowRight" ->
-                    if zipper /= moveToward RightBranch zipper then
-                        ( { model | animationState = Start AnimateRight }, Cmd.none )
-                    else
-                        ( model, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
-        Start dir ->
-            case msg of
-                CurrentTick time ->
-                    let
-                        animation =
-                            A.animation time
-                                |> A.duration (0.5 * Time.second)
-                                |> A.ease Ease.inOutCirc
-                    in
-                        ( { model | animationState = Running dir time animation }, Cmd.none )
-
-                KeyUp _ ->
-                    ( model, Cmd.none )
-
-        Running dir _ animation ->
-            case msg of
-                CurrentTick time ->
-                    if A.isRunning time animation then
-                        ( { model | animationState = Running dir time animation }, Cmd.none )
-                    else
-                        case dir of
-                            AnimateUpLeft ->
-                                ( { model | animationState = Static, zipper = moveToward Root zipper }, Cmd.none )
-
-                            AnimateUpRight ->
-                                ( { model | animationState = Static, zipper = moveToward Root zipper }, Cmd.none )
-
-                            AnimateLeft ->
-                                ( { model | animationState = Static, zipper = moveToward LeftBranch zipper }, Cmd.none )
-
-                            AnimateRight ->
-                                ( { model | animationState = Static, zipper = moveToward RightBranch zipper }, Cmd.none )
-
-                KeyUp _ ->
-                    ( model, Cmd.none )
