@@ -30,18 +30,19 @@ import Dict
 import Formatting as F exposing ((<>))
 import McpaModel exposing (..)
 import MultiSpeciesView
+import ParseMcpa exposing (McpaData)
 
 
-view : Model -> Html.Html Msg
+view : Model McpaData -> Html.Html Msg
 view model =
     let
         selectData cladeId =
-            Dict.get ( cladeId, "Observed", model.selectedVariable ) model.mcpaData
+            Dict.get ( cladeId, "Observed", model.selectedVariable ) model.data
 
         dataForVar var =
-            ( model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "Observed", var ) model.mcpaData)
-            , model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "P-Values", var ) model.mcpaData)
-            , model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "BH Significant", var ) model.mcpaData)
+            ( model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "Observed", var ) model.data)
+            , model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "P-Values", var ) model.data)
+            , model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "BH Significant", var ) model.data)
             )
 
         tableHead =
@@ -56,7 +57,7 @@ view model =
                 , Html.tr [] [ Html.th [] [ Html.text "Observed (p-value)" ], Html.th [] [ Html.text "Variable" ] ]
                 ]
     in
-        MultiSpeciesView.view model tableHead True variableFormatter model.mcpaVariables selectData dataForVar
+        MultiSpeciesView.view model tableHead True variableFormatter model.variables selectData dataForVar
 
 
 variableFormatter : ( Float, Float ) -> String

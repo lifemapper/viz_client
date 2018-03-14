@@ -23,12 +23,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 
 "use strict";
 
-var app = Elm.McpaMain.fullscreen({
-    ancState: ancState,
-    mcpaMatrix: mcpaMatrix,
-    taxonTree: taxonTree
-});
-
 var maps = {};
 var mapLayers = {};
 

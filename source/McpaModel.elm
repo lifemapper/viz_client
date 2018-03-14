@@ -24,17 +24,14 @@
 
 module McpaModel exposing (..)
 
-import ParseMcpa exposing (McpaData, parseMcpa)
-import ParseAncState exposing (AncStateData, parseAncState)
 import DecodeTree exposing (Tree)
 import ParseNexusTree exposing (parseNexusTree)
 import TreeMetrics exposing (..)
 
 
 type alias Flags =
-    { mcpaMatrix : String
+    { data : String
     , taxonTree : String
-    , ancState : String
     }
 
 
@@ -46,36 +43,21 @@ type alias TreeInfo =
     }
 
 
-type alias Model =
+type alias Model data =
     { treeInfo : TreeInfo
-    , mcpaVariables : List String
-    , ancStateVars : List String
-    , ancState : AncStateData
-    , mcpaData : McpaData
+    , variables : List String
+    , data : data
     , selectedVariable : String
     , selectedNode : Maybe Int
     , showBranchLengths : Bool
     }
 
 
-init : Flags -> ( Model, Cmd Msg )
-init flags =
+init : (String -> ( List String, data )) -> Flags -> ( Model data, Cmd Msg )
+init parseData flags =
     let
         ( variables, data ) =
-            case parseMcpa flags.mcpaMatrix of
-                Ok result ->
-                    result
-
-                Err err ->
-                    Debug.crash ("failed to decode MCPA matrix: " ++ err)
-
-        ( ancStateVars, ancState ) =
-            case parseAncState flags.ancState of
-                Ok result ->
-                    result
-
-                Err err ->
-                    Debug.crash ("failed to decode ancState matrix: " ++ err)
+            parseData flags.data
 
         root =
             case parseNexusTree flags.taxonTree of
@@ -93,19 +75,17 @@ init flags =
             }
     in
         ( { treeInfo = treeInfo
-          , mcpaVariables = variables
-          , ancStateVars = ancStateVars
+          , variables = variables
           , selectedVariable = List.head variables |> Maybe.withDefault ""
           , selectedNode = Nothing
           , showBranchLengths = False
-          , mcpaData = data
-          , ancState = ancState
+          , data = data
           }
         , Cmd.none
         )
 
 
-subscriptions : Model -> Sub Msg
+subscriptions : Model data -> Sub Msg
 subscriptions model =
     Sub.none
 
@@ -116,7 +96,7 @@ type Msg
     | SelectNode Int
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model data -> ( Model data, Cmd Msg )
 update msg model =
     case msg of
         SelectVariable v ->

@@ -22,17 +22,28 @@
 -}
 
 
-module McpaMain exposing (..)
+module AncStateMain exposing (..)
 
 import Html
 import McpaModel exposing (..)
 import AncStateTreeView
+import ParseAncState exposing (AncStateData, parseAncState)
 
 
-main : Program Flags Model Msg
+parseData : String -> ( List String, AncStateData )
+parseData data =
+    case parseAncState data of
+        Ok result ->
+            result
+
+        Err err ->
+            Debug.crash ("failed to decode ancState matrix: " ++ err)
+
+
+main : Program Flags (Model AncStateData) Msg
 main =
     Html.programWithFlags
-        { init = init
+        { init = init parseData
         , update = update
         , view = AncStateTreeView.view
         , subscriptions = subscriptions

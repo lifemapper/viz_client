@@ -12,12 +12,17 @@
     <script src="https://npmcdn.com/@turf/turf/turf.min.js"></script>
   </head>
   <body>
-    <script>var mcpaMatrix = "";</script>
     <script src="../package/ancPam.js"></script>
     <script src="../package/ancState.js"></script>
     <script src="../package/tree.js"></script>
     <script src="../package/nodeLookup.js"></script>
     <script src="./elmAncState.js"></script>
+    <script>
+      var app = Elm.AncStateMain.fullscreen({
+      data: ancState,
+      taxonTree: taxonTree
+      });
+    </script>
     <script src="./mcpaMain.js"></script>
   </body>
 </html>

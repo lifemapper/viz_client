@@ -30,24 +30,25 @@ import Dict
 import Formatting as F exposing ((<>))
 import McpaModel exposing (..)
 import MultiSpeciesView
+import ParseAncState exposing (AncStateData)
 
 
-view : Model -> Html.Html Msg
+view : Model AncStateData -> Html.Html Msg
 view model =
     let
         ( min, max ) =
-            Dict.get model.selectedVariable model.ancState.ranges
+            Dict.get model.selectedVariable model.data.ranges
                 |> Maybe.withDefault ( 0, 0 )
 
         scaleData value =
             2 * (value - min) / (max - min) - 1
 
         selectData cladeId =
-            Dict.get ( cladeId, model.selectedVariable ) model.ancState.values
+            Dict.get ( cladeId, model.selectedVariable ) model.data.values
                 |> Maybe.map scaleData
 
         dataForVar var =
-            ( model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, var ) model.ancState.values)
+            ( model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, var ) model.data.values)
             , Just 0.0
             , Just 0.0
             )
@@ -64,7 +65,7 @@ view model =
                 , Html.tr [] [ Html.th [] [ Html.text "Value" ], Html.th [] [ Html.text "Variable" ] ]
                 ]
     in
-        MultiSpeciesView.view model tableHead False variableFormatter model.ancStateVars selectData dataForVar
+        MultiSpeciesView.view model tableHead False variableFormatter model.variables selectData dataForVar
 
 
 variableFormatter : ( Float, Float ) -> String

@@ -87,7 +87,7 @@ drawVariable showBarGraph formatter var ( observed, pValue, significant ) =
 
 
 view :
-    Model
+    Model data
     -> Html.Html Msg
     -> Bool
     -> (( Float, Float ) -> String)

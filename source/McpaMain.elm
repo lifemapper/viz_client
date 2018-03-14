@@ -27,12 +27,23 @@ module McpaMain exposing (..)
 import Html
 import McpaModel exposing (..)
 import McpaView exposing (view)
+import ParseMcpa exposing (McpaData, parseMcpa)
 
 
-main : Program Flags Model Msg
+parseData : String -> ( List String, McpaData )
+parseData data =
+    case parseMcpa data of
+        Ok result ->
+            result
+
+        Err err ->
+            Debug.crash ("failed to decode MCPA matrix: " ++ err)
+
+
+main : Program Flags (Model McpaData) Msg
 main =
     Html.programWithFlags
-        { init = init
+        { init = init parseData
         , update = update
         , view = view
         , subscriptions = subscriptions
