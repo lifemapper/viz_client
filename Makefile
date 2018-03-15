@@ -8,23 +8,23 @@ debug: sdm.tar.gz mcpa.tar.gz
 sdm.tar.gz: sdm/elm.js sdm/*
 	tar -zcvf sdm.tar.gz --exclude=sdmFlagsOverride.js sdm
 
-mcpa.tar.gz: mcpa/elmAncState.js mcpa/elmMcpa.js mcpa/elmStats.js mcpa/elmFractalTree.js mcpa/*
+mcpa.tar.gz: mcpa/elm/AncState.js mcpa/elm/Mcpa.js mcpa/elm/Stats.js mcpa/elm/FractalTree.js mcpa/*
 	tar -zcvf mcpa.tar.gz mcpa
 
 sdm/elm.js: source/Decoder.elm source/*
 	elm-make source/Main.elm $(ELMFLAGS) --output=sdm/elm.js
 
-mcpa/elmStats.js: source/Decoder.elm source/*
-	elm-make source/StatsMain.elm $(ELMFLAGS) --output=mcpa/elmStats.js
+mcpa/elm/Stats.js: source/Decoder.elm source/*
+	elm-make source/StatsMain.elm $(ELMFLAGS) --output=mcpa/elm/Stats.js
 
-mcpa/elmMcpa.js: source/Decoder.elm source/*
-	elm-make source/McpaMain.elm $(ELMFLAGS) --output=mcpa/elmMcpa.js
+mcpa/elm/Mcpa.js: source/Decoder.elm source/*
+	elm-make source/McpaMain.elm $(ELMFLAGS) --output=mcpa/elm/Mcpa.js
 
-mcpa/elmAncState.js: source/Decoder.elm source/*
-	elm-make source/AncStateMain.elm $(ELMFLAGS) --output=mcpa/elmAncState.js
+mcpa/elm/AncState.js: source/Decoder.elm source/*
+	elm-make source/AncStateMain.elm $(ELMFLAGS) --output=mcpa/elm/AncState.js
 
-mcpa/elmFractalTree.js: source/Decoder.elm source/*
-	elm-make source/FractalTreeMain.elm $(ELMFLAGS) --output=mcpa/elmFractalTree.js
+mcpa/elm/FractalTree.js: source/Decoder.elm source/*
+	elm-make source/FractalTreeMain.elm $(ELMFLAGS) --output=mcpa/elm/FractalTree.js
 
 source/Decoder.elm: swagger.json source/Decoder.elm.patch
 	cat swagger.json | swagger-to-elm | elm-format --stdin > source/Decoder.elm.generated
@@ -34,7 +34,7 @@ source/Decoder.elm: swagger.json source/Decoder.elm.patch
 clean:
 	rm -f source/Decoder.elm
 	rm -f sdm.tar.gz sdm/elm.js
-	rm -f mcpa.tar.gz mcpa/elm.js
+	rm -f mcpa.tar.gz mcpa/elm/*.js
 
 test: source/Decoder.elm source/* tests/*.elm
 	elm test

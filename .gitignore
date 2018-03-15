@@ -4,9 +4,9 @@
 /source/Decoder.elm
 /sdm/elm.js
 /sdm/sdmFlagsOverride.js
-/mcpa/elm.js
 /mcpa.tar.gz
-/mcpa/elmStats.js
-/mcpa/elmMcpa.js
-/mcpa/elmFractalTree.js
-/mcpa/elmAncState.js
+/mcpa/elm/Stats.js
+/mcpa/elm/Mcpa.js
+/mcpa/elm/FractalTree.js
+/mcpa/elm/AncState.js
+/mcpa/package/
