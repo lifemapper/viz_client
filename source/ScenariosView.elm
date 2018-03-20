@@ -1,25 +1,27 @@
 {-
-Copyright (C) 2018, University of Kansas Center for Research
+   Copyright (C) 2018, University of Kansas Center for Research
 
-Lifemapper Project, lifemapper [at] ku [dot] edu,
-Biodiversity Institute,
-1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
+   Lifemapper Project, lifemapper [at] ku [dot] edu,
+   Biodiversity Institute,
+   1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or (at
+   your option) any later version.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
 -}
+
+
 module ScenariosView
     exposing
         ( Model
@@ -48,9 +50,10 @@ import Decoder
         , ScenarioMetadata(..)
         , MapLayers(..)
         , MapLayersItem(..)
-        , BoomPOSTModelScenario(..)
-        , BoomPOSTProjectionScenarios(..)
-        , BoomPOSTProjectionScenariosItem(..)
+        , BoomScenarioPackage(..)
+        , BoomScenarioPackageModel_scenario(..)
+        , BoomScenarioPackageProjection_scenario(..)
+        , BoomScenarioPackageProjection_scenarioItem(..)
         )
 import Material
 import Material.List as L
@@ -73,22 +76,23 @@ type alias Model =
     }
 
 
-type alias BoomPOSTScenarios =
-    { modelScenario : BoomPOSTModelScenario, projectionScenarios : BoomPOSTProjectionScenarios }
-
-
-toApi : Model -> Result String BoomPOSTScenarios
+toApi : Model -> Result String BoomScenarioPackage
 toApi { modelScenario, projectionScenarios } =
-    Result.map2 BoomPOSTScenarios
-        (modelScenario
-            |> Maybe.map (\s -> BoomPOSTModelScenario { scenarioId = Just s.id, scenarioCode = s.code })
-            |> Result.fromMaybe "No Model Scenario Selected"
-        )
-        (projectionScenarios
-            |> List.map (\s -> BoomPOSTProjectionScenariosItem { scenarioId = Just s.id, scenarioCode = s.code })
-            |> BoomPOSTProjectionScenarios
-            |> Ok
-        )
+    case modelScenario of
+        Just modelScenario ->
+            Ok <|
+                BoomScenarioPackage
+                    { model_scenario = Just <| BoomScenarioPackageModel_scenario { scenario_code = modelScenario.code }
+                    , projection_scenario =
+                        projectionScenarios
+                            |> List.map (\s -> BoomScenarioPackageProjection_scenarioItem { scenario_code = s.code })
+                            |> BoomScenarioPackageProjection_scenario
+                            |> Just
+                    , scenario_package_filename = Nothing
+                    }
+
+        Nothing ->
+            Err "No Model Scenario Selected"
 
 
 type Msg
@@ -238,8 +242,10 @@ packageCard index model package =
 view : Index -> SL.Model -> Model -> Html Msg
 view index sl model =
     sl.packages
-        |> List.sortBy .id -- just so the packages appear in a consistent order between page loads
-        |> List.indexedMap (\i package -> Grid.cell [ Grid.size Grid.All 4 ] [ packageCard (i :: index) model package ])
+        |> List.sortBy .id
+        -- just so the packages appear in a consistent order between page loads
+        |>
+            List.indexedMap (\i package -> Grid.cell [ Grid.size Grid.All 4 ] [ packageCard (i :: index) model package ])
         |> Grid.grid []
 
 

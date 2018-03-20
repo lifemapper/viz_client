@@ -1,25 +1,27 @@
 {-
-Copyright (C) 2018, University of Kansas Center for Research
+   Copyright (C) 2018, University of Kansas Center for Research
 
-Lifemapper Project, lifemapper [at] ku [dot] edu,
-Biodiversity Institute,
-1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
+   Lifemapper Project, lifemapper [at] ku [dot] edu,
+   Biodiversity Institute,
+   1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or (at
+   your option) any later version.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
 -}
+
+
 module NewSDM exposing (Model, page, init, update, Msg)
 
 import List.Extra exposing (elemIndex, getAt)
@@ -83,12 +85,15 @@ toApi : Model -> Result String Decoder.BoomPOST
 toApi { algorithmsModel, occurrenceSets, scenarios } =
     Scns.toApi scenarios
         |> Result.map
-            (\{ modelScenario, projectionScenarios } ->
+            (\scenarioPackage ->
                 Decoder.BoomPOST
-                    { algorithms = Algs.toApi algorithmsModel
-                    , occurrenceSets = Occs.toApi occurrenceSets
-                    , modelScenario = modelScenario
-                    , projectionScenarios = projectionScenarios
+                    { sdm = Just <| Algs.toApi algorithmsModel
+                    , occurrence = Just <| Occs.toApi occurrenceSets
+                    , scenario_package = Just scenarioPackage
+                    , global_pam = Nothing
+                    , mcpa = Nothing
+                    , pam_stats = Nothing
+                    , tree = Nothing
                     }
             )
 
