@@ -26,6 +26,7 @@ module Encoder exposing (..)
 
 import Decoder exposing (..)
 import Json.Encode exposing (..)
+import Maybe.Extra as Maybe
 
 
 encodeBoomPOST : BoomPOST -> Value
@@ -40,10 +41,11 @@ encodeBoomPOST (BoomPOST { tree, sdm, scenario_package, pam_stats, occurrence, m
 
 encodeBoomOccurrenceSet : BoomOccurrenceSet -> Value
 encodeBoomOccurrenceSet (BoomOccurrenceSet { point_count_min, points_filename, occurrence_ids }) =
-    [ ( "point_count_min", point_count_min |> Maybe.map int |> Maybe.withDefault null )
-    , ( "points_file_name", points_filename |> Maybe.map string |> Maybe.withDefault null )
-    , ( "occurrence_ids", occurrence_ids |> Maybe.map encodeBoomOccurrenceSetOccurrence_ids |> Maybe.withDefault null )
+    [ point_count_min |> Maybe.map (int >> (,) "point_count_min")
+    , points_filename |> Maybe.map (string >> (,) "points_file_name")
+    , occurrence_ids |> Maybe.map (encodeBoomOccurrenceSetOccurrence_ids >> (,) "occurrence_ids")
     ]
+        |> List.concatMap Maybe.toList
         |> object
 
 
@@ -54,10 +56,11 @@ encodeBoomOccurrenceSetOccurrence_ids (BoomOccurrenceSetOccurrence_ids ids) =
 
 encodeBoomScenarioPackage : BoomScenarioPackage -> Value
 encodeBoomScenarioPackage (BoomScenarioPackage { projection_scenario, model_scenario, scenario_package_filename }) =
-    [ ( "projection_scenario", projection_scenario |> Maybe.map encodeScenarioPackageProjection |> Maybe.withDefault null )
-    , ( "model_scenario", model_scenario |> Maybe.map encodeScenarioPackageModel |> Maybe.withDefault null )
-    , ( "scenario_package_filename", scenario_package_filename |> Maybe.map string |> Maybe.withDefault null )
+    [ projection_scenario |> Maybe.map (encodeScenarioPackageProjection >> (,) "projection_scenario")
+    , model_scenario |> Maybe.map (encodeScenarioPackageModel >> (,) "model_scenario")
+    , scenario_package_filename |> Maybe.map (string >> (,) "scenario_package_filename")
     ]
+        |> List.concatMap Maybe.toList
         |> object
 
 
@@ -68,19 +71,20 @@ encodeScenarioPackageProjection (BoomScenarioPackageProjection_scenario items) =
 
 encodeScenarioPackageModel : BoomScenarioPackageModel_scenario -> Value
 encodeScenarioPackageModel (BoomScenarioPackageModel_scenario { scenario_code }) =
-    scenario_code |> Maybe.map string |> Maybe.withDefault null
+    object [ ( "scenario_code", scenario_code |> Maybe.map string |> Maybe.withDefault null ) ]
 
 
 encodeScenarioItem : BoomScenarioPackageProjection_scenarioItem -> Value
 encodeScenarioItem (BoomScenarioPackageProjection_scenarioItem { scenario_code }) =
-    scenario_code |> Maybe.map string |> Maybe.withDefault null
+    object [ ( "scenario_code", scenario_code |> Maybe.map string |> Maybe.withDefault null ) ]
 
 
 encodeBoomSDMs : BoomSDMs -> Value
 encodeBoomSDMs (BoomSDMs { hull_region_intersect_mask, algorithm }) =
-    [ ( "hull_region_intersect_mask", hull_region_intersect_mask |> Maybe.map encodeBoomSDMsHull |> Maybe.withDefault null )
-    , ( "algorithm", algorithm |> encodeBoomSDMsAlgorithm )
+    [ Just ( "algorithm", algorithm |> encodeBoomSDMsAlgorithm )
+    , hull_region_intersect_mask |> Maybe.map (encodeBoomSDMsHull >> (,) "hull_region_intersect_mask")
     ]
+        |> List.concatMap Maybe.toList
         |> object
 
 
