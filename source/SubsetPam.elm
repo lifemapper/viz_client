@@ -73,37 +73,46 @@ type alias Model =
 type Msg
     = GotSolrList SolrList
     | SetFilter String String
+    | ClearFilter String
 
 
-selector : (String -> Msg) -> Set String -> Html Msg
-selector msg values =
-    case Set.toList values of
-        [] ->
-            Html.select [] []
+selector : Dict String String -> String -> Set String -> Html Msg
+selector filters key values =
+    case Dict.get key filters of
+        Just value ->
+            Html.span []
+                [ Html.text value
+                , Html.button [ Events.onClick <| ClearFilter key ] [ Html.text " X" ]
+                ]
 
-        [ value ] ->
-            Html.select [] [ Html.option [] [ Html.text value ] ]
+        Nothing ->
+            case Set.toList values of
+                [] ->
+                    Html.select [] []
 
-        values ->
-            ("--" :: values)
-                |> List.map (\v -> Html.option [] [ Html.text v ])
-                |> Html.select [ Events.onInput msg ]
+                [ value ] ->
+                    Html.select [] [ Html.option [] [ Html.text value ] ]
+
+                values ->
+                    ("--" :: values)
+                        |> List.map (\v -> Html.option [] [ Html.text v ])
+                        |> Html.select [ Events.onInput <| SetFilter key ]
 
 
 view : Model -> Html Msg
-view { facets } =
+view { facets, filters } =
     Html.div []
-        [ Html.p [] [ Html.text "algorithm", selector (SetFilter "algorithmCode") facets.algorithms ]
-        , Html.p [] [ Html.text "display name", selector (SetFilter "displayName") facets.displayNames ]
-        , Html.p [] [ Html.text "model", selector (SetFilter "modelScenarioCode") facets.modelScenarios ]
-        , Html.p [] [ Html.text "projection", selector (SetFilter "sdmProjScenarioCode") facets.projectionScenarios ]
-        , Html.p [] [ Html.text "kingdom", selector (SetFilter "taxonKingdom") facets.taxonKingdom ]
-        , Html.p [] [ Html.text "phylum", selector (SetFilter "taxonPhylum") facets.taxonPhylum ]
-        , Html.p [] [ Html.text "class", selector (SetFilter "taxonClass") facets.taxonClass ]
-        , Html.p [] [ Html.text "order", selector (SetFilter "taxonOrder") facets.taxonOrder ]
-        , Html.p [] [ Html.text "family", selector (SetFilter "taxonFamily") facets.taxonFamily ]
-        , Html.p [] [ Html.text "genus", selector (SetFilter "taxonGenus") facets.taxonGenus ]
-        , Html.p [] [ Html.text "species", selector (SetFilter "taxonSpecies") facets.taxonSpecies ]
+        [ Html.p [] [ Html.text "algorithm: ", selector filters "algorithmCode" facets.algorithms ]
+        , Html.p [] [ Html.text "display name:", selector filters "displayName" facets.displayNames ]
+        , Html.p [] [ Html.text "model: ", selector filters "modelScenarioCode" facets.modelScenarios ]
+        , Html.p [] [ Html.text "projection: ", selector filters "sdmProjScenarioCode" facets.projectionScenarios ]
+        , Html.p [] [ Html.text "kingdom: ", selector filters "taxonKingdom" facets.taxonKingdom ]
+        , Html.p [] [ Html.text "phylum: ", selector filters "taxonPhylum" facets.taxonPhylum ]
+        , Html.p [] [ Html.text "class: ", selector filters "taxonClass" facets.taxonClass ]
+        , Html.p [] [ Html.text "order: ", selector filters "taxonOrder" facets.taxonOrder ]
+        , Html.p [] [ Html.text "family: ", selector filters "taxonFamily" facets.taxonFamily ]
+        , Html.p [] [ Html.text "genus: ", selector filters "taxonGenus" facets.taxonGenus ]
+        , Html.p [] [ Html.text "species: ", selector filters "taxonSpecies" facets.taxonSpecies ]
         ]
 
 
@@ -121,6 +130,13 @@ update msg model =
             let
                 filters =
                     Dict.insert key value model.filters
+            in
+                ( { model | filters = filters }, getSolrList filters )
+
+        ClearFilter key ->
+            let
+                filters =
+                    Dict.remove key model.filters
             in
                 ( { model | filters = filters }, getSolrList filters )
 
