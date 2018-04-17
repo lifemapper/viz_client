@@ -563,6 +563,7 @@
           }
         ],
         "tags": [
+          "Grid Set",
           "Matrix"
         ],
         "responses": {
@@ -615,7 +616,8 @@
           }
         ],
         "tags": [
-          "Matrix"
+          "Matrix",
+          "Grid Set"
         ],
         "responses": {
           "200": {
@@ -640,6 +642,7 @@
           }
         ],
         "tags": [
+          "Grid Set",
           "Matrix"
         ],
         "responses": {
@@ -671,6 +674,8 @@
           }
         ],
         "tags": [
+          "Grid Set",
+          "Matrix",
           "Matrix Column"
         ],
         "responses": {
@@ -685,6 +690,122 @@
           },
           "404": {
             "description": "Error status thrown when the requested matrix was not found"
+          }
+        }
+      }
+    },
+    "/gridset/{gridsetId}/tree": {
+      "get": {
+        "summary": "Get the tree associated with this gridset",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          }
+        ],
+        "tags": [
+          "Tree",
+          "Grid Set"
+        ],
+        "responses": {
+          "200": {
+            "description": "The tree in the specified format",
+            "schema": {
+              "$ref": "#/definitions/Tree"
+            }
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to access a tree"
+          },
+          "404": {
+            "description": "Error status returned when the requested tree does not exist"
+          }
+        }
+      },
+      "post": {
+        "summary": "Post a new phylogenetic tree",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Tree POST body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/TreePOST"
+            }
+          }
+        ],
+        "tags": [
+          "Tree",
+          "Grid Set"
+        ],
+        "responses": {
+          "201": {
+            "description": "The posted tree",
+            "schema": {
+              "$ref": "#/definitions/Tree"
+            }
+          },
+          "400": {
+            "description": "Error status returned when there is a problem with user input"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a tree that you own",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          }
+        ],
+        "tags": [
+          "Tree",
+          "Grid Set"
+        ],
+        "responses": {
+          "204": {
+            "description": "An OK message that the tree was deleted"
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to delete a tree"
+          },
+          "404": {
+            "description": "Error status returned when the requested tree does not exist"
+          }
+        }
+      }
+    },
+    "/gridset/{gridsetId}/tree/{treeId}": {
+      "post": {
+        "summary": "Adds the specified phylogenetic tree to the gridset",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          },
+          {
+            "$ref": "#/parameters/PathTreeId"
+          }
+        ],
+        "tags": [
+          "Tree"
+        ],
+        "responses": {
+          "201": {
+            "description": "The posted tree",
+            "schema": {
+              "$ref": "#/definitions/Tree"
+            }
+          },
+          "400": {
+            "description": "Error status returned when there is a problem with user input"
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to access a tree"
+          },
+          "404": {
+            "description": "Error status returned when the requested tree does not exist"
           }
         }
       }
@@ -2729,7 +2850,7 @@
           "type": "string"
         },
         "id": {
-          "type": "integer"
+          "type": "string"
         },
         "modelScenarioCode": {
           "type": "string"
@@ -2789,6 +2910,27 @@
           "type": "integer"
         },
         "shapegridMetaUrl": {
+          "type": "string"
+        },
+        "taxonClass": {
+          "type": "string"
+        },
+        "taxonFamily": {
+          "type": "string"
+        },
+        "taxonGenus": {
+          "type": "string"
+        },
+        "taxonKingdom": {
+          "type": "string"
+        },
+        "taxonOrder": {
+          "type": "string"
+        },
+        "taxonPhylum": {
+          "type": "string"
+        },
+        "taxonSpecies": {
           "type": "string"
         },
         "squid": {

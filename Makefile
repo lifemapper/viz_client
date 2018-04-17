@@ -1,9 +1,9 @@
 ELMFLAGS = --yes --warn
 
-all: sdm.tar.gz mcpa.tar.gz
+all: sdm.tar.gz mcpa.tar.gz mcpa/elm/subsetpam.js
 
 debug: ELMFLAGS += --debug
-debug: sdm.tar.gz mcpa.tar.gz
+debug: all
 
 sdm.tar.gz: sdm/elm.js sdm/*
 	tar -zcvf sdm.tar.gz --exclude=sdmFlagsOverride.js sdm
@@ -25,6 +25,9 @@ mcpa/elm/AncState.js: source/Decoder.elm source/*
 
 mcpa/elm/FractalTree.js: source/Decoder.elm source/*
 	elm-make source/FractalTreeMain.elm $(ELMFLAGS) --output=mcpa/elm/FractalTree.js
+
+mcpa/elm/subsetpam.js:  source/Decoder.elm source/*
+	elm-make source/SubsetPam.elm $(ELMFLAGS) --output=mcpa/elm/subsetpam.js
 
 source/Decoder.elm: swagger.json source/Decoder.elm.patch
 	cat swagger.json | swagger-to-elm | elm-format --stdin > source/Decoder.elm.generated
