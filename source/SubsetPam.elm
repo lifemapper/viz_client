@@ -28,6 +28,7 @@ import Set exposing (Set)
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Events as Events
+import Html.Attributes
 import Http
 import QueryString as Q
 import Decoder exposing (SolrList(..), SolrPAV(..), SolrPAVRecord)
@@ -67,6 +68,7 @@ initFacets =
 type alias Model =
     { facets : Facets
     , filters : Dict String String
+    , pavs : String
     }
 
 
@@ -100,7 +102,7 @@ selector filters key values =
 
 
 view : Model -> Html Msg
-view { facets, filters } =
+view { facets, filters, pavs } =
     Html.div []
         [ Html.p [] [ Html.text "algorithm: ", selector filters "algorithmCode" facets.algorithms ]
         , Html.p [] [ Html.text "display name:", selector filters "displayName" facets.displayNames ]
@@ -113,6 +115,12 @@ view { facets, filters } =
         , Html.p [] [ Html.text "family: ", selector filters "taxonFamily" facets.taxonFamily ]
         , Html.p [] [ Html.text "genus: ", selector filters "taxonGenus" facets.taxonGenus ]
         , Html.p [] [ Html.text "species: ", selector filters "taxonSpecies" facets.taxonSpecies ]
+        , Html.div
+            [ Html.Attributes.class "leaflet-map"
+            , Html.Attributes.attribute "data-map-pavs" pavs
+            , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
+            ]
+            []
         ]
 
 
@@ -123,8 +131,11 @@ update msg model =
             let
                 facets =
                     List.foldr addAttrs initFacets pavs
+
+                pavsJoined =
+                    pavs |> List.map (\(SolrPAV { compressedPAV }) -> compressedPAV) |> String.join "\n"
             in
-                ( { model | facets = facets }, Cmd.none )
+                ( { model | facets = facets, pavs = pavsJoined }, Cmd.none )
 
         SetFilter key value ->
             let
@@ -192,7 +203,7 @@ gotSolrList result =
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( { facets = initFacets, filters = Dict.empty }, getSolrList Dict.empty )
+        { init = ( { facets = initFacets, filters = Dict.empty, pavs = "" }, getSolrList Dict.empty )
         , update = update
         , subscriptions = always Sub.none
         , view = view
