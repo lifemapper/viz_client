@@ -39,6 +39,7 @@ import Http
 import Page
 import NewSDM
 import SDMResults
+import BrowseProjectionsPage
 import NewOccurrenceSet
 import SignUp
 import ProgramFlags exposing (Flags)
@@ -57,6 +58,7 @@ type SDMPage
     | SDMResults Int SDMResults.Model
     | NewOccurrenceSet NewOccurrenceSet.Model
     | SignUp SignUp.Model
+    | BrowseProjections BrowseProjectionsPage.Model
     | PageNotFound
 
 
@@ -92,6 +94,15 @@ initSignUpPage flags =
         ( SignUp model_, Cmd.map SignUpMsg msg_ )
 
 
+initBrowsePage : Flags -> ( SDMPage, Cmd Msg )
+initBrowsePage flags =
+    let
+        ( model_, msg_ ) =
+            BrowseProjectionsPage.init flags
+    in
+        ( BrowseProjections model_, Cmd.map BrowseProjectionsMsg msg_ )
+
+
 location2Page : Flags -> Location -> Maybe ( SDMPage, Cmd Msg )
 location2Page flags location =
     let
@@ -100,6 +111,7 @@ location2Page flags location =
                 [ Url.map (initNewSDMPage flags) Url.top
                 , Url.map (initResultsPage flags) (Url.s "results" </> Url.int)
                 , Url.map (initNewOccurrenceSetPage flags) (Url.s "new-species-data")
+                , Url.map (initBrowsePage flags) (Url.s "browse-projections")
                 , Url.map (initSignUpPage flags) (Url.s "sign-up")
                 ]
     in
@@ -125,12 +137,14 @@ type Msg
     | NewSDMMsg NewSDM.Msg
     | SDMResultsMsg SDMResults.Msg
     | NewOccurrenceSetMsg NewOccurrenceSet.Msg
+    | BrowseProjectionsMsg BrowseProjectionsPage.Msg
     | SignUpMsg SignUp.Msg
     | GotGridSets (List AtomObjectRecord)
     | UrlChange Location
     | OpenExisting Int
     | OpenNew
     | OpenNewOccurrenceSet
+    | OpenBrowse
     | Tick Time.Time
     | AuthMsg Auth.Msg
     | Nop
@@ -175,6 +189,18 @@ update msg model =
                 _ ->
                     \msg_ model -> ( model, Cmd.none )
 
+        liftedBrowseProjectionsUpdate =
+            case model.page of
+                BrowseProjections model_ ->
+                    lift
+                        (always model_)
+                        (\m x -> { m | page = BrowseProjections x })
+                        BrowseProjectionsMsg
+                        BrowseProjectionsPage.update
+
+                _ ->
+                    \msg_ model -> ( model, Cmd.none )
+
         liftedSignUpUpdate =
             case model.page of
                 SignUp model_ ->
@@ -200,6 +226,9 @@ update msg model =
             NewOccurrenceSetMsg msg_ ->
                 liftedNewOccurrenceSetUpdate msg_ model
 
+            BrowseProjectionsMsg msg_ ->
+                liftedBrowseProjectionsUpdate msg_ model
+
             SignUpMsg msg_ ->
                 liftedSignUpUpdate msg_ model
 
@@ -216,6 +245,9 @@ update msg model =
 
             OpenNewOccurrenceSet ->
                 model ! [ Nav.newUrl "#new-species-data/" ]
+
+            OpenBrowse ->
+                model ! [ Nav.newUrl "#browse-projections/" ]
 
             Tick _ ->
                 ( model, getGridSets model.flags model.login )
@@ -330,6 +362,11 @@ resultsLink model { modificationTime, id } =
             [ Html.text modificationTime ]
 
 
+browseProjectionsLink : Model -> Html Msg
+browseProjectionsLink model =
+    Layout.link [ Options.onClick OpenBrowse, Options.css "cursor" "pointer" ] [ Html.text "Browse by species" ]
+
+
 title : Auth.Model -> Html msg
 title login =
     Auth.getUserName login
@@ -345,6 +382,7 @@ drawer model =
     , Layout.navigation [] [ newLink model ]
       -- , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
+    , Layout.navigation [] [ browseProjectionsLink model ]
     , case model.gridsets of
         GridSetsLoading ->
             Layout.row [] [ Loading.spinner [ Loading.active True ] ]
@@ -368,6 +406,9 @@ pageImplementation p =
 
         SignUp model_ ->
             Page.lift SignUp.page (always model_) SignUpMsg
+
+        BrowseProjections model_ ->
+            Page.lift BrowseProjectionsPage.page (always model_) BrowseProjectionsMsg
 
         PageNotFound ->
             { view = always <| Options.div [] []
