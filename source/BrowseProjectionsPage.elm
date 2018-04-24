@@ -57,15 +57,15 @@ type alias LoadingInfo =
 
 
 type State
-    = WaitingForListToPopulate Int
+    = ChoosingOccurrenceSet OccurrenceSetChooser.Model
     | LoadingProjections LoadingInfo
     | DisplaySeparate (List ( ProjectionInfo, MapCard.Model ))
     | DisplayGrouped (List ( List ProjectionInfo, MapCard.Model ))
+    | WaitingForListToPopulate Decoder.AtomObjectRecord
 
 
 type alias Model =
     { programFlags : Flags
-    , chooser : OccurrenceSetChooser.Model
     , state : State
     , mdl : Material.Model
     }
@@ -74,15 +74,14 @@ type alias Model =
 init : Flags -> ( Model, Cmd Msg )
 init flags =
     { programFlags = flags
-    , chooser = OccurrenceSetChooser.init flags
-    , state = WaitingForListToPopulate 0
+    , state = OccurrenceSetChooser.init flags |> ChoosingOccurrenceSet
     , mdl = Material.model
     }
         ! []
 
 
 type Msg
-    = LoadProjections Int
+    = LoadProjections Decoder.AtomObjectRecord
     | GotProjectionAtoms Int (List Decoder.AtomObjectRecord)
     | GotProjection Decoder.ProjectionRecord
     | NewProjectionInfo ProjectionInfo
@@ -127,31 +126,42 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        liftedChooserUpdate =
-            Helpers.lift
-                .chooser
-                (\m x -> { m | chooser = x })
-                ChooserMsg
-                OccurrenceSetChooser.update
+        liftedChooserUpdate msg_ model =
+            case model.state of
+                ChoosingOccurrenceSet model_ ->
+                    case msg_ of
+                        OccurrenceSetChooser.Select record ->
+                            ( { model | state = WaitingForListToPopulate record }
+                            , loadProjections model.programFlags record.id
+                            )
+
+                        _ ->
+                            Helpers.lift
+                                (always model_)
+                                (\m x -> { m | state = ChoosingOccurrenceSet x })
+                                ChooserMsg
+                                OccurrenceSetChooser.update
+                                msg_
+                                model
+
+                _ ->
+                    ( model, Cmd.none )
     in
         case msg of
             Nop ->
                 ( model, Cmd.none )
 
-            LoadProjections gridsetId ->
-                ( { model | state = WaitingForListToPopulate gridsetId }, loadProjections model.programFlags gridsetId )
+            LoadProjections record ->
+                ( { model | state = WaitingForListToPopulate record }, loadProjections model.programFlags record.id )
 
-            GotProjectionAtoms gridSetId atoms ->
-                if List.length atoms == 0 then
-                    ( { model | state = WaitingForListToPopulate gridSetId }, Cmd.none )
-                else
-                    let
-                        loadingInfo =
-                            { toLoad = atoms, currentlyLoaded = Dict.empty }
-                    in
-                        ( { model | state = LoadingProjections loadingInfo }
-                        , atoms |> List.map (loadMetadata model.programFlags loadingInfo) |> Cmd.batch
-                        )
+            GotProjectionAtoms occurrenceSetId atoms ->
+                let
+                    loadingInfo =
+                        { toLoad = atoms, currentlyLoaded = Dict.empty }
+                in
+                    ( { model | state = LoadingProjections loadingInfo }
+                    , atoms |> List.map (loadMetadata model.programFlags loadingInfo) |> Cmd.batch
+                    )
 
             GotProjection record ->
                 ( model, loadOccurrenceSet record )
@@ -296,7 +306,7 @@ loadProjections { apiRoot } id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = apiRoot ++ "sdmProject?user=anon&gridsetid=" ++ (toString id)
+        , url = apiRoot ++ "sdmProject?occurrenceSetId=" ++ (toString id)
         , body = Http.emptyBody
         , expect = Http.expectJson Decoder.decodeAtomList
         , timeout = Nothing
@@ -340,32 +350,34 @@ gotMetadata loadingInfo result =
 
 
 view : Model -> Html Msg
-view model =
-    Html.div []
-        [ OccurrenceSetChooser.view [ 0 ] model.chooser |> Html.map ChooserMsg
-        ]
+view { state } =
+    let
+        loading message =
+            Options.div
+                [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                [ Html.text message, Html.p [] [ Loading.spinner [ Loading.active True ] ] ]
+    in
+        case state of
+            ChoosingOccurrenceSet model_ ->
+                Html.div []
+                    [ OccurrenceSetChooser.view [ 0 ] model_ |> Html.map ChooserMsg
+                    ]
 
+            WaitingForListToPopulate _ ->
+                loading "Waiting for projections..."
 
+            LoadingProjections _ ->
+                loading "Loading projections..."
 
--- let
---     loading message =
---         Options.div
---             [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
---             [ Html.text message, Html.p [] [ Loading.spinner [ Loading.active True ] ] ]
--- in
---     case state of
---         WaitingForListToPopulate _ ->
---             loading "Waiting for projections..."
---         LoadingProjections _ ->
---             loading "Loading projections..."
---         DisplaySeparate display ->
---             display
---                 |> List.indexedMap viewSeparate
---                 |> Grid.grid []
---         DisplayGrouped display ->
---             display
---                 |> List.indexedMap viewGrouped
---                 |> Grid.grid []
+            DisplaySeparate display ->
+                display
+                    |> List.indexedMap viewSeparate
+                    |> Grid.grid []
+
+            DisplayGrouped display ->
+                display
+                    |> List.indexedMap viewGrouped
+                    |> Grid.grid []
 
 
 viewSeparate : Int -> ( ProjectionInfo, MapCard.Model ) -> Grid.Cell Msg
@@ -439,9 +451,4 @@ page =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.state of
-        WaitingForListToPopulate gridsetId ->
-            Time.every (5 * Time.second) (always <| LoadProjections gridsetId)
-
-        _ ->
-            Sub.none
+    Sub.none
