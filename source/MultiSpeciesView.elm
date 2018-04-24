@@ -126,7 +126,8 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead s
 
         variableSelector =
             Html.div [ Html.Attributes.style [ ( "margin-bottom", "8px" ) ] ]
-                [ Html.select [ Html.Events.onInput select ]
+                [ Html.span [] [ Html.text "Node color: " ]
+                , Html.select [ Html.Events.onInput select ]
                     (vars
                         |> List.indexedMap
                             (\i v ->
@@ -152,17 +153,31 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead s
                     , Html.text "Show branch lengths"
                     ]
                 ]
+
+        variableTableRows =
+            case selectedNode of
+                Just _ ->
+                    vars |> List.map (\var -> dataForVar var |> drawVariable showBarGraph variableFormatter var)
+
+                Nothing ->
+                    [ Html.tr []
+                        [ Html.td [ Html.Attributes.colspan 2, Html.Attributes.style [ ( "text-align", "center" ) ] ]
+                            [ Html.text "No node selected." ]
+                        ]
+                    ]
     in
         Html.div
             [ Html.Attributes.style
                 [ ( "display", "flex" )
-                , ( "justify-content", "space-between" )
+                  -- , ( "justify-content", "space-between" )
                 , ( "font-family", "sans-serif" )
                 ]
             ]
             [ Html.div
                 [ Html.Attributes.style [ ( "height", "100vh" ), ( "display", "flex" ), ( "flex-direction", "column" ) ] ]
-                [ Html.div
+                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                    [ Html.text "Select nodes in tree" ]
+                , Html.div
                     [ Html.Attributes.style
                         [ ( "display", "flex" )
                         , ( "justify-content", "space-between" )
@@ -170,10 +185,10 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead s
                         ]
                     ]
                     [ variableSelector, toggleBranchLengths ]
-                , Html.div [ Html.Attributes.style [ ( "margin-bottom", "20px" ), ( "overflow-y", "scroll" ) ] ]
+                , Html.div [ Html.Attributes.style [ ( "margin-bottom", "20px" ), ( "overflow-y", "auto" ) ] ]
                     [ svg
-                        [ width "800"
-                        , height (20 * treeHeight |> toString)
+                        [ width "600"
+                        , height (15 * treeHeight |> toString)
                         , viewBox ("0 0 40 " ++ (toString treeHeight))
                         , Html.Attributes.style [ ( "background", "#000" ), ( "font-family", "sans-serif" ) ]
                           -- , Html.Events.onClick JumpUp
@@ -182,21 +197,20 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead s
                         (gradDefs :: treeSvg)
                     ]
                 ]
-            , Html.table []
-                (tableHead
-                    :: (vars
-                            |> List.map
-                                (\var ->
-                                    dataForVar var
-                                        |> drawVariable showBarGraph variableFormatter var
-                                )
-                       )
-                )
             , Html.div
-                [ Html.Attributes.class "leaflet-map"
-                , Html.Attributes.attribute "data-map-column"
-                    (selectedNode |> Maybe.map toString |> Maybe.withDefault "")
-                , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
+                [ Html.Attributes.style [ ( "width", "500px" ), ( "flex-shrink", "0" ), ( "margin", "0 12px" ) ] ]
+                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                    [ Html.text "Subtree Left (blue) vs. Right (red) of selected node" ]
+                , Html.div
+                    [ Html.Attributes.class "leaflet-map"
+                    , Html.Attributes.attribute "data-map-column"
+                        (selectedNode |> Maybe.map toString |> Maybe.withDefault "")
+                    , Html.Attributes.style [ ( "width", "500px" ), ( "height", "500px" ) ]
+                    ]
+                    []
                 ]
-                []
+            , Html.table
+                [ -- Html.Attributes.style [ ( "width", "600px" ), ( "min-width", "400px" ), ( "flex-shrink", "1" ) ]
+                ]
+                (tableHead :: variableTableRows)
             ]
