@@ -232,7 +232,7 @@ packageCard index model package =
             [ Card.title [ Card.border ] [ Card.head [] [ Html.text <| "Package: " ++ (package.name ? "") ] ]
             , Card.text []
                 [ Options.div [ Typo.subhead ] [ Html.text "Choose Model Layers" ]
-                , listScenarios modelLI (observedFilter package.scenarios)
+                , listScenarios modelLI package.scenarios
                 , Options.div [ Typo.subhead ] [ Html.text "Choose Projection Layers" ]
                 , listScenarios projLI package.scenarios
                 ]
