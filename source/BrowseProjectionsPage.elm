@@ -357,8 +357,14 @@ view { state } =
     in
         case state of
             ChoosingOccurrenceSet model_ ->
-                Html.div []
-                    [ OccurrenceSetChooser.view [ 0 ] model_ |> Html.map ChooserMsg
+                Options.div
+                    [ Options.css "width" "600px"
+                    , Options.css "margin-left" "auto"
+                    , Options.css "margin-right" "auto"
+                    , Options.css "padding-top" "50px"
+                    ]
+                    [ Options.styled Html.p [ Typo.headline ] [ Html.text "Show SDM projections for:" ]
+                    , OccurrenceSetChooser.view [ 0 ] model_ |> Html.map ChooserMsg
                     ]
 
             WaitingForListToPopulate _ ->
