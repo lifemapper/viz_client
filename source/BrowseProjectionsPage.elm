@@ -26,7 +26,6 @@ module BrowseProjectionsPage exposing (Model, init, update, page, Msg)
 
 import List.Extra as List
 import Maybe.Extra as Maybe
-import Time
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Http
@@ -35,7 +34,6 @@ import ProgramFlags exposing (Flags)
 import Page exposing (Page)
 import MapCardMultiple as MapCard
 import OccurrenceSetChooser
-import Helpers exposing (Index, chain)
 import Material
 import Material.Options as Options
 import Material.Typography as Typo
@@ -441,9 +439,9 @@ tabTitles model =
 page : Page Model Msg
 page =
     { view = view
-    , selectedTab = selectedTab
-    , selectTab = selectTab
-    , tabTitles = tabTitles
+    , selectedTab = always 0
+    , selectTab = always Nop
+    , tabTitles = always []
     , subscriptions = subscriptions
     , title = "Browse Projections"
     }
