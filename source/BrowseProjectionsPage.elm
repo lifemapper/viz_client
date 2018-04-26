@@ -253,10 +253,12 @@ makeOccurrenceMap { occurrenceRecord } =
 
 
 projectionTitle : Decoder.ProjectionRecord -> String
-projectionTitle record =
-    record.metadata
-        |> Maybe.andThen (\(Decoder.ProjectionMetadata { title }) -> title)
-        |> Maybe.withDefault "Projection"
+projectionTitle { algorithm, modelScenario, projectionScenario } =
+    (algorithm |> Maybe.map (\(Decoder.Algorithm { code }) -> code) |> Maybe.withDefault "")
+        ++ " "
+        ++ (modelScenario |> Maybe.map (\(Decoder.ScenarioRef { code }) -> code) |> Maybe.join |> Maybe.withDefault "")
+        ++ " to "
+        ++ (projectionScenario |> Maybe.map (\(Decoder.ScenarioRef { code }) -> code) |> Maybe.join |> Maybe.withDefault "")
 
 
 makeProjectionMap : ProjectionInfo -> Maybe MapCard.NamedMap
