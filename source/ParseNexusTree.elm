@@ -44,14 +44,14 @@ treeRegex =
     regex "TREE 1 = ([^;]*;)"
 
 
-tryParse : Combine.Parser () r -> String -> Result String r
-tryParse parser input =
+tryParse : String -> Combine.Parser () r -> String -> Result String r
+tryParse parserName parser input =
     case Combine.parse parser input of
         Ok ( _, stream, result ) ->
             Ok result
 
         Err ( _, stream, errors ) ->
-            Err ((String.left 20 stream.input) ++ " " ++ String.join " or " errors)
+            Err (parserName ++ " " ++ (String.left 20 stream.input) ++ " " ++ String.join " or " errors)
 
 
 parseNexusTree : String -> Result String Binary.Tree
@@ -62,8 +62,9 @@ parseNexusTree nexus =
                 |> find (AtMost 1) taxLabelsRegex
                 |> List.getAt 0
                 |> Maybe.map .match
+                -- |> Debug.log "taxlabels string"
                 |> Result.fromMaybe "Couldn't find TAXLABELS in Nexus"
-                |> Result.andThen (tryParse taxLabels)
+                |> Result.andThen (tryParse "taxLabels" taxLabels)
 
         tree =
             nexus
@@ -72,7 +73,8 @@ parseNexusTree nexus =
                 |> Maybe.map .submatches
                 |> Maybe.andThen (List.getAt 0)
                 |> Maybe.join
+                -- |> Debug.log "newick string"
                 |> Result.fromMaybe "Couldn't find TREE 1 in Nexus"
-                |> Result.andThen (tryParse Newick.tree)
+                |> Result.andThen (tryParse "Newick.tree" Newick.tree)
     in
         Result.map2 newick2Binary taxa tree

@@ -58,9 +58,14 @@ taxLabel =
 name : Parser s Name
 name =
     choice
-        [ regex "[^']+" |> between (string "'") (string "'")
-        , regex "[_a-zA-Z0-9']+"
+        [ string "'" *> quotedName <* string "'"
+        , regex "[^\\s;]+"
         ]
+
+
+quotedName : Parser s Name
+quotedName =
+    String.join "" <$> many (choice [ string "''" $> "'", regex "[^']+" ])
 
 
 squid : Parser s Squid

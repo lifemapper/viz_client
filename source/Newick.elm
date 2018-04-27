@@ -112,9 +112,14 @@ leaf =
 name : Parser s Name
 name =
     choice
-        [ regex "[^']+" |> between (string "'") (string "'")
-        , regex "[_a-zA-Z0-9']*"
+        [ string "'" *> quotedName <* string "'" -- |> map (Debug.log "quotedName")
+        , regex "[^\\s;:]*" -- |> map (Debug.log "bare name")
         ]
+
+
+quotedName : Parser s Name
+quotedName =
+    String.join "" <$> many (choice [ string "''" $> "'", regex "[^']*" ])
 
 
 internal : () -> Parser s SubTree
@@ -134,4 +139,19 @@ branch () =
 
 length : Parser s Length
 length =
-    maybe (string ":" *> choice [ float, map toFloat int ])
+    maybe (string ":" *> floatWithExp)
+
+
+floatWithExp : Parser s Float
+floatWithExp =
+    regex "[-+]?(?:\\d*\\.?\\d+|\\d+\\.?\\d*)(?:[eE][-+]?\\d+)?"
+        |> map
+            (\str ->
+                case String.toFloat str of
+                    Ok res ->
+                        res
+
+                    Err m ->
+                        Debug.crash ("impossible float: " ++ (toString m))
+            )
+        -- |> map (Debug.log "floatWithExp")
