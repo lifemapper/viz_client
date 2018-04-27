@@ -29,7 +29,7 @@ install:
 
 script:
   - libsysconfcpus/bin/sysconfcpus -n 2 make
-  - libsysconfcpus/bin/sysconfcpus -n 2 make test
+  # - libsysconfcpus/bin/sysconfcpus -n 2 make test
 
 deploy:
   provider: releases
