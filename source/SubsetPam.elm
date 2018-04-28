@@ -74,10 +74,12 @@ type alias Model =
 
 
 type Msg
-    = GotSolrList SolrList
+    = Nop
+    | GotSolrList SolrList
     | GotShapeGrid String
     | SetFilter String String
     | ClearFilter String
+    | RunMCPA
 
 
 selector : Dict String String -> String -> Set String -> Html Msg
@@ -85,8 +87,8 @@ selector filters key values =
     case Dict.get key filters of
         Just value ->
             Html.span []
-                [ Html.text value
-                , Html.button [ Events.onClick <| ClearFilter key ] [ Html.text " X" ]
+                [ Html.button [ Events.onClick <| ClearFilter key ] [ Html.text "X" ]
+                , Html.text (" " ++ value)
                 ]
 
         Nothing ->
@@ -105,31 +107,89 @@ selector filters key values =
 
 view : Model -> Html Msg
 view { facets, filters, pavs, shapeGrid } =
-    Html.div []
-        [ Html.p [] [ Html.text "algorithm: ", selector filters "algorithmCode" facets.algorithms ]
-        , Html.p [] [ Html.text "display name:", selector filters "displayName" facets.displayNames ]
-        , Html.p [] [ Html.text "model: ", selector filters "modelScenarioCode" facets.modelScenarios ]
-        , Html.p [] [ Html.text "projection: ", selector filters "sdmProjScenarioCode" facets.projectionScenarios ]
-        , Html.p [] [ Html.text "kingdom: ", selector filters "taxonKingdom" facets.taxonKingdom ]
-        , Html.p [] [ Html.text "phylum: ", selector filters "taxonPhylum" facets.taxonPhylum ]
-        , Html.p [] [ Html.text "class: ", selector filters "taxonClass" facets.taxonClass ]
-        , Html.p [] [ Html.text "order: ", selector filters "taxonOrder" facets.taxonOrder ]
-        , Html.p [] [ Html.text "family: ", selector filters "taxonFamily" facets.taxonFamily ]
-        , Html.p [] [ Html.text "genus: ", selector filters "taxonGenus" facets.taxonGenus ]
-        , Html.p [] [ Html.text "species: ", selector filters "taxonSpecies" facets.taxonSpecies ]
-        , Html.div
-            [ Html.Attributes.class "leaflet-map"
-            , Html.Attributes.attribute "data-map-pavs" pavs
-            , Html.Attributes.attribute "data-map-shape-grid" <| Maybe.withDefault "" <| shapeGrid
-            , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
+    Html.div [ Html.Attributes.style [ ( "font-family", "sans-serif" ), ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
+        [ Html.div []
+            [ Html.h3 [] [ Html.text "Subset PAM with these filters" ]
+            , Html.table [ Html.Attributes.style [ ( "width", "800px" ) ] ]
+                [ Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ), ( "width", "20px" ) ] ] [ Html.text "Algorithm: " ]
+                    , Html.td [] [ selector filters "algorithmCode" facets.algorithms ]
+                    ]
+                  -- , Html.tr []
+                  --     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Display name:" ]
+                  --     , Html.td [] [ selector filters "displayName" facets.displayNames ]
+                  --     ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Model: " ]
+                    , Html.td [] [ selector filters "modelScenarioCode" facets.modelScenarios ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Projection: " ]
+                    , Html.td [] [ selector filters "sdmProjScenarioCode" facets.projectionScenarios ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Kingdom: " ]
+                    , Html.td [] [ selector filters "taxonKingdom" facets.taxonKingdom ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Phylum: " ]
+                    , Html.td [] [ selector filters "taxonPhylum" facets.taxonPhylum ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Class: " ]
+                    , Html.td [] [ selector filters "taxonClass" facets.taxonClass ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Order: " ]
+                    , Html.td [] [ selector filters "taxonOrder" facets.taxonOrder ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Family: " ]
+                    , Html.td [] [ selector filters "taxonFamily" facets.taxonFamily ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Genus: " ]
+                    , Html.td [] [ selector filters "taxonGenus" facets.taxonGenus ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Species: " ]
+                    , Html.td [] [ selector filters "taxonSpecies" facets.taxonSpecies ]
+                    ]
+                ]
+            , Html.h3 [] [ Html.text "Matching species" ]
+            , Html.ul [ Html.Attributes.style [ ( "height", "400px" ), ( "overflow-y", "auto" ), ( "border", "1px solid grey" ) ] ]
+                (List.map displayName <| Set.toList facets.displayNames)
+            , Html.div []
+                [ Html.button
+                    [-- Events.onClick RunMCPA
+                    ]
+                    [ Html.text "Run MCPA" ]
+                ]
             ]
-            []
+        , Html.div []
+            [ Html.h3 [] [ Html.text "Heat map of matching species" ]
+            , Html.div
+                [ Html.Attributes.class "leaflet-map"
+                , Html.Attributes.attribute "data-map-pavs" pavs
+                , Html.Attributes.attribute "data-map-shape-grid" <| Maybe.withDefault "" <| shapeGrid
+                , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
+                ]
+                []
+            ]
         ]
+
+
+displayName : String -> Html Msg
+displayName name =
+    Html.li [] [ Html.text name ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Nop ->
+            ( model, Cmd.none )
+
         GotSolrList (SolrList pavs) ->
             let
                 facets =
@@ -156,6 +216,9 @@ update msg model =
                     Dict.remove key model.filters
             in
                 ( { model | filters = filters }, getSolrList filters )
+
+        RunMCPA ->
+            ( model, runMCPA model.filters )
 
 
 addAttrs : SolrPAV -> Facets -> Facets
@@ -200,6 +263,34 @@ gotShapeGrid result =
 
         Err err ->
             Debug.crash (toString err)
+
+
+runMCPA : Dict String String -> Cmd Msg
+runMCPA filters =
+    let
+        body =
+            filters
+                |> Dict.toList
+                |> List.map (\( k, v ) -> Http.stringPart k v)
+                |> Http.multipartBody
+    in
+        Http.request
+            { method = "POST"
+            , headers = [ Http.header "Accept" "application/json" ]
+            , url = "http://notyeti-193.lifemapper.org/api/v2/globalPam"
+            , body = body
+            , expect = Http.expectJson Decoder.decodeAtomObject
+            , timeout = Nothing
+            , withCredentials = False
+            }
+            |> Http.send gotPostResponse
+
+
+gotPostResponse : Result Http.Error Decoder.AtomObject -> Msg
+gotPostResponse result =
+    case Debug.log "post response" result of
+        _ ->
+            Nop
 
 
 getSolrList : Dict String String -> Cmd Msg

@@ -90,6 +90,9 @@ function configureMap(element) {
     // } else {
     //     layers[0].setStyle(style(dataColumn));
     // }
+
+    const bbox = turf.bbox(shapeGrid);
+    map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]]);
 }
 
 function style(counts, maxCount) {
