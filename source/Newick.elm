@@ -25,7 +25,6 @@
 module Newick exposing (..)
 
 import Combine exposing (..)
-import Combine.Num exposing (float, int)
 
 
 type alias Name =
@@ -112,8 +111,10 @@ leaf =
 name : Parser s Name
 name =
     choice
-        [ string "'" *> quotedName <* string "'" -- |> map (Debug.log "quotedName")
-        , regex "[^\\s;:]*" -- |> map (Debug.log "bare name")
+        [ string "'" *> quotedName <* string "'"
+          -- |> map (Debug.log "quotedName")
+        , regex "[^\\s;:]*"
+          -- |> map (Debug.log "bare name")
         ]
 
 
@@ -154,4 +155,7 @@ floatWithExp =
                     Err m ->
                         Debug.crash ("impossible float: " ++ (toString m))
             )
-        -- |> map (Debug.log "floatWithExp")
+
+
+
+-- |> map (Debug.log "floatWithExp")
