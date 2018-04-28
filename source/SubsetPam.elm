@@ -69,11 +69,13 @@ type alias Model =
     { facets : Facets
     , filters : Dict String String
     , pavs : String
+    , shapeGrid : Maybe String
     }
 
 
 type Msg
     = GotSolrList SolrList
+    | GotShapeGrid String
     | SetFilter String String
     | ClearFilter String
 
@@ -102,7 +104,7 @@ selector filters key values =
 
 
 view : Model -> Html Msg
-view { facets, filters, pavs } =
+view { facets, filters, pavs, shapeGrid } =
     Html.div []
         [ Html.p [] [ Html.text "algorithm: ", selector filters "algorithmCode" facets.algorithms ]
         , Html.p [] [ Html.text "display name:", selector filters "displayName" facets.displayNames ]
@@ -118,6 +120,7 @@ view { facets, filters, pavs } =
         , Html.div
             [ Html.Attributes.class "leaflet-map"
             , Html.Attributes.attribute "data-map-pavs" pavs
+            , Html.Attributes.attribute "data-map-shape-grid" <| Maybe.withDefault "" <| shapeGrid
             , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
             ]
             []
@@ -136,6 +139,9 @@ update msg model =
                     pavs |> List.map (\(SolrPAV { compressedPAV }) -> compressedPAV) |> String.join "\n"
             in
                 ( { model | facets = facets, pavs = pavsJoined }, Cmd.none )
+
+        GotShapeGrid shp ->
+            ( { model | shapeGrid = Just shp }, Cmd.none )
 
         SetFilter key value ->
             let
@@ -172,6 +178,30 @@ addAttrs (SolrPAV pav) facets =
         }
 
 
+getShapeGrid : Cmd Msg
+getShapeGrid =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = "http://notyeti-193.lifemapper.org/api/v2/shapegrid/67472/geojson"
+        , body = Http.emptyBody
+        , expect = Http.expectString
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send gotShapeGrid
+
+
+gotShapeGrid : Result Http.Error String -> Msg
+gotShapeGrid result =
+    case result of
+        Ok shapeGrid ->
+            GotShapeGrid shapeGrid
+
+        Err err ->
+            Debug.crash (toString err)
+
+
 getSolrList : Dict String String -> Cmd Msg
 getSolrList filters =
     let
@@ -200,10 +230,22 @@ gotSolrList result =
             Debug.crash (toString err)
 
 
+init : ( Model, Cmd Msg )
+init =
+    { facets = initFacets
+    , filters = Dict.empty
+    , pavs = ""
+    , shapeGrid = Nothing
+    }
+        ! [ getSolrList Dict.empty
+          , getShapeGrid
+          ]
+
+
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( { facets = initFacets, filters = Dict.empty, pavs = "" }, getSolrList Dict.empty )
+        { init = init
         , update = update
         , subscriptions = always Sub.none
         , view = view

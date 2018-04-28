@@ -45,6 +45,11 @@ function configureMap(element) {
         layers.forEach(function(layer) {  map.removeLayer(layer); });
     }
 
+    const shapeGridJSON = element.dataset["mapShapeGrid"];
+    if (shapeGridJSON === "") return;
+
+    const shapeGrid = JSON.parse(shapeGridJSON);
+
     const pavs = element.dataset["mapPavs"].split("\n").map(function(pav) {
         return pav.split(" ");
     });
@@ -143,7 +148,7 @@ observer.observe(document.body, {
     subtree: true,
     childList: true,
     attributes: true,
-    attributeFilter: ["data-map-pavs"],
+    attributeFilter: ["data-map-pavs", "data-map-shape-grid"],
     attributeOldValue: true
 });
 
