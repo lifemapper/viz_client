@@ -78,6 +78,7 @@ type alias Model =
     , pavs : String
     , shapeGrid : Maybe String
     , loadingPavs : Bool
+    , archiveName : String
     }
 
 
@@ -87,6 +88,7 @@ type Msg
     | GotShapeGrid String
     | SetFilter String String
     | ClearFilter String
+    | SetArchiveName String
     | RunMCPA
 
 
@@ -122,7 +124,7 @@ header loadingPavs =
 
 
 view : Model -> Html Msg
-view { facets, filters, pavs, shapeGrid, loadingPavs } =
+view { facets, filters, pavs, shapeGrid, loadingPavs, archiveName } =
     Html.div [ Html.Attributes.style [ ( "font-family", "sans-serif" ), ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
         [ Html.div []
             [ Html.h3 [] [ header loadingPavs ]
@@ -172,10 +174,18 @@ view { facets, filters, pavs, shapeGrid, loadingPavs } =
             , Html.ul [ Html.Attributes.style [ ( "height", "400px" ), ( "overflow-y", "auto" ), ( "border", "1px solid grey" ) ] ]
                 (List.map displayName <| Set.toList facets.displayNames)
             , Html.div []
-                [ Html.button
-                    [-- Events.onClick RunMCPA, Html.Attributes.disabled loadingPavs
+                [ Html.input
+                    [ Html.Attributes.placeholder "Archive name"
+                    , Html.Attributes.style [ ( "margin-right", "5px" ) ]
+                    , Events.onInput SetArchiveName
+                    , Html.Attributes.value archiveName
                     ]
-                    [ Html.text "Run MCPA" ]
+                    []
+                , Html.button
+                    [ Events.onClick RunMCPA
+                    , Html.Attributes.disabled (loadingPavs || (archiveName == ""))
+                    ]
+                    [ Html.text "Subset PAM" ]
                 ]
             ]
         , Html.div []
@@ -232,8 +242,11 @@ update msg model =
                 else
                     ( { model | filters = filters, loadingPavs = True }, getSolrList filters )
 
+        SetArchiveName name ->
+            ( { model | archiveName = String.trim name }, Cmd.none )
+
         RunMCPA ->
-            ( model, runMCPA model.filters )
+            ( model, runMCPA model.archiveName model.filters )
 
 
 addAttrs : SolrPAV -> Facets -> Facets
@@ -280,20 +293,21 @@ gotShapeGrid result =
             Debug.crash (toString err)
 
 
-runMCPA : Dict String String -> Cmd Msg
-runMCPA filters =
+runMCPA : String -> Dict String String -> Cmd Msg
+runMCPA archiveName filters =
     let
-        body =
+        query =
             filters
-                |> Dict.toList
-                |> List.map (\( k, v ) -> Http.stringPart k v)
-                |> Http.multipartBody
+                |> Dict.insert "archiveName" archiveName
+                |> Dict.insert "gridSetId" "2"
+                |> Dict.foldr Q.add Q.empty
+                |> Q.render
     in
         Http.request
             { method = "POST"
             , headers = [ Http.header "Accept" "application/json" ]
-            , url = "http://gad210.nchc.org.tw/api/v2/globalPam"
-            , body = body
+            , url = "http://gad210.nchc.org.tw/api/v2/globalPam" ++ query
+            , body = Http.emptyBody
             , expect = Http.expectJson Decoder.decodeAtomObject
             , timeout = Nothing
             , withCredentials = False
@@ -343,6 +357,7 @@ init =
     , pavs = ""
     , shapeGrid = Nothing
     , loadingPavs = False
+    , archiveName = ""
     }
         ! [ getShapeGrid ]
 
