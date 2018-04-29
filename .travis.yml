@@ -39,6 +39,7 @@ deploy:
   file:
     - sdm.tar.gz
     - mcpa.tar.gz
+    - global-pam.tar.gz
   skip_cleanup: true
   on:
     repo: lifemapper/rutabaga
