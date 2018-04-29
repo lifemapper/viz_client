@@ -58,10 +58,17 @@ initFacets =
     , taxonClass = Set.empty
     , taxonFamily = Set.empty
     , taxonGenus = Set.empty
-    , taxonKingdom = Set.empty
     , taxonOrder = Set.empty
     , taxonPhylum = Set.empty
     , taxonSpecies = Set.empty
+    , taxonKingdom =
+        Set.fromList
+            [ "Animalia"
+            , "Chromista"
+            , "Fungi"
+            , "Plantae"
+            , "Protozoa"
+            ]
     }
 
 
@@ -70,6 +77,7 @@ type alias Model =
     , filters : Dict String String
     , pavs : String
     , shapeGrid : Maybe String
+    , loadingPavs : Bool
     }
 
 
@@ -82,12 +90,12 @@ type Msg
     | RunMCPA
 
 
-selector : Dict String String -> String -> Set String -> Html Msg
-selector filters key values =
+selector : Bool -> Dict String String -> String -> Set String -> Html Msg
+selector loading filters key values =
     case Dict.get key filters of
         Just value ->
             Html.span []
-                [ Html.button [ Events.onClick <| ClearFilter key ] [ Html.text "X" ]
+                [ Html.button [ Events.onClick <| ClearFilter key, Html.Attributes.disabled loading ] [ Html.text "X" ]
                 , Html.text (" " ++ value)
                 ]
 
@@ -102,58 +110,62 @@ selector filters key values =
                 values ->
                     ("--" :: values)
                         |> List.map (\v -> Html.option [] [ Html.text v ])
-                        |> Html.select [ Events.onInput <| SetFilter key ]
+                        |> Html.select [ Events.onInput <| SetFilter key, Html.Attributes.disabled loading ]
+
+
+header : Bool -> Html msg
+header loadingPavs =
+    if loadingPavs then
+        Html.text "Subset PAM with these filters (updating...)"
+    else
+        Html.text "Subset PAM with these filters"
 
 
 view : Model -> Html Msg
-view { facets, filters, pavs, shapeGrid } =
+view { facets, filters, pavs, shapeGrid, loadingPavs } =
     Html.div [ Html.Attributes.style [ ( "font-family", "sans-serif" ), ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
         [ Html.div []
-            [ Html.h3 [] [ Html.text "Subset PAM with these filters" ]
+            [ Html.h3 [] [ header loadingPavs ]
             , Html.table [ Html.Attributes.style [ ( "width", "800px" ) ] ]
                 [ Html.tr []
-                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ), ( "width", "20px" ) ] ] [ Html.text "Algorithm: " ]
-                    , Html.td [] [ selector filters "algorithmCode" facets.algorithms ]
-                    ]
-                  -- , Html.tr []
-                  --     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Display name:" ]
-                  --     , Html.td [] [ selector filters "displayName" facets.displayNames ]
-                  --     ]
-                , Html.tr []
-                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Model: " ]
-                    , Html.td [] [ selector filters "modelScenarioCode" facets.modelScenarios ]
-                    ]
-                , Html.tr []
-                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Projection: " ]
-                    , Html.td [] [ selector filters "sdmProjScenarioCode" facets.projectionScenarios ]
-                    ]
-                , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Kingdom: " ]
-                    , Html.td [] [ selector filters "taxonKingdom" facets.taxonKingdom ]
+                    , Html.td [] [ selector loadingPavs filters "taxonKingdom" facets.taxonKingdom ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Phylum: " ]
-                    , Html.td [] [ selector filters "taxonPhylum" facets.taxonPhylum ]
+                    , Html.td [] [ selector loadingPavs filters "taxonPhylum" facets.taxonPhylum ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Class: " ]
-                    , Html.td [] [ selector filters "taxonClass" facets.taxonClass ]
+                    , Html.td [] [ selector loadingPavs filters "taxonClass" facets.taxonClass ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Order: " ]
-                    , Html.td [] [ selector filters "taxonOrder" facets.taxonOrder ]
+                    , Html.td [] [ selector loadingPavs filters "taxonOrder" facets.taxonOrder ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Family: " ]
-                    , Html.td [] [ selector filters "taxonFamily" facets.taxonFamily ]
+                    , Html.td [] [ selector loadingPavs filters "taxonFamily" facets.taxonFamily ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Genus: " ]
-                    , Html.td [] [ selector filters "taxonGenus" facets.taxonGenus ]
+                    , Html.td [] [ selector loadingPavs filters "taxonGenus" facets.taxonGenus ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Species: " ]
-                    , Html.td [] [ selector filters "taxonSpecies" facets.taxonSpecies ]
+                    , Html.td [] [ selector loadingPavs filters "taxonSpecies" facets.taxonSpecies ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ), ( "width", "20px" ) ] ] [ Html.text "Algorithm: " ]
+                    , Html.td [] [ selector loadingPavs filters "algorithmCode" facets.algorithms ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Model: " ]
+                    , Html.td [] [ selector loadingPavs filters "modelScenarioCode" facets.modelScenarios ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Projection: " ]
+                    , Html.td [] [ selector loadingPavs filters "sdmProjScenarioCode" facets.projectionScenarios ]
                     ]
                 ]
             , Html.h3 [] [ Html.text "Matching species" ]
@@ -161,7 +173,7 @@ view { facets, filters, pavs, shapeGrid } =
                 (List.map displayName <| Set.toList facets.displayNames)
             , Html.div []
                 [ Html.button
-                    [-- Events.onClick RunMCPA
+                    [-- Events.onClick RunMCPA, Html.Attributes.disabled loadingPavs
                     ]
                     [ Html.text "Run MCPA" ]
                 ]
@@ -198,7 +210,7 @@ update msg model =
                 pavsJoined =
                     pavs |> List.map (\(SolrPAV { compressedPAV }) -> compressedPAV) |> String.join "\n"
             in
-                ( { model | facets = facets, pavs = pavsJoined }, Cmd.none )
+                ( { model | facets = facets, pavs = pavsJoined, loadingPavs = False }, Cmd.none )
 
         GotShapeGrid shp ->
             ( { model | shapeGrid = Just shp }, Cmd.none )
@@ -208,14 +220,17 @@ update msg model =
                 filters =
                     Dict.insert key value model.filters
             in
-                ( { model | filters = filters }, getSolrList filters )
+                ( { model | filters = filters, loadingPavs = True }, getSolrList filters )
 
         ClearFilter key ->
             let
                 filters =
                     Dict.remove key model.filters
             in
-                ( { model | filters = filters }, getSolrList filters )
+                if Dict.isEmpty filters then
+                    ( { model | facets = initFacets, filters = filters }, Cmd.none )
+                else
+                    ( { model | filters = filters, loadingPavs = True }, getSolrList filters )
 
         RunMCPA ->
             ( model, runMCPA model.filters )
@@ -246,7 +261,7 @@ getShapeGrid =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = "http://notyeti-193.lifemapper.org/api/v2/shapegrid/67472/geojson"
+        , url = "http://gad210.nchc.org.tw/api/v2/shapegrid/163/geojson"
         , body = Http.emptyBody
         , expect = Http.expectString
         , timeout = Nothing
@@ -277,7 +292,7 @@ runMCPA filters =
         Http.request
             { method = "POST"
             , headers = [ Http.header "Accept" "application/json" ]
-            , url = "http://notyeti-193.lifemapper.org/api/v2/globalPam"
+            , url = "http://gad210.nchc.org.tw/api/v2/globalPam"
             , body = body
             , expect = Http.expectJson Decoder.decodeAtomObject
             , timeout = Nothing
@@ -297,12 +312,12 @@ getSolrList : Dict String String -> Cmd Msg
 getSolrList filters =
     let
         query =
-            filters |> Dict.foldl Q.add Q.empty |> Q.render
+            filters |> Dict.foldr Q.add Q.empty |> Q.render
     in
         Http.request
             { method = "GET"
             , headers = [ Http.header "Accept" "application/json" ]
-            , url = "http://notyeti-193.lifemapper.org/api/v2/globalPam" ++ query
+            , url = "http://gad210.nchc.org.tw/api/v2/globalPam" ++ query
             , body = Http.emptyBody
             , expect = Http.expectJson Decoder.decodeSolrList
             , timeout = Nothing
@@ -327,10 +342,9 @@ init =
     , filters = Dict.empty
     , pavs = ""
     , shapeGrid = Nothing
+    , loadingPavs = False
     }
-        ! [ getSolrList Dict.empty
-          , getShapeGrid
-          ]
+        ! [ getShapeGrid ]
 
 
 main : Program Never Model Msg
