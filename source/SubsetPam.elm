@@ -79,7 +79,16 @@ type alias Model =
     , shapeGrid : Maybe String
     , loadingPavs : Bool
     , archiveName : String
+    , postStatus : PostStatus
     }
+
+
+type PostStatus
+    = NotPosted
+    | Posted
+    | PostFinished
+    | PostFailed
+    | Processing { total : Int, completed : Int, id : Int }
 
 
 type Msg
@@ -90,6 +99,8 @@ type Msg
     | ClearFilter String
     | SetArchiveName String
     | RunMCPA
+    | GotPostResponse (Result Http.Error Decoder.AtomObject)
+    | StatusUpdate Decoder.GridSet
 
 
 selector : Bool -> Dict String String -> String -> Set String -> Html Msg
@@ -115,6 +126,41 @@ selector loading filters key values =
                         |> Html.select [ Events.onInput <| SetFilter key, Html.Attributes.disabled loading ]
 
 
+view : Model -> Html Msg
+view model =
+    case model.postStatus of
+        NotPosted ->
+            viewNotPosted model
+
+        Posted ->
+            Html.div [ Html.Attributes.style [ ( "font-family", "sans-serif" ), ( "text-align", "center" ) ] ]
+                [ Html.text "Request sent. Waiting for response..." ]
+
+        PostFinished ->
+            Html.div [ Html.Attributes.style [ ( "font-family", "sans-serif" ), ( "text-align", "center" ) ] ]
+                [ Html.text "Request accepted. Waiting for status updates..." ]
+
+        PostFailed ->
+            Html.div [ Html.Attributes.style [ ( "font-family", "sans-serif" ), ( "text-align", "center" ) ] ]
+                [ Html.text "Server encountered an error processing request." ]
+
+        Processing { id, total, completed } ->
+            if total /= completed then
+                Html.div [ Html.Attributes.style [ ( "font-family", "sans-serif" ), ( "text-align", "center" ) ] ]
+                    [ Html.text <| "Processing request (" ++ (toString completed) ++ "/" ++ (toString total) ++ ")..." ]
+            else
+                Html.div [ Html.Attributes.style [ ( "font-family", "sans-serif" ), ( "text-align", "center" ) ] ]
+                    [ Html.text "Processing complete. "
+                    , Html.a
+                        [ Html.Attributes.href <|
+                            "http://gad210.nchc.org.tw/api/v2/gridset/"
+                                ++ (toString id)
+                                ++ "/package"
+                        ]
+                        [ Html.text "Download results." ]
+                    ]
+
+
 header : Bool -> Html msg
 header loadingPavs =
     if loadingPavs then
@@ -123,8 +169,8 @@ header loadingPavs =
         Html.text "Subset PAM with these filters"
 
 
-view : Model -> Html Msg
-view { facets, filters, pavs, shapeGrid, loadingPavs, archiveName } =
+viewNotPosted : Model -> Html Msg
+viewNotPosted { facets, filters, pavs, shapeGrid, loadingPavs, archiveName } =
     Html.div [ Html.Attributes.style [ ( "font-family", "sans-serif" ), ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
         [ Html.div []
             [ Html.h3 [] [ header loadingPavs ]
@@ -246,7 +292,38 @@ update msg model =
             ( { model | archiveName = String.trim name }, Cmd.none )
 
         RunMCPA ->
-            ( model, runMCPA model.archiveName model.filters )
+            ( { model | postStatus = Posted }, runMCPA model.archiveName model.filters )
+
+        GotPostResponse result ->
+            case result of
+                Ok (Decoder.AtomObject { id }) ->
+                    ( { model | postStatus = PostFinished }, checkStatus id )
+
+                Err err ->
+                    Debug.log "Post failed" err
+                        |> always ( { model | postStatus = PostFailed }, Cmd.none )
+
+        StatusUpdate (Decoder.GridSet { id, matrices }) ->
+            let
+                (Decoder.GridSetMatrices ms) =
+                    matrices
+
+                total =
+                    ms |> List.length
+
+                completed =
+                    ms |> List.filter (\(Decoder.Matrix { status }) -> status == Just 300) |> List.length
+
+                postStatus =
+                    Processing { completed = completed, total = total, id = id }
+
+                cmd =
+                    if completed == total then
+                        Cmd.none
+                    else
+                        checkStatus id
+            in
+                ( { model | postStatus = postStatus }, cmd )
 
 
 addAttrs : SolrPAV -> Facets -> Facets
@@ -267,6 +344,30 @@ addAttrs (SolrPAV pav) facets =
         , taxonGenus = maybeInsert pav.taxonGenus facets.taxonGenus
         , taxonSpecies = maybeInsert pav.taxonSpecies facets.taxonSpecies
         }
+
+
+checkStatus : Int -> Cmd Msg
+checkStatus id =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = "http://gad210.nchc.org.tw/api/v2/gridset/" ++ (toString id)
+        , body = Http.emptyBody
+        , expect = Http.expectJson Decoder.decodeGridSet
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send gotGridSet
+
+
+gotGridSet : Result Http.Error Decoder.GridSet -> Msg
+gotGridSet result =
+    case result of
+        Ok gridSet ->
+            StatusUpdate gridSet
+
+        Err err ->
+            Debug.crash (toString err)
 
 
 getShapeGrid : Cmd Msg
@@ -312,14 +413,7 @@ runMCPA archiveName filters =
             , timeout = Nothing
             , withCredentials = False
             }
-            |> Http.send gotPostResponse
-
-
-gotPostResponse : Result Http.Error Decoder.AtomObject -> Msg
-gotPostResponse result =
-    case Debug.log "post response" result of
-        _ ->
-            Nop
+            |> Http.send GotPostResponse
 
 
 getSolrList : Dict String String -> Cmd Msg
@@ -358,6 +452,7 @@ init =
     , shapeGrid = Nothing
     , loadingPavs = False
     , archiveName = ""
+    , postStatus = NotPosted
     }
         ! [ getShapeGrid ]
 

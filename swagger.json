@@ -694,6 +694,99 @@
         }
       }
     },
+    "/gridset/{gridsetId}/biogeo": {
+      "get": {
+        "summary": "Get a list of biogeographic hypothesis matrices for this gridset",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          }
+        ],
+        "tags": [
+          "Tree",
+          "BioGeo"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of biogeogrpahic hypothesis matrix objects",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Matrix"
+              }
+            }
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to access a matrix"
+          },
+          "404": {
+            "description": "Error status returned when the requested matrix does not exist"
+          }
+        }
+      },
+      "post": {
+        "summary": "Post a set of new biogeographic hypotheses",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Hypothesis POST body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BoomHypotheses"
+            }
+          }
+        ],
+        "tags": [
+          "Tree",
+          "BioGeo"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of posted biogeogrpahic hypothesis matrix objects",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Matrix"
+              }
+            }
+          },
+          "400": {
+            "description": "Error status returned when there is a problem with user input"
+          }
+        }
+      }
+    },
+    "/gridset/{gridsetId}/biogeo/{biogeoId}": {
+      "get": {
+        "summary": "Gets the specified biogeographic hypothesis matrix",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          },
+          {
+            "$ref": "#/parameters/PathBioGeoId"
+          }
+        ],
+        "tags": [
+          "BioGeo"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Matrix"
+          },
+          "403": {
+            "description": "Error status returned when the user does not have permission to access the data"
+          },
+          "404": {
+            "description": "Error status returned when the requested matrix does not exist"
+          }
+        }
+      }
+    },
     "/gridset/{gridsetId}/tree": {
       "get": {
         "summary": "Get the tree associated with this gridset",
@@ -2160,7 +2253,25 @@
       }
     },
     "GridSet": {
-      "type": "object"
+      "type": "object",
+      "required": [
+        "id",
+        "matrices"
+      ],
+      "properties": {
+        "objectType": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "matrices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Matrix"
+          }
+        }
+      }
     },
     "Layer": {
       "type": "object",
@@ -2229,7 +2340,18 @@
       }
     },
     "Matrix": {
-      "type": "object"
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "integer"
+        }
+      }
     },
     "MatrixColumn": {
       "type": "object"
@@ -2398,6 +2520,61 @@
             },
             "min_percent": {
               "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "BoomHypotheses": {
+      "type": "object",
+      "description": "Biogeographic hypotheses specification for use with MCPA",
+      "required": [
+        "hypothesis_package_reference"
+      ],
+      "properties": {
+        "hypothesis_package_reference": {
+          "description": "Reference hypothesis package previously uploaded",
+          "type": "object",
+          "required": [
+            "identifier",
+            "reference_type"
+          ],
+          "properties": {
+            "identifier": {
+              "type": "string"
+            },
+            "reference_type": {
+              "type": "string",
+              "enum": [
+                "gridset",
+                "upload"
+              ]
+            }
+          }
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "file_name"
+            ],
+            "properties": {
+              "event_field": {
+                "type": "string"
+              },
+              "file_name": {
+                "type": "string"
+              },
+              "hypothesis_name": {
+                "type": "string"
+              },
+              "keywords": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
             }
           }
         }
@@ -3036,6 +3213,13 @@
     }
   },
   "parameters": {
+    "PathBioGeoId": {
+      "name": "biogeoId",
+      "in": "path",
+      "description": "The id of the biogeographic matrix to use",
+      "required": true,
+      "type": "integer"
+    },
     "PathGridsetId": {
       "name": "gridsetId",
       "in": "path",
