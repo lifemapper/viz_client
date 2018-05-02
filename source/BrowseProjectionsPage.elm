@@ -376,9 +376,21 @@ view { state } =
                 loading "Loading projections..."
 
             DisplaySeparate display ->
-                display
-                    |> List.indexedMap viewSeparate
-                    |> Grid.grid []
+                Options.div []
+                    [ Options.styled Html.p
+                        [ Typo.headline
+                        , Options.css "text-align" "center"
+                        , Options.css "margin-top" "20px"
+                        ]
+                        [ display
+                            |> List.getAt 0
+                            |> Maybe.map (\( { record }, _ ) -> record.speciesName)
+                            |> Maybe.join
+                            |> Maybe.withDefault ""
+                            |> Html.text
+                        ]
+                    , display |> List.indexedMap viewSeparate |> Grid.grid []
+                    ]
 
             DisplayGrouped display ->
                 display
