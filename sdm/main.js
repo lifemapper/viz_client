@@ -55,8 +55,11 @@ function configureMap(element) {
     }
 
     var wmsInfos = JSON.parse(element.dataset.leaflet);
+    var bb = element.dataset.leafletBoundingBox && JSON.parse(element.dataset.leafletBoundingBox);
 
     mapLayers[element._leaflet_id] = wmsInfos.map(function(wmsInfo) {
+        bb && map.fitBounds(bb);
+
         return L.tileLayer.wms(wmsInfo.endPoint, {
             mapName: wmsInfo.mapName,
             format: 'image/png',
@@ -107,7 +110,7 @@ observer.observe(document.body, {
     subtree: true,
     childList: true,
     attributes: true,
-    attributeFilter: ["data-leaflet"],
+    attributeFilter: ["data-leaflet", "data-leaflet-bounding-box"],
     attributeOldValue: true
 });
 

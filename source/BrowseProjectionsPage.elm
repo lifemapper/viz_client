@@ -33,6 +33,7 @@ import Decoder
 import ProgramFlags exposing (Flags)
 import Page exposing (Page)
 import MapCardMultiple as MapCard
+import Leaflet exposing (BoundingBox)
 import OccurrenceSetChooser
 import Material
 import Material.Options as Options
@@ -247,6 +248,7 @@ makeOccurrenceMap { occurrenceRecord } =
             (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
                 { name = "Occurrences"
                 , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                , bb = Nothing
                 }
             )
         |> Maybe.toList
@@ -263,13 +265,30 @@ projectionTitle { algorithm, modelScenario, projectionScenario } =
 
 makeProjectionMap : ProjectionInfo -> Maybe MapCard.NamedMap
 makeProjectionMap { record } =
-    record.map
-        |> Maybe.map
-            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
-                { name = projectionTitle record
-                , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
-                }
-            )
+    let
+        bb =
+            record.spatialRaster
+                |> Maybe.map (\(Decoder.SpatialRaster { bbox }) -> bbox)
+                |> Maybe.join
+                |> Maybe.map
+                    (\(Decoder.SpatialRasterBbox bbox) ->
+                        case bbox of
+                            [ lng1, lat1, lng2, lat2 ] ->
+                                Just (BoundingBox lat1 lng1 lat2 lng2)
+
+                            _ ->
+                                Debug.log "bad bounding box" (toString bbox) |> always Nothing
+                    )
+                |> Maybe.join
+    in
+        record.map
+            |> Maybe.map
+                (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+                    { name = projectionTitle record
+                    , bb = bb
+                    , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                    }
+                )
 
 
 loadOccurrenceSet : Decoder.ProjectionRecord -> Cmd Msg

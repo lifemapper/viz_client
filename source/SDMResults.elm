@@ -220,6 +220,7 @@ makeOccurrenceMap { occurrenceRecord } =
             (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
                 { name = "Occurrences"
                 , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                , bb = Nothing
                 }
             )
         |> Maybe.toList
@@ -239,6 +240,7 @@ makeProjectionMap { record } =
             (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
                 { name = projectionTitle record
                 , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                , bb = Nothing
                 }
             )
 

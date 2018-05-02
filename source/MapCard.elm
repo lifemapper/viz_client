@@ -90,7 +90,7 @@ view index title model =
                 ]
 
         leafletDiv =
-            model.mapInfo |> Maybe.map (selectLayers model.mapLayer) |> Maybe.toList |> Leaflet.view
+            model.mapInfo |> Maybe.map (selectLayers model.mapLayer) |> Maybe.toList |> Leaflet.view Nothing
     in
         Card.view
             [ Elevation.e2
