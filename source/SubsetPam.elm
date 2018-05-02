@@ -215,6 +215,18 @@ viewNotPosted { facets, filters, pavs, shapeGrid, loadingPavs, archiveName } =
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Projection: " ]
                     , Html.td [] [ selector loadingPavs filters "sdmProjScenarioCode" facets.projectionScenarios ]
                     ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "B-Box: " ]
+                    , Html.td []
+                        [ Html.input
+                            [ Events.onInput (SetFilter "bbox")
+                            , Html.Attributes.value (Dict.get "bbox" filters |> Maybe.withDefault "")
+                            , Html.Attributes.readonly loadingPavs
+                            , Html.Attributes.placeholder "minx,miny,maxx,maxy"
+                            ]
+                            []
+                        ]
+                    ]
                 ]
             , Html.h3 [] [ Html.text "Matching species" ]
             , Html.ul [ Html.Attributes.style [ ( "height", "400px" ), ( "overflow-y", "auto" ), ( "border", "1px solid grey" ) ] ]
@@ -276,17 +288,20 @@ update msg model =
                 filters =
                     Dict.insert key value model.filters
             in
-                ( { model | filters = filters, loadingPavs = True }, getSolrList filters )
+                if Dict.member "taxonKingdom" filters then
+                    ( { model | filters = filters, loadingPavs = True }, getSolrList filters )
+                else
+                    ( { model | facets = initFacets, filters = filters }, Cmd.none )
 
         ClearFilter key ->
             let
                 filters =
                     Dict.remove key model.filters
             in
-                if Dict.isEmpty filters then
-                    ( { model | facets = initFacets, filters = filters }, Cmd.none )
-                else
+                if Dict.member "taxonKingdom" filters then
                     ( { model | filters = filters, loadingPavs = True }, getSolrList filters )
+                else
+                    ( { model | facets = initFacets, filters = filters }, Cmd.none )
 
         SetArchiveName name ->
             ( { model | archiveName = String.trim name }, Cmd.none )
