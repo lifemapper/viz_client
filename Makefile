@@ -6,12 +6,15 @@ debug: ELMFLAGS += --debug
 debug: all
 
 sdm.tar.gz: sdm/elm.js sdm/*
+	git describe --tags > sdm/VERSION
 	tar -zcvf sdm.tar.gz --exclude=sdmFlagsOverride.js sdm
 
 mcpa.tar.gz: mcpa/elm/AncState.js mcpa/elm/Mcpa.js mcpa/elm/Stats.js mcpa/elm/FractalTree.js mcpa/*
+	git describe --tags > mcpa/VERSION
 	tar -zcvf mcpa.tar.gz mcpa
 
 global-pam.tar.gz: global-pam/elm/subsetpam.js
+	git describe --tags > global-pam/VERSION
 	tar -zcvf global-pam.tar.gz global-pam
 
 sdm/elm.js: source/Decoder.elm source/*
