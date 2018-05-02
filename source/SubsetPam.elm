@@ -22,7 +22,7 @@
 -}
 
 
-module SubsetPam exposing (..)
+port module SubsetPam exposing (..)
 
 import Set exposing (Set)
 import Dict exposing (Dict)
@@ -32,6 +32,9 @@ import Html.Attributes
 import Http
 import QueryString as Q
 import Decoder exposing (SolrList(..), SolrPAV(..), SolrPAVRecord)
+
+
+port bboxSelected : (List Float -> msg) -> Sub msg
 
 
 type alias Facets =
@@ -98,6 +101,7 @@ type Msg
     | SetFilter String String
     | ClearFilter String
     | SetArchiveName String
+    | BBoxSelected (List Float)
     | RunMCPA
     | GotPostResponse (Result Http.Error Decoder.AtomObject)
     | StatusUpdate Decoder.GridSet
@@ -306,6 +310,16 @@ update msg model =
         SetArchiveName name ->
             ( { model | archiveName = String.trim name }, Cmd.none )
 
+        BBoxSelected bbox ->
+            let
+                filters =
+                    Dict.insert "bbox" (bbox |> List.map toString |> String.join ",") model.filters
+            in
+                if Dict.member "taxonKingdom" filters then
+                    ( { model | filters = filters, loadingPavs = True }, getSolrList filters )
+                else
+                    ( { model | facets = initFacets, filters = filters }, Cmd.none )
+
         RunMCPA ->
             ( { model | postStatus = Posted }, runMCPA model.archiveName model.filters )
 
@@ -473,11 +487,21 @@ init =
         ! [ getShapeGrid ]
 
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.postStatus of
+        NotPosted ->
+            bboxSelected BBoxSelected
+
+        _ ->
+            Sub.none
+
+
 main : Program Never Model Msg
 main =
     Html.program
         { init = init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         , view = view
         }

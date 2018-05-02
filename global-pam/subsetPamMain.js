@@ -121,6 +121,32 @@ var observer = new MutationObserver(function(mutations) {
                     minZoom: 1,
                     maxZoom: 12
                 }).addTo(map);
+
+                var editableLayers = new L.FeatureGroup();
+                map.addLayer(editableLayers);
+
+                var drawControl = new L.Control.Draw({
+                    draw: {
+                        polyline: false,
+                        polygon: false,
+                        marker: false,
+                        circle: false,
+                        circlemarker: false
+                    }
+                });
+                map.addControl(drawControl);
+
+                map.on(L.Draw.Event.CREATED, function(e) {
+                    editableLayers.addLayer(e.layer);
+                    let bbox = turf.bbox(editableLayers.toGeoJSON());
+                    console.log("bbox", bbox);
+                    app.ports.bboxSelected.send(bbox);
+                });
+
+                map.on(L.Draw.Event.DRAWSTART, function(e) {
+                    editableLayers.clearLayers();
+                });
+
                 maps[element._leaflet_id] = map;
                 console.log("added leaflet id", element._leaflet_id);
                 configureMap(element);
