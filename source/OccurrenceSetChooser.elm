@@ -1,26 +1,28 @@
 {-
-Copyright (C) 2018, University of Kansas Center for Research
+   Copyright (C) 2018, University of Kansas Center for Research
 
-Lifemapper Project, lifemapper [at] ku [dot] edu,
-Biodiversity Institute,
-1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
+   Lifemapper Project, lifemapper [at] ku [dot] edu,
+   Biodiversity Institute,
+   1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or (at
+   your option) any later version.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
 -}
-module OccurrenceSetChooser exposing (Model, Msg(Select), update, view, init)
+
+
+module OccurrenceSetChooser exposing (Model, Msg(Select), update, view, init, isPublicData)
 
 import Decoder exposing (AtomObjectRecord, AtomList(..), decodeAtomList, AtomObject(..))
 import ProgramFlags exposing (Flags)
@@ -33,6 +35,7 @@ import Material
 import Material.Color as Color
 import Material.Options as Options
 import Material.Textfield as Textfield
+import Material.Toggles as Toggles
 import Material.List as L
 import QueryString as Q
 import Dom
@@ -41,6 +44,7 @@ import Task
 
 type alias Model =
     { searchText : String
+    , searchPublicData : Bool
     , searchResults : List AtomObjectRecord
     , highlight : Maybe Int
     , mdl : Material.Model
@@ -48,9 +52,15 @@ type alias Model =
     }
 
 
+isPublicData : Model -> Bool
+isPublicData model =
+    model.searchPublicData
+
+
 type Msg
     = Mdl (Material.Msg Msg)
     | UpdateSearchText String
+    | SearchPublicData
     | GotOccurrenceSets (Result Http.Error AtomList)
     | Select AtomObjectRecord
     | HighlightUp
@@ -64,6 +74,13 @@ update msg model =
         Mdl msg_ ->
             Material.update Mdl msg_ model
 
+        SearchPublicData ->
+            let
+                model_ =
+                    { model | searchPublicData = not model.searchPublicData, searchResults = [], highlight = Nothing }
+            in
+                ( model_, getOccurrenceSets model_.programFlags model_.searchPublicData model_.searchText )
+
         UpdateSearchText text ->
             case String.uncons text of
                 Just ( c, rest ) ->
@@ -71,7 +88,7 @@ update msg model =
                         text =
                             String.cons (Char.toUpper c) rest
                     in
-                        ( { model | searchText = text }, getOccurrenceSets model.programFlags text )
+                        ( { model | searchText = text }, getOccurrenceSets model.programFlags model.searchPublicData text )
 
                 Nothing ->
                     ( { model | searchText = text }, Cmd.none )
@@ -123,12 +140,12 @@ highlightUp model =
         |> Maybe.map (min <| (List.length model.searchResults) - 1)
 
 
-getOccurrenceSets : Flags -> String -> Cmd Msg
-getOccurrenceSets flags searchText =
+getOccurrenceSets : Flags -> Bool -> String -> Cmd Msg
+getOccurrenceSets flags publicData searchText =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = searchUrl flags searchText
+        , url = searchUrl flags publicData searchText
         , body = Http.emptyBody
         , expect = Http.expectJson decodeAtomList
         , timeout = Nothing
@@ -137,17 +154,23 @@ getOccurrenceSets flags searchText =
         |> Http.send GotOccurrenceSets
 
 
-searchUrl : Flags -> String -> String
-searchUrl { apiRoot, minimumOccurrencePoints } searchText =
-    apiRoot
-        ++ "occurrence"
-        ++ (Q.empty
+searchUrl : Flags -> Bool -> String -> String
+searchUrl { apiRoot, minimumOccurrencePoints } publicData searchText =
+    let
+        query_ =
+            Q.empty
                 |> Q.add "limit" "10"
                 |> Q.add "status" "300"
                 |> Q.add "minimumNumberOfPoints" (toString minimumOccurrencePoints)
                 |> Q.add "displayName" searchText
-                |> Q.render
-           )
+
+        query =
+            if publicData then
+                query_ |> Q.add "user" "public"
+            else
+                query_
+    in
+        apiRoot ++ "occurrence" ++ (Q.render query)
 
 
 viewSearchResultItem : Maybe Int -> Int -> AtomObjectRecord -> Html Msg
@@ -206,6 +229,13 @@ view index model =
             , onKeyUp (keyUp model)
             ]
             []
+        , Toggles.switch Mdl
+            (1 :: index)
+            model.mdl
+            [ Toggles.value model.searchPublicData
+            , Options.onToggle SearchPublicData
+            ]
+            [ Html.text "Search public data" ]
         , viewSearchResults model
         ]
 
@@ -213,6 +243,7 @@ view index model =
 init : Flags -> Model
 init flags =
     { searchText = ""
+    , searchPublicData = True
     , searchResults = []
     , highlight = Nothing
     , mdl = Material.model

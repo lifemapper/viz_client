@@ -401,6 +401,7 @@ runMCPA archiveName filters =
             filters
                 |> Dict.insert "archiveName" archiveName
                 |> Dict.insert "gridSetId" "2"
+                |> Dict.insert "user" "public"
                 |> Dict.foldr Q.add Q.empty
                 |> Q.render
     in
@@ -420,7 +421,7 @@ getSolrList : Dict String String -> Cmd Msg
 getSolrList filters =
     let
         query =
-            filters |> Dict.foldr Q.add Q.empty |> Q.render
+            filters |> Dict.insert "user" "public" |> Dict.foldr Q.add Q.empty |> Q.render
     in
         Http.request
             { method = "GET"

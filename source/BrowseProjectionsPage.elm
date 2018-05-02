@@ -80,8 +80,7 @@ init flags =
 
 
 type Msg
-    = LoadProjections Decoder.AtomObjectRecord
-    | GotProjectionAtoms Int (List Decoder.AtomObjectRecord)
+    = GotProjectionAtoms Int (List Decoder.AtomObjectRecord)
     | GotProjection Decoder.ProjectionRecord
     | NewProjectionInfo ProjectionInfo
     | SetDisplayGrouped Bool
@@ -131,7 +130,7 @@ update msg model =
                     case msg_ of
                         OccurrenceSetChooser.Select record ->
                             ( { model | state = WaitingForListToPopulate record }
-                            , loadProjections model.programFlags record.id
+                            , loadProjections model.programFlags (OccurrenceSetChooser.isPublicData model_) record.id
                             )
 
                         _ ->
@@ -149,9 +148,6 @@ update msg model =
         case msg of
             Nop ->
                 ( model, Cmd.none )
-
-            LoadProjections record ->
-                ( { model | state = WaitingForListToPopulate record }, loadProjections model.programFlags record.id )
 
             GotProjectionAtoms occurrenceSetId atoms ->
                 let
@@ -320,18 +316,25 @@ gotOccurrenceSet record result =
             Debug.log "Error fetching occurrence set" (toString err) |> always Nop
 
 
-loadProjections : Flags -> Int -> Cmd Msg
-loadProjections { apiRoot } id =
-    Http.request
-        { method = "GET"
-        , headers = [ Http.header "Accept" "application/json" ]
-        , url = apiRoot ++ "sdmProject?occurrenceSetId=" ++ (toString id)
-        , body = Http.emptyBody
-        , expect = Http.expectJson Decoder.decodeAtomList
-        , timeout = Nothing
-        , withCredentials = False
-        }
-        |> Http.send (gotProjectionAtoms id)
+loadProjections : Flags -> Bool -> Int -> Cmd Msg
+loadProjections { apiRoot } usePublicData id =
+    let
+        userParam =
+            if usePublicData then
+                "&user=public"
+            else
+                ""
+    in
+        Http.request
+            { method = "GET"
+            , headers = [ Http.header "Accept" "application/json" ]
+            , url = apiRoot ++ "sdmProject?occurrenceSetId=" ++ (toString id) ++ userParam
+            , body = Http.emptyBody
+            , expect = Http.expectJson Decoder.decodeAtomList
+            , timeout = Nothing
+            , withCredentials = False
+            }
+            |> Http.send (gotProjectionAtoms id)
 
 
 gotProjectionAtoms : Int -> Result Http.Error Decoder.AtomList -> Msg
