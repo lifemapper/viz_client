@@ -268,6 +268,14 @@ displayName name =
     Html.li [] [ Html.text name ]
 
 
+updateFilters : Dict String String -> Model -> ( Model, Cmd Msg )
+updateFilters filters model =
+    if Dict.member "taxonKingdom" filters then
+        ( { model | filters = filters, loadingPavs = True }, getSolrList filters )
+    else
+        ( { model | facets = initFacets, filters = filters }, Cmd.none )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -288,37 +296,16 @@ update msg model =
             ( { model | shapeGrid = Just shp }, Cmd.none )
 
         SetFilter key value ->
-            let
-                filters =
-                    Dict.insert key value model.filters
-            in
-                if Dict.member "taxonKingdom" filters then
-                    ( { model | filters = filters, loadingPavs = True }, getSolrList filters )
-                else
-                    ( { model | facets = initFacets, filters = filters }, Cmd.none )
+            updateFilters (Dict.insert key value model.filters) model
 
         ClearFilter key ->
-            let
-                filters =
-                    Dict.remove key model.filters
-            in
-                if Dict.member "taxonKingdom" filters then
-                    ( { model | filters = filters, loadingPavs = True }, getSolrList filters )
-                else
-                    ( { model | facets = initFacets, filters = filters }, Cmd.none )
+            updateFilters (Dict.remove key model.filters) model
 
         SetArchiveName name ->
             ( { model | archiveName = String.trim name }, Cmd.none )
 
         BBoxSelected bbox ->
-            let
-                filters =
-                    Dict.insert "bbox" (bbox |> List.map toString |> String.join ",") model.filters
-            in
-                if Dict.member "taxonKingdom" filters then
-                    ( { model | filters = filters, loadingPavs = True }, getSolrList filters )
-                else
-                    ( { model | facets = initFacets, filters = filters }, Cmd.none )
+            updateFilters (Dict.insert "bbox" (bbox |> List.map toString |> String.join ",") model.filters) model
 
         RunMCPA ->
             ( { model | postStatus = Posted }, runMCPA model.archiveName model.filters )
