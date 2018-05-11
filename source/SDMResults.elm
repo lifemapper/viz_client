@@ -1,25 +1,27 @@
 {-
-Copyright (C) 2018, University of Kansas Center for Research
+   Copyright (C) 2018, University of Kansas Center for Research
 
-Lifemapper Project, lifemapper [at] ku [dot] edu,
-Biodiversity Institute,
-1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
+   Lifemapper Project, lifemapper [at] ku [dot] edu,
+   Biodiversity Institute,
+   1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or (at
+   your option) any later version.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
 -}
+
+
 module SDMResults exposing (Model, init, update, page, Msg)
 
 import List.Extra as List
@@ -32,6 +34,7 @@ import Decoder
 import ProgramFlags exposing (Flags)
 import Page exposing (Page)
 import MapCardMultiple as MapCard
+import Leaflet exposing (BoundingBox)
 import Material
 import Material.Options as Options
 import Material.Typography as Typo
@@ -189,8 +192,12 @@ displaySeparate infos =
 
 makeSeparateMap : ProjectionInfo -> MapCard.Model
 makeSeparateMap info =
-    MapCard.init
-        ((makeProjectionMap info |> Maybe.toList) ++ (makeOccurrenceMap info))
+    [ makeBackgroundMap info
+    , makeProjectionMap info |> Maybe.toList
+    , makeOccurrenceMap info
+    ]
+        |> List.concat
+        |> MapCard.init (boundingBoxForProjection info)
 
 
 displayGrouped : List ProjectionInfo -> State
@@ -206,11 +213,15 @@ makeGroupedMap : List ProjectionInfo -> MapCard.Model
 makeGroupedMap projections =
     case projections of
         [] ->
-            MapCard.init []
+            MapCard.init Nothing []
 
         first :: _ ->
-            MapCard.init
-                ((List.filterMap makeProjectionMap projections) ++ (makeOccurrenceMap first))
+            [ makeBackgroundMap first
+            , List.filterMap makeProjectionMap projections
+            , makeOccurrenceMap first
+            ]
+                |> List.concat
+                |> MapCard.init (boundingBoxForProjection first)
 
 
 makeOccurrenceMap : ProjectionInfo -> List MapCard.NamedMap
@@ -220,7 +231,18 @@ makeOccurrenceMap { occurrenceRecord } =
             (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
                 { name = "Occurrences"
                 , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
-                , bb = Nothing
+                }
+            )
+        |> Maybe.toList
+
+
+makeBackgroundMap : ProjectionInfo -> List MapCard.NamedMap
+makeBackgroundMap { occurrenceRecord } =
+    occurrenceRecord.map
+        |> Maybe.map
+            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+                { name = "Background"
+                , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ "bmng" ] }
                 }
             )
         |> Maybe.toList
@@ -233,6 +255,23 @@ projectionTitle record =
         |> Maybe.withDefault "Projection"
 
 
+boundingBoxForProjection : ProjectionInfo -> Maybe BoundingBox
+boundingBoxForProjection { record } =
+    record.spatialRaster
+        |> Maybe.map (\(Decoder.SpatialRaster { bbox }) -> bbox)
+        |> Maybe.join
+        |> Maybe.map
+            (\(Decoder.SpatialRasterBbox bbox) ->
+                case bbox of
+                    [ lng1, lat1, lng2, lat2 ] ->
+                        Just (BoundingBox lat1 lng1 lat2 lng2)
+
+                    _ ->
+                        Debug.log "bad bounding box" (toString bbox) |> always Nothing
+            )
+        |> Maybe.join
+
+
 makeProjectionMap : ProjectionInfo -> Maybe MapCard.NamedMap
 makeProjectionMap { record } =
     record.map
@@ -240,7 +279,6 @@ makeProjectionMap { record } =
             (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
                 { name = projectionTitle record
                 , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
-                , bb = Nothing
                 }
             )
 

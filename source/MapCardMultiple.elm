@@ -39,13 +39,13 @@ import Leaflet exposing (WMSInfo, BoundingBox)
 type alias NamedMap =
     { name : String
     , wmsInfo : WMSInfo
-    , bb : Maybe BoundingBox
     }
 
 
 type alias Model =
     { available : List NamedMap
     , showing : List NamedMap
+    , bb : Maybe BoundingBox
     , expanded : Bool
     , mdl : Material.Model
     }
@@ -78,15 +78,9 @@ update msg model =
             ( { model | expanded = expanded }, Cmd.none )
 
 
-selectLayers : Bool -> Int -> WMSInfo -> WMSInfo
-selectLayers includeBMNG i mapInfo =
-    { mapInfo
-        | layers =
-            if includeBMNG then
-                "bmng" :: (mapInfo.layers |> List.getAt i |> Maybe.toList)
-            else
-                (mapInfo.layers |> List.getAt i |> Maybe.toList)
-    }
+selectLayers : Int -> WMSInfo -> WMSInfo
+selectLayers i mapInfo =
+    { mapInfo | layers = mapInfo.layers |> List.getAt i |> Maybe.toList }
 
 
 layerLi : Model -> Index -> Int -> NamedMap -> Html Msg
@@ -112,19 +106,13 @@ layersList index model =
 view : Index -> String -> Model -> Html Msg
 view index title model =
     let
-        bb =
-            model.showing
-                |> List.getAt 0
-                |> Maybe.map .bb
-                |> Maybe.join
-
         leafletDiv =
             model.available
                 |> List.filter (\m -> List.member m model.showing)
                 -- doesn't this just equal model.showing?
                 |>
-                    List.indexedMap (\i m -> m.wmsInfo |> selectLayers (i == 0) 0)
-                |> Leaflet.view bb
+                    List.indexedMap (\i m -> m.wmsInfo |> selectLayers 0)
+                |> Leaflet.view model.bb
     in
         Card.view
             [ Elevation.e2
@@ -138,10 +126,11 @@ view index title model =
             ]
 
 
-init : List NamedMap -> Model
-init available =
+init : Maybe BoundingBox -> List NamedMap -> Model
+init bb available =
     { available = available
     , showing = available
+    , bb = bb
     , expanded = False
     , mdl = Material.model
     }
