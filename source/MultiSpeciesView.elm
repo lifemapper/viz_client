@@ -127,7 +127,7 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead s
         variableSelector =
             Html.div [ Html.Attributes.style [ ( "margin-bottom", "8px" ) ] ]
                 [ Html.span [] [ Html.text "Node color: " ]
-                , Html.select [ Html.Events.onInput select ]
+                , Html.select [ Html.Events.onInput select, Html.Attributes.style [ ( "max-width", "355px" ) ] ]
                     (vars
                         |> List.indexedMap
                             (\i v ->
@@ -210,7 +210,7 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead s
                     []
                 ]
             , Html.table
-                [ -- Html.Attributes.style [ ( "width", "600px" ), ( "min-width", "400px" ), ( "flex-shrink", "1" ) ]
+                [-- Html.Attributes.style [ ( "width", "600px" ), ( "min-width", "400px" ), ( "flex-shrink", "1" ) ]
                 ]
                 (tableHead :: variableTableRows)
             ]

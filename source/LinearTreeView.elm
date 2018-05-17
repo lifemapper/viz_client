@@ -25,6 +25,7 @@
 module LinearTreeView exposing (drawTree, computeColor, gradientDefinitions)
 
 import Html.Events
+import Html.Attributes
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import DecodeTree exposing (Tree(..), TreeData)
@@ -185,6 +186,7 @@ drawTree config parentColor tree =
                             , r "0.3"
                             , fill color
                             , Html.Events.onClick <| config.selectNode data.cladeId
+                            , Html.Attributes.style [ ( "cursor", "pointer" ) ]
                             ]
                             []
                        ]
