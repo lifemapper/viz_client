@@ -100,7 +100,7 @@ drawTree config parentColor tree =
                         [ x "0"
                         , width (toString length)
                         , y "0.45"
-                        , height "0.05"
+                        , height "0.15"
                         , fill ("url(#grad-" ++ (toString data.cladeId) ++ ")")
                         ]
                         []
@@ -164,7 +164,7 @@ drawTree config parentColor tree =
                        , rect
                             [ x "0"
                             , width (toString length)
-                            , height "0.05"
+                            , height "0.15"
                             , y <| toString (thisHeight / 2.0 - 0.05)
                             , strokeWidth "0.01"
                             , fill ("url(#grad-" ++ (toString data.cladeId) ++ ")")
@@ -175,7 +175,7 @@ drawTree config parentColor tree =
                             , x2 (toString length)
                             , y1 (toString (leftHeight / 2))
                             , y2 (toString (leftHeight + rightHeight / 2))
-                            , strokeWidth "0.05"
+                            , strokeWidth "0.15"
                             , stroke color
                             ]
                             []
