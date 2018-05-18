@@ -391,7 +391,7 @@ getShapeGrid =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = "http://gad210.nchc.org.tw/api/v2/shapegrid/163/geojson"
+        , url = "http://gad210.nchc.org.tw/api/v2/shapegrid/33341/geojson"
         , body = Http.emptyBody
         , expect = Http.expectString
         , timeout = Nothing
@@ -416,7 +416,7 @@ runMCPA archiveName filters =
         query =
             filters
                 |> Dict.insert "archiveName" archiveName
-                |> Dict.insert "gridSetId" "2"
+                |> Dict.insert "gridSetId" "127"
                 |> Dict.insert "user" "public"
                 |> Dict.foldr Q.add Q.empty
                 |> Q.render
@@ -437,7 +437,11 @@ getSolrList : Dict String String -> Cmd Msg
 getSolrList filters =
     let
         query =
-            filters |> Dict.insert "user" "public" |> Dict.foldr Q.add Q.empty |> Q.render
+            filters
+                |> Dict.insert "gridsetid" "127"
+                |> Dict.insert "user" "public"
+                |> Dict.foldr Q.add Q.empty
+                |> Q.render
     in
         Http.request
             { method = "GET"
