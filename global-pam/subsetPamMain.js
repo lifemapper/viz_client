@@ -118,6 +118,7 @@ var observer = new MutationObserver(function(mutations) {
             Array.prototype.forEach.call(elements, function(element) {
                 var map = L.map(element, {center: [0,0], zoom: 2});
                 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: "© OpenStreetMap",
                     minZoom: 1,
                     maxZoom: 12
                 }).addTo(map);

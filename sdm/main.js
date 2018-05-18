@@ -65,6 +65,7 @@ function configureMap(element) {
             format: 'image/png',
             version: '1.1.0',
             transparent: true,
+            crs: L.CRS.EPSG4326,
             layers: wmsInfo.layers.join(',')
         }).addTo(map);
     });
@@ -78,8 +79,14 @@ var observer = new MutationObserver(function(mutations) {
 
             var elements = n.getElementsByClassName("leaflet-map");
             Array.prototype.forEach.call(elements, function(element) {
-                var map = L.map(element, {crs: L.CRS.EPSG4326})
+                var map = L.map(element)
                     .setView([0, 0], 1);
+                L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: "© OpenStreetMap",
+                    minZoom: 1,
+                    maxZoom: 12
+                }).addTo(map);
+
                 maps[element._leaflet_id] = map;
                 console.log("added leaflet id", element._leaflet_id);
                 configureMap(element);
