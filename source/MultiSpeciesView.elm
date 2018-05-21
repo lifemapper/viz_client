@@ -154,27 +154,44 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead s
                     ]
                 ]
 
-        variableTableRows =
-            case selectedNode of
-                Just _ ->
-                    vars |> List.map (\var -> dataForVar var |> drawVariable showBarGraph variableFormatter var)
+        ( envVars, bgVars ) =
+            case List.findIndex ((==) "ENV - Adjusted R-squared") vars of
+                Just i ->
+                    List.splitAt (i + 1) vars
 
                 Nothing ->
-                    [ Html.tr []
-                        [ Html.td [ Html.Attributes.colspan 2, Html.Attributes.style [ ( "text-align", "center" ) ] ]
-                            [ Html.text "No node selected." ]
-                        ]
-                    ]
+                    ( vars, [] )
+
+        ( envVarTableRows, bgVarTableRows ) =
+            case selectedNode of
+                Just _ ->
+                    ( envVars |> List.map (\var -> dataForVar var |> drawVariable showBarGraph variableFormatter var)
+                    , bgVars |> List.map (\var -> dataForVar var |> drawVariable showBarGraph variableFormatter var)
+                    )
+
+                Nothing ->
+                    ( [ Html.tr []
+                            [ Html.td [ Html.Attributes.colspan 2, Html.Attributes.style [ ( "text-align", "center" ) ] ]
+                                [ Html.text "No node selected." ]
+                            ]
+                      ]
+                    , [ Html.tr []
+                            [ Html.td [ Html.Attributes.colspan 2, Html.Attributes.style [ ( "text-align", "center" ) ] ]
+                                [ Html.text "No node selected." ]
+                            ]
+                      ]
+                    )
     in
         Html.div
             [ Html.Attributes.style
                 [ ( "display", "flex" )
                   -- , ( "justify-content", "space-between" )
                 , ( "font-family", "sans-serif" )
+                , ( "height", "100vh" )
                 ]
             ]
             [ Html.div
-                [ Html.Attributes.style [ ( "height", "100vh" ), ( "display", "flex" ), ( "flex-direction", "column" ) ] ]
+                [ Html.Attributes.style [ ( "display", "flex" ), ( "flex-direction", "column" ) ] ]
                 [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
                     [ Html.text "Select nodes in tree" ]
                 , Html.div
@@ -198,19 +215,45 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead s
                     ]
                 ]
             , Html.div
-                [ Html.Attributes.style [ ( "width", "500px" ), ( "flex-shrink", "0" ), ( "margin", "0 12px" ) ] ]
-                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
-                    [ Html.text "Subtree Left (blue) vs. Right (red) of selected node" ]
-                , Html.div
-                    [ Html.Attributes.class "leaflet-map"
-                    , Html.Attributes.attribute "data-map-column"
-                        (selectedNode |> Maybe.map toString |> Maybe.withDefault "")
-                    , Html.Attributes.style [ ( "width", "500px" ), ( "height", "500px" ) ]
+                [ Html.Attributes.style
+                    [ ( "display", "flex" )
+                    , ( "flex-direction", "column" )
+                    , ( "flex-grow", "1" )
                     ]
-                    []
                 ]
-            , Html.table
-                [-- Html.Attributes.style [ ( "width", "600px" ), ( "min-width", "400px" ), ( "flex-shrink", "1" ) ]
+                [ Html.div
+                    [ Html.Attributes.style [ ( "flex-shrink", "0" ), ( "margin", "0 12px" ) ] ]
+                    [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                        [ Html.text "Subtree Left (blue) vs. Right (red) of selected node" ]
+                    , Html.div
+                        [ Html.Attributes.class "leaflet-map"
+                        , Html.Attributes.attribute "data-map-column"
+                            (selectedNode |> Maybe.map toString |> Maybe.withDefault "")
+                        , Html.Attributes.style
+                            [ ( "max-width", "900px" )
+                            , ( "height", "500px" )
+                            , ( "margin-left", "auto" )
+                            , ( "margin-right", "auto" )
+                            ]
+                        ]
+                        []
+                    ]
+                , Html.div
+                    [ Html.Attributes.style
+                        [ ( "overflow-y", "auto" )
+                        , ( "display", "flex" )
+                        , ( "justify-content", "space-around" )
+                        , ( "margin-top", "10px" )
+                        ]
+                    ]
+                    [ Html.table
+                        [-- Html.Attributes.style [ ( "width", "600px" ), ( "min-width", "400px" ), ( "flex-shrink", "1" ) ]
+                        ]
+                        (tableHead :: envVarTableRows)
+                    , Html.table
+                        [-- Html.Attributes.style [ ( "width", "600px" ), ( "min-width", "400px" ), ( "flex-shrink", "1" ) ]
+                        ]
+                        (tableHead :: bgVarTableRows)
+                    ]
                 ]
-                (tableHead :: variableTableRows)
             ]
