@@ -92,6 +92,7 @@ view index title model =
         Card.view
             [ Elevation.e2
             , Options.css "width" "800px"
+            , Options.css "height" "591px"
             , Options.css "margin" "20px"
             ]
             [ Card.title [ Card.border ]
