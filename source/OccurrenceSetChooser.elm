@@ -34,6 +34,7 @@ import Helpers exposing (Index)
 import Http
 import Html exposing (Html)
 import Material
+import Material.Spinner as Loading
 import Material.Color as Color
 import Material.Options as Options
 import Material.Textfield as Textfield
@@ -260,6 +261,7 @@ view index model =
             , onKeyUp (keyUp model)
             ]
             []
+        , Loading.spinner [ Loading.active (model.searchState == Searching) ]
         , Toggles.switch Mdl
             (1 :: index)
             model.mdl
