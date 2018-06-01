@@ -24,10 +24,12 @@
 
 module OccurrenceSetChooser exposing (Model, Msg(Select), update, view, init, isPublicData)
 
+import String.Extra as String
+import List.Extra as List
+import Ternary exposing ((?))
 import Decoder exposing (AtomObjectRecord, AtomList(..), decodeAtomList, AtomObject(..))
 import ProgramFlags exposing (Flags)
 import Json.Decode as Decode
-import Char
 import Helpers exposing (Index)
 import Http
 import Html exposing (Html)
@@ -42,10 +44,16 @@ import Dom
 import Task
 
 
+type SearchState
+    = WaitingForInput
+    | Searching
+    | GotResults (List AtomObjectRecord)
+
+
 type alias Model =
     { searchText : String
     , searchPublicData : Bool
-    , searchResults : List AtomObjectRecord
+    , searchState : SearchState
     , highlight : Maybe Int
     , mdl : Material.Model
     , programFlags : Flags
@@ -68,6 +76,24 @@ type Msg
     | Nop
 
 
+updateSearchParameters : Model -> ( Model, Cmd Msg )
+updateSearchParameters model =
+    let
+        searchState =
+            if model.searchText == "" then
+                WaitingForInput
+            else
+                Searching
+
+        cmd =
+            if model.searchText == "" then
+                Cmd.none
+            else
+                getOccurrenceSets model.programFlags model.searchPublicData model.searchText
+    in
+        ( { model | searchState = searchState, highlight = Nothing }, cmd )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -75,38 +101,27 @@ update msg model =
             Material.update Mdl msg_ model
 
         SearchPublicData ->
-            let
-                model_ =
-                    { model | searchPublicData = not model.searchPublicData, searchResults = [], highlight = Nothing }
-            in
-                ( model_, getOccurrenceSets model_.programFlags model_.searchPublicData model_.searchText )
+            updateSearchParameters { model | searchPublicData = not model.searchPublicData }
 
         UpdateSearchText text ->
-            case String.uncons text of
-                Just ( c, rest ) ->
-                    let
-                        text =
-                            String.cons (Char.toUpper c) rest
-                    in
-                        ( { model | searchText = text }, getOccurrenceSets model.programFlags model.searchPublicData text )
-
-                Nothing ->
-                    ( { model | searchText = text }, Cmd.none )
+            updateSearchParameters { model | searchText = String.toSentenceCase text }
 
         GotOccurrenceSets (Ok (AtomList atoms)) ->
             let
                 results =
                     List.map (\(AtomObject o) -> o) atoms
             in
-                ( { model | searchResults = results }, Cmd.none )
+                ( { model | searchState = GotResults results }, Cmd.none )
 
         GotOccurrenceSets (Err err) ->
             Debug.log (toString err) ( model, Cmd.none )
 
         Select object ->
-            ( { model | searchText = "", searchResults = [], highlight = Nothing }
-            , Dom.focus "occurrence-set-search-input" |> Task.attempt (always Nop)
-            )
+            let
+                ( model_, cmd ) =
+                    updateSearchParameters { model | searchText = "" }
+            in
+                model_ ! [ cmd, Dom.focus "occurrence-set-search-input" |> Task.attempt (always Nop) ]
 
         HighlightUp ->
             ( { model | highlight = highlightUp model }, Cmd.none )
@@ -120,24 +135,28 @@ update msg model =
 
 highlightDown : Model -> Maybe Int
 highlightDown model =
-    model.highlight
-        |> Maybe.withDefault (-1)
-        |> (+) 1
-        |> (min <| (List.length model.searchResults) - 1)
-        |> Just
+    case model.searchState of
+        GotResults searchResults ->
+            model.highlight
+                |> Maybe.map ((+) 1)
+                |> Maybe.map (min <| (List.length searchResults) - 1)
+                |> Maybe.withDefault 0
+                |> Just
+
+        _ ->
+            Nothing
 
 
 highlightUp : Model -> Maybe Int
 highlightUp model =
-    model.highlight
-        |> Maybe.andThen
-            (\n ->
-                if n == 0 then
-                    Nothing
-                else
-                    Just (n - 1)
-            )
-        |> Maybe.map (min <| (List.length model.searchResults) - 1)
+    case model.searchState of
+        GotResults searchResults ->
+            model.highlight
+                |> Maybe.map (flip (-) 1)
+                |> Maybe.andThen (\n -> (n < 0) ? Nothing <| (Just n))
+
+        _ ->
+            Nothing
 
 
 getOccurrenceSets : Flags -> Bool -> String -> Cmd Msg
@@ -186,15 +205,30 @@ viewSearchResultItem highlighted i object =
 
 viewSearchResults : Model -> Html Msg
 viewSearchResults model =
-    if model.searchResults == [] && model.searchText /= "" then
-        Options.styled Html.p [] [ Html.text "No matches" ]
-    else
-        L.ul [] <| List.indexedMap (viewSearchResultItem model.highlight) model.searchResults
+    case model.searchState of
+        GotResults [] ->
+            Options.styled Html.p [] [ Html.text "No matches" ]
+
+        GotResults results ->
+            L.ul [] <| List.indexedMap (viewSearchResultItem model.highlight) results
+
+        _ ->
+            L.ul [] []
 
 
 onKeyUp : (String -> Msg) -> Options.Property c Msg
 onKeyUp msg =
     Options.on "keyup" <| Decode.map msg (Decode.at [ "key" ] Decode.string)
+
+
+getHighlightedResult : Model -> Maybe AtomObjectRecord
+getHighlightedResult model =
+    case model.searchState of
+        GotResults results ->
+            model.highlight |> Maybe.andThen (flip List.getAt results)
+
+        _ ->
+            Nothing
 
 
 keyUp : Model -> String -> Msg
@@ -207,10 +241,7 @@ keyUp model s =
             HighlightDown
 
         "Enter" ->
-            model.highlight
-                |> Maybe.andThen (\i -> List.drop i model.searchResults |> List.head)
-                |> Maybe.map Select
-                |> Maybe.withDefault Nop
+            getHighlightedResult model |> Maybe.map Select |> Maybe.withDefault Nop
 
         _ ->
             Nop
@@ -244,7 +275,7 @@ init : Flags -> Model
 init flags =
     { searchText = ""
     , searchPublicData = True
-    , searchResults = []
+    , searchState = WaitingForInput
     , highlight = Nothing
     , mdl = Material.model
     , programFlags = flags
