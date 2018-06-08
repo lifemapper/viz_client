@@ -70,9 +70,7 @@ view : Index -> String -> Model -> Html Msg
 view index title model =
     let
         layerNames =
-            model.mapInfo
-                |> Maybe.map (\{ layers } -> layers)
-                |> Maybe.withDefault []
+            model.mapInfo |> Maybe.map .layers |> Maybe.withDefault []
 
         checkmark x =
             if x then
