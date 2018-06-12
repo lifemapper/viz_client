@@ -40,7 +40,6 @@ import Page
 import NewSDM
 import SDMResults
 import BrowseProjectionsPage
-import NewOccurrenceSet
 import SignUp
 import ProgramFlags exposing (Flags)
 import Authentication as Auth
@@ -56,7 +55,6 @@ import Decoder
 type SDMPage
     = NewSDM NewSDM.Model
     | SDMResults Int SDMResults.Model
-    | NewOccurrenceSet NewOccurrenceSet.Model
     | SignUp SignUp.Model
     | BrowseProjections BrowseProjectionsPage.Model
     | PageNotFound
@@ -74,15 +72,6 @@ initNewSDMPage flags =
             NewSDM.init flags
     in
         ( NewSDM model_, Cmd.map NewSDMMsg msg_ )
-
-
-initNewOccurrenceSetPage : Flags -> ( SDMPage, Cmd Msg )
-initNewOccurrenceSetPage flags =
-    let
-        ( model_, msg_ ) =
-            NewOccurrenceSet.init
-    in
-        ( NewOccurrenceSet model_, Cmd.none )
 
 
 initSignUpPage : Flags -> ( SDMPage, Cmd Msg )
@@ -110,7 +99,6 @@ location2Page flags location =
             Url.oneOf
                 [ Url.map (initNewSDMPage flags) Url.top
                 , Url.map (initResultsPage flags) (Url.s "results" </> Url.int)
-                , Url.map (initNewOccurrenceSetPage flags) (Url.s "new-species-data")
                 , Url.map (initBrowsePage flags) (Url.s "browse-projections")
                 , Url.map (initSignUpPage flags) (Url.s "sign-up")
                 ]
@@ -136,7 +124,6 @@ type Msg
     = Mdl (Material.Msg Msg)
     | NewSDMMsg NewSDM.Msg
     | SDMResultsMsg SDMResults.Msg
-    | NewOccurrenceSetMsg NewOccurrenceSet.Msg
     | BrowseProjectionsMsg BrowseProjectionsPage.Msg
     | SignUpMsg SignUp.Msg
     | GotGridSets (List AtomObjectRecord)
@@ -177,18 +164,6 @@ update msg model =
                 _ ->
                     \msg_ model -> ( model, Cmd.none )
 
-        liftedNewOccurrenceSetUpdate =
-            case model.page of
-                NewOccurrenceSet model_ ->
-                    lift
-                        (always model_)
-                        (\m x -> { m | page = NewOccurrenceSet x })
-                        NewOccurrenceSetMsg
-                        NewOccurrenceSet.update
-
-                _ ->
-                    \msg_ model -> ( model, Cmd.none )
-
         liftedBrowseProjectionsUpdate =
             case model.page of
                 BrowseProjections model_ ->
@@ -222,9 +197,6 @@ update msg model =
 
             SDMResultsMsg msg_ ->
                 liftedSDMResultsUpdate msg_ model
-
-            NewOccurrenceSetMsg msg_ ->
-                liftedNewOccurrenceSetUpdate msg_ model
 
             BrowseProjectionsMsg msg_ ->
                 liftedBrowseProjectionsUpdate msg_ model
@@ -329,21 +301,6 @@ newLink model =
             [ Html.text "New SDM Project" ]
 
 
-newOccurrenceSetLink : Model -> Html Msg
-newOccurrenceSetLink model =
-    let
-        selected =
-            case model.page of
-                NewOccurrenceSet _ ->
-                    Color.background (Color.color Color.Grey Color.S300)
-
-                _ ->
-                    Options.nop
-    in
-        Layout.link [ Options.onClick OpenNewOccurrenceSet, Options.css "cursor" "pointer", selected ]
-            [ Html.text "New Species Data" ]
-
-
 resultsLink : Model -> AtomObjectRecord -> Html Msg
 resultsLink model { modificationTime, id } =
     let
@@ -400,9 +357,6 @@ pageImplementation p =
 
         SDMResults _ model_ ->
             Page.lift SDMResults.page (always model_) SDMResultsMsg
-
-        NewOccurrenceSet model_ ->
-            Page.lift NewOccurrenceSet.page (always model_) NewOccurrenceSetMsg
 
         SignUp model_ ->
             Page.lift SignUp.page (always model_) SignUpMsg
