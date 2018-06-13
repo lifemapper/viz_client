@@ -1,25 +1,27 @@
 {-
-Copyright (C) 2018, University of Kansas Center for Research
+   Copyright (C) 2018, University of Kansas Center for Research
 
-Lifemapper Project, lifemapper [at] ku [dot] edu,
-Biodiversity Institute,
-1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
+   Lifemapper Project, lifemapper [at] ku [dot] edu,
+   Biodiversity Institute,
+   1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or (at
+   your option) any later version.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
 -}
+
+
 module MapCard exposing (Model, update, Msg(SetMap), view, init)
 
 import Maybe.Extra as Maybe
@@ -32,11 +34,12 @@ import Material.Elevation as Elevation
 import Material.Icon as Icon
 import Html exposing (Html)
 import Helpers exposing (Index)
-import Leaflet exposing (WMSInfo)
+import Leaflet exposing (WMSInfo, BoundingBox)
 
 
 type alias Model =
     { mapInfo : Maybe WMSInfo
+    , bb : Maybe BoundingBox
     , mapLayer : Int
     , mdl : Material.Model
     }
@@ -45,7 +48,7 @@ type alias Model =
 type Msg
     = Mdl (Material.Msg Msg)
     | SetLayer Int
-    | SetMap (Maybe WMSInfo)
+    | SetMap (Maybe BoundingBox) (Maybe WMSInfo)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -54,8 +57,8 @@ update msg model =
         Mdl msg_ ->
             Material.update Mdl msg_ model
 
-        SetMap mapInfo ->
-            ( { model | mapInfo = mapInfo, mapLayer = 0 }, Cmd.none )
+        SetMap bb mapInfo ->
+            ( { model | bb = bb, mapInfo = mapInfo, mapLayer = 0 }, Cmd.none )
 
         SetLayer layer ->
             ( { model | mapLayer = layer }, Cmd.none )
@@ -63,7 +66,7 @@ update msg model =
 
 selectLayers : Int -> WMSInfo -> WMSInfo
 selectLayers i mapInfo =
-    { mapInfo | layers = mapInfo.layers |> List.getAt i |> Maybe.toList}
+    { mapInfo | layers = mapInfo.layers |> List.getAt i |> Maybe.toList }
 
 
 view : Index -> String -> Model -> Html Msg
@@ -85,7 +88,7 @@ view index title model =
                 ]
 
         leafletDiv =
-            model.mapInfo |> Maybe.map (selectLayers model.mapLayer) |> Maybe.toList |> Leaflet.view Nothing
+            model.mapInfo |> Maybe.map (selectLayers model.mapLayer) |> Maybe.toList |> Leaflet.view model.bb
     in
         Card.view
             [ Elevation.e2
@@ -107,9 +110,10 @@ view index title model =
             ]
 
 
-init : Maybe WMSInfo -> Model
-init wmsInfo =
+init : Maybe BoundingBox -> Maybe WMSInfo -> Model
+init bb wmsInfo =
     { mapInfo = wmsInfo
+    , bb = bb
     , mapLayer = 0
     , mdl = Material.model
     }

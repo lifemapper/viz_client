@@ -32,6 +32,8 @@ import Decoder
         , OccurrenceSetRecord
         , OccurrenceSet(..)
         , SingleLayerMap(..)
+        , SpatialVector(..)
+        , SpatialVectorBbox(..)
         )
 import OccurrenceSetChooser
 import Leaflet
@@ -124,28 +126,42 @@ addSelected msg model =
             ( model, Cmd.none )
 
 
-setMap : Maybe Leaflet.WMSInfo -> Model -> ( Model, Cmd Msg )
-setMap wmsInfo =
+setMap : Maybe Leaflet.BoundingBox -> Maybe Leaflet.WMSInfo -> Model -> ( Model, Cmd Msg )
+setMap bb wmsInfo =
     Helpers.lift
         .mapCard
         (\m x -> { m | mapCard = x })
         MapCardMsg
         MapCard.update
-        (MapCard.SetMap wmsInfo)
+        (MapCard.SetMap bb wmsInfo)
 
 
 updateMap : Model -> ( Model, Cmd Msg )
 updateMap model =
     let
+        bb =
+            model.mappedSet
+                |> Maybe.andThen .spatialVector
+                |> Maybe.andThen (\(SpatialVector { bbox }) -> bbox)
+                |> Maybe.andThen
+                    (\(SpatialVectorBbox bbox) ->
+                        case bbox of
+                            [ lng1, lat1, lng2, lat2 ] ->
+                                Just (Leaflet.BoundingBox lat1 lng1 lat2 lng2)
+
+                            _ ->
+                                Debug.log "bad bounding box" (toString bbox) |> always Nothing
+                    )
+
         mapInfo =
             model.mappedSet
-                |> Maybe.andThen (\{ map } -> map)
+                |> Maybe.andThen .map
                 |> Maybe.map
                     (\(SingleLayerMap { endpoint, mapName, layerName }) ->
                         { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
                     )
     in
-        setMap mapInfo model
+        setMap bb mapInfo model
 
 
 getMetadataAndMap : Flags -> Int -> Cmd Msg
@@ -178,7 +194,7 @@ init flags =
     { occurrenceSets = []
     , mappedSet = Nothing
     , chooser = OccurrenceSetChooser.init flags
-    , mapCard = MapCard.init Nothing
+    , mapCard = MapCard.init Nothing Nothing
     , mdl = Material.model
     , programFlags = flags
     }
