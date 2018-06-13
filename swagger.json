@@ -363,6 +363,9 @@
             "$ref": "#/parameters/BBox"
           },
           {
+            "$ref": "#/parameters/CellSize"
+          },
+          {
             "$ref": "#/parameters/ModelScenarioCode"
           },
           {
@@ -410,6 +413,45 @@
             "description": "An atom for the gridset that was just posted",
             "schema": {
               "$ref": "#/definitions/AtomObject"
+            }
+          }
+        }
+      }
+    },
+    "/globalpam/gridset": {
+      "get": {
+        "summary": "Service to find the available gridsets for the global pam",
+        "description": "The Global PAM gridset facet endpoint allows the user to find the \ngridsets available to them that are cataloged in Solr so that they can\ncreate subsets from them.\n",
+        "parameters": [
+          {
+            "$ref": "#/parameters/UrlUser"
+          }
+        ],
+        "tags": [
+          "Global PAM",
+          "Facet"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the available gridsets",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "gridSetId": {
+                  "type": "list",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "gridSetId": {
+                        "type": "string"
+                      },
+                      "count": {
+                        "type": "int"
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -694,6 +736,49 @@
         }
       }
     },
+    "/gridset/{gridsetId}/analysis": {
+      "post": {
+        "summary": "Perform analyses on the gridset",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          },
+          {
+            "$ref": "#/parameters/DoMCPA"
+          },
+          {
+            "$ref": "#/parameters/NumberOfPermutations"
+          },
+          {
+            "$ref": "#/parameters/DoCalculate"
+          }
+        ],
+        "tags": [
+          "Gridset",
+          "Analysis"
+        ],
+        "responses": {
+          "202": {
+            "description": "Returns the gridset object that the analyses were submitted for",
+            "schema": {
+              "$ref": "#/definitions/GridSet"
+            }
+          },
+          "400": {
+            "description": "Error status returned when there is a problem with user input"
+          },
+          "403": {
+            "description": "Error status thrown when the user does not have permission to access a gridset"
+          },
+          "404": {
+            "description": "Error status thrown when the requested gridset was not found"
+          },
+          "409": {
+            "description": "Error status thrown when the gridset is not ready for analyses to be run"
+          }
+        }
+      }
+    },
     "/gridset/{gridsetId}/biogeo": {
       "get": {
         "summary": "Get a list of biogeographic hypothesis matrices for this gridset",
@@ -776,7 +861,10 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/definitions/Matrix"
+            "description": "A biogeogrpahic hypothesis matrix",
+            "schema": {
+              "$ref": "#/definitions/Matrix"
+            }
           },
           "403": {
             "description": "Error status returned when the user does not have permission to access the data"
@@ -3378,6 +3466,30 @@
       "required": false,
       "type": "string"
     },
+    "DoCalculate": {
+      "name": "doCalc",
+      "in": "query",
+      "description": "If set to 1, calculate PAM-based statistics",
+      "required": false,
+      "default": 0,
+      "type": "integer",
+      "enum": [
+        0,
+        1
+      ]
+    },
+    "DoMCPA": {
+      "name": "doMcpa",
+      "in": "query",
+      "description": "If set to 1, calculate MCPA",
+      "required": false,
+      "default": 0,
+      "type": "integer",
+      "enum": [
+        0,
+        1
+      ]
+    },
     "EnvCode": {
       "name": "envCode",
       "in": "query",
@@ -3527,6 +3639,16 @@
       "required": false,
       "type": "integer",
       "minimum": 0
+    },
+    "NumberOfPermutations": {
+      "name": "numPermutations",
+      "in": "query",
+      "description": "Perform this many permutation tests when running MCPA",
+      "required": false,
+      "default": 500,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10000
     },
     "OccurrenceSetId": {
       "name": "occurrenceSetId",
