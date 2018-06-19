@@ -22,10 +22,13 @@
 -}
 
 
-module NewSDM exposing (Model, page, init, update, Msg)
+port module NewSDM exposing (Model, page, init, update, Msg)
 
 import List.Extra exposing (elemIndex, getAt)
 import Html exposing (Html)
+import Html.Attributes as Attribute
+import Html.Events as Events
+import Json.Decode as Decode
 import Http
 import Material
 import Material.Options as Options
@@ -35,6 +38,8 @@ import Material.Typography as Typo
 import Material.Button as Button
 import Material.Helpers exposing (lift)
 import Material.Spinner as Loading
+import Material.Textfield as Textfield
+import Material.Progress as Progress
 import ScenariosView as Scns
 import AlgorithmsView as Algs
 import OccurrenceSetsView as Occs
@@ -46,16 +51,39 @@ import ProgramFlags exposing (Flags)
 import Navigation as Nav
 
 
+port fileSelected : String -> Cmd msg
+
+
+port uploadProgress : ({ id : String, loaded : Int, total : Int } -> msg) -> Sub msg
+
+
+port uploadComplete : ({ id : String, response : String, status : Int } -> msg) -> Sub msg
+
+
+port uploadFailed : ({ id : String, response : String } -> msg) -> Sub msg
+
+
+port uploadCanceled : (String -> msg) -> Sub msg
+
+
+port uploadCmd : { id : String, url : String } -> Cmd msg
+
+
+port selectedFileName : ({ id : String, filename : String } -> msg) -> Sub msg
+
+
 type Tab
     = Algorithms
     | OccurrenceSets
     | Scenarios
+    | TreeUpload
+    | HypothesisUpload
     | PostProjection
 
 
 tabs : List Tab
 tabs =
-    [ OccurrenceSets, Algorithms, Scenarios, PostProjection ]
+    [ OccurrenceSets, Algorithms, Scenarios, TreeUpload, HypothesisUpload, PostProjection ]
 
 
 tabIndex : Tab -> Int
@@ -69,6 +97,22 @@ type WorkFlowState
     | SubmissionFailed
 
 
+type UploadStatus
+    = StartingUpload
+    | Uploading ( Int, Int )
+    | UploadComplete Int String
+    | UploadFailed String
+    | UploadCanceled
+
+
+type FileSelectState
+    = FileNotSelected
+    | FileSelected
+    | GotFileName { localFileName : String, uploadAs : String }
+    | UploadingFile { localFileName : String, uploadAs : String, status : UploadStatus }
+    | FileNameConflict { localFileName : String, uploadAs : String }
+
+
 type alias Model =
     { mdl : Material.Model
     , selectedTab : Tab
@@ -76,6 +120,7 @@ type alias Model =
     , algorithmsModel : Algs.Model
     , occurrenceSets : Occs.Model
     , availableScenarios : SL.Model
+    , tree : FileSelectState
     , workFlowState : WorkFlowState
     , programFlags : Flags
     }
@@ -125,6 +170,7 @@ init flags =
       , algorithmsModel = Algs.init
       , occurrenceSets = Occs.init flags
       , availableScenarios = SL.init flags
+      , tree = FileNotSelected
       , workFlowState = Defining
       , programFlags = flags
       }
@@ -142,6 +188,11 @@ type Msg
     | AlgsMsg Algs.Msg
     | OccsMsg Occs.Msg
     | SLMsg SL.Msg
+    | FileSelectedMsg String
+    | GotFileNameMsg { id : String, filename : String }
+    | GotUploadStatus { id : String, status : UploadStatus }
+    | UpdateUploadFilename String
+    | DoUpload
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -199,8 +250,78 @@ update msg model =
                 msg_
                 model
 
+        FileSelectedMsg id ->
+            ( { model | tree = FileSelected }, fileSelected id )
+
+        GotFileNameMsg { id, filename } ->
+            if id == "tree-file" then
+                ( { model | tree = GotFileName { localFileName = filename, uploadAs = filename } }, Cmd.none )
+            else
+                ( model, Cmd.none )
+
+        UpdateUploadFilename uploadAs ->
+            case model.tree of
+                GotFileName info ->
+                    ( { model | tree = GotFileName { info | uploadAs = uploadAs } }, Cmd.none )
+
+                FileNameConflict info ->
+                    ( { model | tree = FileNameConflict { info | uploadAs = uploadAs } }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        DoUpload ->
+            case model.tree of
+                GotFileName info ->
+                    doUpload info model
+
+                FileNameConflict info ->
+                    doUpload info model
+
+                _ ->
+                    ( model, Cmd.none )
+
+        GotUploadStatus { id, status } ->
+            case ( id, model.tree ) of
+                ( "tree-file", UploadingFile ({ localFileName, uploadAs } as info) ) ->
+                    case status of
+                        UploadComplete 409 _ ->
+                            ( { model
+                                | tree =
+                                    FileNameConflict
+                                        { localFileName = localFileName
+                                        , uploadAs = uploadAs
+                                        }
+                              }
+                            , Cmd.none
+                            )
+
+                        _ ->
+                            ( { model | tree = UploadingFile { info | status = status } }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
+
         Mdl msg_ ->
             Material.update Mdl msg_ model
+
+
+doUpload : { localFileName : String, uploadAs : String } -> Model -> ( Model, Cmd Msg )
+doUpload { localFileName, uploadAs } model =
+    let
+        url =
+            model.programFlags.apiRoot ++ "upload?uploadType=tree&fileName=" ++ uploadAs
+    in
+        ( { model
+            | tree =
+                UploadingFile
+                    { localFileName = localFileName
+                    , uploadAs = uploadAs
+                    , status = StartingUpload
+                    }
+          }
+        , uploadCmd { id = "tree-file", url = url }
+        )
 
 
 tabTitle : Tab -> Html msg
@@ -208,13 +329,19 @@ tabTitle tab =
     Html.text <|
         case tab of
             Algorithms ->
-                "Algorithms"
+                "SDM Algorithms"
 
             OccurrenceSets ->
                 "Species Data"
 
             Scenarios ->
-                "Input Layers"
+                "SDM Layers"
+
+            TreeUpload ->
+                "Tree Upload"
+
+            HypothesisUpload ->
+                "Hypothesis"
 
             PostProjection ->
                 "Submit Project"
@@ -251,6 +378,88 @@ mainView model =
 
                 Scenarios ->
                     model.scenarios |> Scns.view [ 0 ] model.availableScenarios |> Html.map ScnsMsg
+
+                TreeUpload ->
+                    Options.div [ Options.css "padding" "20px" ]
+                        (case model.tree of
+                            FileNameConflict { localFileName, uploadAs } ->
+                                [ Html.p [] [ Html.text ("File selected: " ++ localFileName) ]
+                                , Html.p [] [ Html.text "Filename already in use. Choose another." ]
+                                , Html.p []
+                                    [ Textfield.render Mdl
+                                        [ 0 ]
+                                        model.mdl
+                                        [ Textfield.label "Upload as"
+                                        , Textfield.floatingLabel
+                                        , Textfield.value uploadAs
+                                        , Options.onInput UpdateUploadFilename
+                                        ]
+                                        []
+                                    , Button.render Mdl
+                                        [ 1 ]
+                                        model.mdl
+                                        [ Button.raised, Options.onClick DoUpload ]
+                                        [ Html.text "Upload" ]
+                                    ]
+                                ]
+
+                            UploadingFile { localFileName, uploadAs, status } ->
+                                case status of
+                                    StartingUpload ->
+                                        [ Html.text <| "Starting upload of " ++ uploadAs ++ "..."
+                                        , Progress.indeterminate
+                                        ]
+
+                                    Uploading ( loaded, total ) ->
+                                        [ Html.text <| "Uploading " ++ uploadAs ++ "..."
+                                        , Progress.progress (toFloat loaded / toFloat total * 100)
+                                        ]
+
+                                    UploadComplete status response ->
+                                        [ Html.text <| "Finished uploading " ++ uploadAs ++ "." ]
+
+                                    UploadFailed response ->
+                                        [ Html.text <| "Failed uploading " ++ uploadAs ++ "." ]
+
+                                    UploadCanceled ->
+                                        [ Html.text <| "Failed uploading " ++ uploadAs ++ "." ]
+
+                            GotFileName { localFileName, uploadAs } ->
+                                [ Html.p [] [ Html.text ("File selected: " ++ localFileName) ]
+                                , Html.p []
+                                    [ Textfield.render Mdl
+                                        [ 0 ]
+                                        model.mdl
+                                        [ Textfield.label "Upload as"
+                                        , Textfield.floatingLabel
+                                        , Textfield.value uploadAs
+                                        , Options.onInput UpdateUploadFilename
+                                        ]
+                                        []
+                                    , Button.render Mdl
+                                        [ 1 ]
+                                        model.mdl
+                                        [ Button.raised, Options.onClick DoUpload ]
+                                        [ Html.text "Upload" ]
+                                    ]
+                                ]
+
+                            FileSelected ->
+                                [ Html.text "Opening file..." ]
+
+                            FileNotSelected ->
+                                [ Html.input
+                                    [ Attribute.type_ "file"
+                                    , Attribute.id "tree-file"
+                                    , Events.on "change" (Decode.succeed <| FileSelectedMsg "tree-file")
+                                    ]
+                                    []
+                                ]
+                        )
+
+                HypothesisUpload ->
+                    Options.div [ Options.css "padding" "20px" ]
+                        [ Html.text "..." ]
 
                 PostProjection ->
                     Options.div [ Options.css "padding" "20px" ]
@@ -337,6 +546,27 @@ page =
     , selectedTab = selectedTab
     , selectTab = selectTab
     , tabTitles = tabTitles
-    , subscriptions = always (Scns.subscriptions ScnsMsg)
+    , subscriptions =
+        always <|
+            Sub.batch
+                [ Scns.subscriptions ScnsMsg
+                , selectedFileName GotFileNameMsg
+                , uploadProgress
+                    (\{ id, total, loaded } ->
+                        GotUploadStatus { id = id, status = Uploading ( loaded, total ) }
+                    )
+                , uploadComplete
+                    (\{ id, response, status } ->
+                        GotUploadStatus { id = id, status = UploadComplete status response }
+                    )
+                , uploadFailed
+                    (\{ id, response } ->
+                        GotUploadStatus { id = id, status = UploadFailed response }
+                    )
+                , uploadCanceled
+                    (\id ->
+                        GotUploadStatus { id = id, status = UploadCanceled }
+                    )
+                ]
     , title = "New Project"
     }

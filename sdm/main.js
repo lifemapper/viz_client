@@ -25,19 +25,47 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 
 var app = Elm.Main.fullscreen(sdmFlags);
 
+var files = {};
+
 app.ports.fileSelected.subscribe(function(id) {
     var node = document.getElementById(id);
-    var reader = new FileReader();
-
     var file = node.files[0];
+    files[id] = file;
+    app.ports.selectedFileName.send({id: id, filename: file.name});
 
-    reader.onload = (function(event) {
-        app.ports.fileContentRead.send({contents: event.target.result, filename: file.name});
-    });
-
-    reader.readAsText(file);
+    // var reader = new FileReader();
+    // reader.onload = (function(event) {
+    //     app.ports.fileContentRead.send({contents: event.target.result, filename: file.name});
+    // });
+    // reader.readAsText(file);
 });
 
+app.ports.uploadCmd.subscribe(function(info) {
+    var xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener("progress", function(evt) {
+        evt.lengthComputable && app.ports.uploadProgress.send({
+            id: info.id,
+            loaded: evt.loaded,
+            total: evt.total
+        });
+    });
+    xhr.addEventListener("load", function(evt) {
+        console.log("load", evt, xhr);
+        app.ports.uploadComplete.send({id: info.id, response: xhr.responseText, status: xhr.status});
+    });
+    xhr.addEventListener("error", function(evt) {
+        console.log("error", evt, xhr);
+        app.ports.uploadFailed.send({id: info.id, response: xhr.responseText});
+    });
+    xhr.addEventListener("abort", function(evt) {
+        console.log("abort", evt, xhr);
+        app.ports.uploadCanceled.send(info.id);
+    });
+    xhr.open("POST", info.url, true);
+    xhr.responseType = "text";
+    xhr.setRequestHeader("Content-type", "application/octet-stream");
+    xhr.send(files[info.id]);
+});
 
 
 var maps = {};
