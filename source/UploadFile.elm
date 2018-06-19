@@ -204,12 +204,12 @@ view mapMdlMsg mapMsg index mdl state =
                     , Options.onInput (UpdateUploadFilename >> mapMsg)
                     ]
                     []
-                , Button.render mapMdlMsg
-                    (1 :: index)
-                    mdl
-                    [ Button.raised, Options.onClick (mapMsg DoUpload) ]
-                    [ Html.text "Upload" ]
                 ]
+            , Button.render mapMdlMsg
+                (1 :: index)
+                mdl
+                [ Button.raised, Options.onClick (mapMsg DoUpload) ]
+                [ Html.text "Upload" ]
             ]
 
         UploadingFile { localFileName, uploadAs, status } ->
@@ -245,12 +245,12 @@ view mapMdlMsg mapMsg index mdl state =
                     , Options.onInput (UpdateUploadFilename >> mapMsg)
                     ]
                     []
-                , Button.render mapMdlMsg
-                    (1 :: index)
-                    mdl
-                    [ Button.raised, Options.onClick (mapMsg DoUpload) ]
-                    [ Html.text "Upload" ]
                 ]
+            , Button.render mapMdlMsg
+                (1 :: index)
+                mdl
+                [ Button.raised, Options.onClick (mapMsg DoUpload) ]
+                [ Html.text "Upload" ]
             ]
 
         FileSelected ->

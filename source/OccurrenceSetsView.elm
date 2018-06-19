@@ -55,7 +55,7 @@ type alias Model =
     , chooser : OccurrenceSetChooser.Model
     , mappedSet : Maybe OccurrenceSetRecord
     , mapCard : MapCard.Model
-    , upload : UploadFile.Model
+    , upload : Maybe UploadFile.Model
     , mdl : Material.Model
     , programFlags : Flags
     }
@@ -72,7 +72,7 @@ toApi model =
     in
         Decoder.BoomOccurrenceSet
             { occurrence_ids = occurrenceIds
-            , points_filename = UploadFile.getUploadedFilename model.upload
+            , points_filename = model.upload |> Maybe.andThen UploadFile.getUploadedFilename
             , point_count_min = Nothing
             }
 
@@ -84,6 +84,7 @@ type Msg
     | MapOccurrences Int
     | MapCardMsg MapCard.Msg
     | UploadMsg UploadFile.Msg
+    | WantToUpload
     | Mdl (Material.Msg Msg)
 
 
@@ -121,11 +122,19 @@ update index msg model =
                 liftedMapCardUpdate msg_ model
 
             UploadMsg msg_ ->
-                let
-                    ( upload, cmd ) =
-                        UploadFile.update (1 :: index) model.programFlags msg_ model.upload
-                in
-                    ( { model | upload = upload }, cmd )
+                case model.upload of
+                    Just upload ->
+                        let
+                            ( upload_, cmd ) =
+                                UploadFile.update (1 :: index) model.programFlags msg_ upload
+                        in
+                            ( { model | upload = Just upload_ }, cmd )
+
+                    Nothing ->
+                        ( model, Cmd.none )
+
+            WantToUpload ->
+                ( { model | upload = Just UploadFile.init }, Cmd.none )
 
             ChooserMsg msg_ ->
                 chain (addSelected msg_) (liftedChooserUpdate msg_) model
@@ -212,7 +221,7 @@ init flags =
     , mappedSet = Nothing
     , chooser = OccurrenceSetChooser.init flags
     , mapCard = MapCard.init Nothing Nothing
-    , upload = UploadFile.init
+    , upload = Nothing
     , mdl = Material.model
     , programFlags = flags
     }
@@ -247,10 +256,14 @@ occurrenceSetList index model =
             List.append
                 (List.indexedMap (occurrenceSetLI model) model.occurrenceSets)
                 [ (OccurrenceSetChooser.view (0 :: index) model.chooser |> Html.map ChooserMsg) ]
-        , Options.div []
-            [ Html.p [] [ Html.text "or choose file to upload:" ]
-            , Html.div [] (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl model.upload)
-            ]
+        , case model.upload of
+            Nothing ->
+                Options.styled Html.a
+                    [ Options.onClick WantToUpload, Options.css "cursor" "pointer" ]
+                    [ Html.text "or upload data" ]
+
+            Just upload ->
+                Options.div [] (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
         ]
 
 
@@ -268,15 +281,19 @@ view index model =
 
 problems : Model -> Maybe String
 problems model =
-    case model.occurrenceSets of
-        [] ->
-            if UploadFile.getUploadedFilename model.upload == Nothing then
-                Just "No occurrence sets chosen."
-            else
-                Nothing
+    let
+        uploadedFile =
+            model.upload |> Maybe.andThen UploadFile.getUploadedFilename
+    in
+        case model.occurrenceSets of
+            [] ->
+                if uploadedFile == Nothing then
+                    Just "No occurrence sets chosen."
+                else
+                    Nothing
 
-        _ ->
-            Nothing
+            _ ->
+                Nothing
 
 
 subscriptions : Sub Msg
