@@ -192,7 +192,7 @@ update msg model =
                 .occurrenceSets
                 (\m x -> { m | occurrenceSets = x })
                 OccsMsg
-                Occs.update
+                (Occs.update [])
                 msg_
                 model
 
@@ -208,7 +208,7 @@ update msg model =
         UploadMsg msg_ ->
             let
                 ( tree_, cmd ) =
-                    UploadFile.update [0] model.programFlags msg_ model.tree
+                    UploadFile.update [ 0 ] model.programFlags msg_ model.tree
             in
                 ( { model | tree = tree_ }, cmd )
 
@@ -272,7 +272,7 @@ mainView model =
                     model.scenarios |> Scns.view [ 0 ] model.availableScenarios |> Html.map ScnsMsg
 
                 TreeUpload ->
-                    Options.div [ Options.css "padding" "20px" ] (UploadFile.view Mdl UploadMsg [0] model.mdl model.tree)
+                    Options.div [ Options.css "padding" "20px" ] (UploadFile.view Mdl UploadMsg [ 0 ] model.mdl model.tree)
 
                 HypothesisUpload ->
                     Options.div [ Options.css "padding" "20px" ]
@@ -364,6 +364,11 @@ page =
     , selectTab = selectTab
     , tabTitles = tabTitles
     , subscriptions =
-        always <| Sub.batch [ Scns.subscriptions ScnsMsg, UploadFile.subscriptions UploadMsg ]
+        always <|
+            Sub.batch
+                [ Scns.subscriptions ScnsMsg
+                , UploadFile.subscriptions UploadMsg
+                , Sub.map OccsMsg Occs.subscriptions
+                ]
     , title = "New Project"
     }

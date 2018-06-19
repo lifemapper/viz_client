@@ -22,7 +22,7 @@
 -}
 
 
-port module UploadFile exposing (Model, Msg, init, update, view, subscriptions)
+port module UploadFile exposing (Model, Msg, init, getUploadedFilename, update, view, subscriptions)
 
 import Html exposing (Html)
 import Html.Attributes as Attribute
@@ -72,6 +72,7 @@ type FileSelectState
     | GotFileName { localFileName : String, uploadAs : String }
     | UploadingFile { localFileName : String, uploadAs : String, status : UploadStatus }
     | FileNameConflict { localFileName : String, uploadAs : String }
+    | Finished String
 
 
 type alias Model =
@@ -81,6 +82,16 @@ type alias Model =
 init : Model
 init =
     FileNotSelected
+
+
+getUploadedFilename : Model -> Maybe String
+getUploadedFilename state =
+    case state of
+        Finished filename ->
+            Just filename
+
+        _ ->
+            Nothing
 
 
 type UploadMsg
@@ -97,7 +108,7 @@ type alias Msg =
 
 fileSelectId : Index -> String
 fileSelectId index =
-    "file-select" ++ (index |> List.map toString |> String.join "-" )
+    "file-select" ++ (index |> List.map toString |> String.join "-")
 
 
 update : Index -> Flags -> UploadMsg -> FileSelectState -> ( FileSelectState, Cmd msg )
@@ -147,6 +158,9 @@ update index flags msg state =
                                 , Cmd.none
                                 )
 
+                            UploadComplete 200 _ ->
+                                ( Finished uploadAs, Cmd.none )
+
                             _ ->
                                 ( UploadingFile { info | status = status }, Cmd.none )
 
@@ -174,6 +188,9 @@ doUpload index flags { localFileName, uploadAs } =
 view : (Material.Msg msg -> msg) -> (UploadMsg -> msg) -> Index -> Material.Model -> FileSelectState -> List (Html msg)
 view mapMdlMsg mapMsg index mdl state =
     case state of
+        Finished filename ->
+            [ Html.text <| "Uploaded " ++ filename ++ "." ]
+
         FileNameConflict { localFileName, uploadAs } ->
             [ Html.p [] [ Html.text ("File selected: " ++ localFileName) ]
             , Html.p [] [ Html.text "Filename already in use. Choose another." ]

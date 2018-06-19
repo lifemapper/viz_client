@@ -22,7 +22,7 @@
 -}
 
 
-module OccurrenceSetsView exposing (Model, toApi, Msg, update, view, init, problems)
+module OccurrenceSetsView exposing (Model, toApi, Msg, update, view, init, problems, subscriptions)
 
 import ProgramFlags exposing (Flags)
 import Decoder
@@ -47,6 +47,7 @@ import Http
 import List.Extra exposing (removeAt)
 import Helpers exposing (Index, chain)
 import MapCard
+import UploadFile
 
 
 type alias Model =
@@ -54,18 +55,26 @@ type alias Model =
     , chooser : OccurrenceSetChooser.Model
     , mappedSet : Maybe OccurrenceSetRecord
     , mapCard : MapCard.Model
+    , upload : UploadFile.Model
     , mdl : Material.Model
     , programFlags : Flags
     }
 
 
 toApi : Model -> Decoder.BoomOccurrenceSet
-toApi =
-    .occurrenceSets
-        >> List.map (.id)
-        >> Decoder.BoomOccurrenceSetOccurrence_ids
-        >> (\ids -> { occurrence_ids = Just ids, point_count_min = Nothing, points_filename = Nothing })
-        >> Decoder.BoomOccurrenceSet
+toApi model =
+    let
+        occurrenceIds =
+            model.occurrenceSets
+                |> List.map (.id)
+                |> Decoder.BoomOccurrenceSetOccurrence_ids
+                |> Just
+    in
+        Decoder.BoomOccurrenceSet
+            { occurrence_ids = occurrenceIds
+            , points_filename = UploadFile.getUploadedFilename model.upload
+            , point_count_min = Nothing
+            }
 
 
 type Msg
@@ -74,11 +83,12 @@ type Msg
     | SetMapped (Maybe OccurrenceSetRecord)
     | MapOccurrences Int
     | MapCardMsg MapCard.Msg
+    | UploadMsg UploadFile.Msg
     | Mdl (Material.Msg Msg)
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Index -> Msg -> Model -> ( Model, Cmd Msg )
+update index msg model =
     let
         liftedChooserUpdate =
             Helpers.lift
@@ -109,6 +119,13 @@ update msg model =
 
             MapCardMsg msg_ ->
                 liftedMapCardUpdate msg_ model
+
+            UploadMsg msg_ ->
+                let
+                    ( upload, cmd ) =
+                        UploadFile.update (1 :: index) model.programFlags msg_ model.upload
+                in
+                    ( { model | upload = upload }, cmd )
 
             ChooserMsg msg_ ->
                 chain (addSelected msg_) (liftedChooserUpdate msg_) model
@@ -195,13 +212,14 @@ init flags =
     , mappedSet = Nothing
     , chooser = OccurrenceSetChooser.init flags
     , mapCard = MapCard.init Nothing Nothing
+    , upload = UploadFile.init
     , mdl = Material.model
     , programFlags = flags
     }
 
 
-occurrenceSetLI : Model -> Index -> Int -> AtomObjectRecord -> Html Msg
-occurrenceSetLI model index i o =
+occurrenceSetLI : Model -> Int -> AtomObjectRecord -> Html Msg
+occurrenceSetLI model i o =
     let
         iconName =
             if Just o.id == Maybe.map .id model.mappedSet then
@@ -227,8 +245,12 @@ occurrenceSetList index model =
         [ Options.styled Html.p [ Typo.title ] [ Html.text "Choose Occurrence Sets" ]
         , L.ul [] <|
             List.append
-                (List.indexedMap (occurrenceSetLI model index) model.occurrenceSets)
-                [ (OccurrenceSetChooser.view index model.chooser |> Html.map ChooserMsg) ]
+                (List.indexedMap (occurrenceSetLI model) model.occurrenceSets)
+                [ (OccurrenceSetChooser.view (0 :: index) model.chooser |> Html.map ChooserMsg) ]
+        , Options.div []
+            [ Html.p [] [ Html.text "or choose file to upload:" ]
+            , Html.div [] (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl model.upload)
+            ]
         ]
 
 
@@ -248,7 +270,15 @@ problems : Model -> Maybe String
 problems model =
     case model.occurrenceSets of
         [] ->
-            Just "No occurrence sets chosen."
+            if UploadFile.getUploadedFilename model.upload == Nothing then
+                Just "No occurrence sets chosen."
+            else
+                Nothing
 
         _ ->
             Nothing
+
+
+subscriptions : Sub Msg
+subscriptions =
+    UploadFile.subscriptions UploadMsg
