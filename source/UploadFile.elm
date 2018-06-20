@@ -111,8 +111,8 @@ fileSelectId index =
     "file-select" ++ (index |> List.map toString |> String.join "-")
 
 
-update : Index -> Flags -> UploadMsg -> FileSelectState -> ( FileSelectState, Cmd msg )
-update index flags msg state =
+update : String -> Index -> Flags -> UploadMsg -> FileSelectState -> ( FileSelectState, Cmd msg )
+update uploadType index flags msg state =
     case msg of
         FileSelectedMsg id ->
             ( FileSelected, fileSelected id )
@@ -137,10 +137,10 @@ update index flags msg state =
         DoUpload ->
             case state of
                 GotFileName info ->
-                    doUpload index flags info
+                    doUpload uploadType index flags info
 
                 FileNameConflict info ->
-                    doUpload index flags info
+                    doUpload uploadType index flags info
 
                 _ ->
                     ( state, Cmd.none )
@@ -170,11 +170,11 @@ update index flags msg state =
                 ( state, Cmd.none )
 
 
-doUpload : Index -> Flags -> { localFileName : String, uploadAs : String } -> ( FileSelectState, Cmd msg )
-doUpload index flags { localFileName, uploadAs } =
+doUpload : String -> Index -> Flags -> { localFileName : String, uploadAs : String } -> ( FileSelectState, Cmd msg )
+doUpload uploadType index flags { localFileName, uploadAs } =
     let
         url =
-            flags.apiRoot ++ "upload?uploadType=tree&fileName=" ++ uploadAs
+            flags.apiRoot ++ "upload?uploadType=" ++ uploadType ++ "&fileName=" ++ uploadAs
     in
         ( UploadingFile
             { localFileName = localFileName

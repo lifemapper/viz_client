@@ -208,7 +208,7 @@ update msg model =
         UploadMsg msg_ ->
             let
                 ( tree_, cmd ) =
-                    UploadFile.update [ 0 ] model.programFlags msg_ model.tree
+                    UploadFile.update "tree" [ 0 ] model.programFlags msg_ model.tree
             in
                 ( { model | tree = tree_ }, cmd )
 
