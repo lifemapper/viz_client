@@ -130,7 +130,6 @@ type Msg
     | UrlChange Location
     | OpenExisting Int
     | OpenNew
-    | OpenNewOccurrenceSet
     | OpenBrowse
     | Tick Time.Time
     | AuthMsg Auth.Msg
@@ -215,9 +214,6 @@ update msg model =
             OpenNew ->
                 model ! [ Nav.newUrl "#" ]
 
-            OpenNewOccurrenceSet ->
-                model ! [ Nav.newUrl "#new-species-data/" ]
-
             OpenBrowse ->
                 model ! [ Nav.newUrl "#browse-projections/" ]
 
@@ -279,7 +275,7 @@ header : String -> List (Html Msg)
 header title =
     [ Layout.row []
         [ Layout.title []
-            [ Html.text "Lifemapper SDM | "
+            [ Html.text "Lifemapper BOOM | "
             , Options.span [ Typo.subhead ] [ Html.text title ]
             ]
         ]
@@ -298,7 +294,7 @@ newLink model =
                     Options.nop
     in
         Layout.link [ Options.onClick OpenNew, Options.css "cursor" "pointer", selected ]
-            [ Html.text "New SDM Project" ]
+            [ Html.text "New BOOM Project" ]
 
 
 resultsLink : Model -> AtomObjectRecord -> Html Msg
@@ -321,14 +317,14 @@ resultsLink model { modificationTime, id } =
 
 browseProjectionsLink : Model -> Html Msg
 browseProjectionsLink model =
-    Layout.link [ Options.onClick OpenBrowse, Options.css "cursor" "pointer" ] [ Html.text "Browse by species" ]
+    Layout.link [ Options.onClick OpenBrowse, Options.css "cursor" "pointer" ] [ Html.text "Browse Projections" ]
 
 
 title : Auth.Model -> Html msg
 title login =
     Auth.getUserName login
         |> Maybe.map (\userName -> "Welcome, " ++ userName)
-        |> Maybe.withDefault "Lifemapper SDM"
+        |> Maybe.withDefault "Lifemapper BOOM"
         |> Html.text
 
 
