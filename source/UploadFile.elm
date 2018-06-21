@@ -115,7 +115,10 @@ update : String -> Index -> Flags -> UploadMsg -> FileSelectState -> ( FileSelec
 update uploadType index flags msg state =
     case msg of
         FileSelectedMsg id ->
-            ( FileSelected, fileSelected id )
+            if id == fileSelectId index then
+                ( FileSelected, fileSelected id )
+            else
+                ( state, Cmd.none )
 
         GotFileNameMsg { id, filename } ->
             if id == fileSelectId index then

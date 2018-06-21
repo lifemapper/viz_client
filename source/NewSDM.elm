@@ -79,7 +79,8 @@ type alias Model =
     , algorithmsModel : Algs.Model
     , occurrenceSets : Occs.Model
     , availableScenarios : SL.Model
-    , tree : UploadFile.Model
+    , treeUpload : UploadFile.Model
+    , hypoUpload : UploadFile.Model
     , workFlowState : WorkFlowState
     , programFlags : Flags
     }
@@ -129,7 +130,8 @@ init flags =
       , algorithmsModel = Algs.init
       , occurrenceSets = Occs.init flags
       , availableScenarios = SL.init flags
-      , tree = UploadFile.init
+      , treeUpload = UploadFile.init
+      , hypoUpload = UploadFile.init
       , workFlowState = Defining
       , programFlags = flags
       }
@@ -192,7 +194,7 @@ update msg model =
                 .occurrenceSets
                 (\m x -> { m | occurrenceSets = x })
                 OccsMsg
-                (Occs.update [])
+                (Occs.update [ 1 ])
                 msg_
                 model
 
@@ -207,10 +209,13 @@ update msg model =
 
         UploadMsg msg_ ->
             let
-                ( tree_, cmd ) =
-                    UploadFile.update "tree" [ 0 ] model.programFlags msg_ model.tree
+                ( treeUpload_, cmd1 ) =
+                    UploadFile.update "tree" [ 3 ] model.programFlags msg_ model.treeUpload
+
+                ( hypoUpload_, cmd2 ) =
+                    UploadFile.update "biogeo" [ 4 ] model.programFlags msg_ model.hypoUpload
             in
-                ( { model | tree = tree_ }, cmd )
+                { model | treeUpload = treeUpload_, hypoUpload = hypoUpload_ } ! [ cmd1, cmd2 ]
 
         Mdl msg_ ->
             Material.update Mdl msg_ model
@@ -247,7 +252,7 @@ mainView model =
                 [ Html.text "There was a problem submitting the job."
                 , Html.p []
                     [ Button.render Mdl
-                        [ 0 ]
+                        [ 5 ]
                         model.mdl
                         [ Button.raised, Options.onClick SubmitJob ]
                         [ Html.text "Retry" ]
@@ -263,20 +268,21 @@ mainView model =
         Defining ->
             case model.selectedTab of
                 Algorithms ->
-                    model.algorithmsModel |> Algs.view [] |> Html.map AlgsMsg
+                    model.algorithmsModel |> Algs.view [ 0 ] |> Html.map AlgsMsg
 
                 OccurrenceSets ->
-                    model.occurrenceSets |> Occs.view [] |> Html.map OccsMsg
+                    model.occurrenceSets |> Occs.view [ 1 ] |> Html.map OccsMsg
 
                 Scenarios ->
-                    model.scenarios |> Scns.view [ 0 ] model.availableScenarios |> Html.map ScnsMsg
+                    model.scenarios |> Scns.view [ 2 ] model.availableScenarios |> Html.map ScnsMsg
 
                 TreeUpload ->
-                    Options.div [ Options.css "padding" "20px" ] (UploadFile.view Mdl UploadMsg [ 0 ] model.mdl model.tree)
+                    Options.div [ Options.css "padding" "20px" ]
+                        (UploadFile.view Mdl UploadMsg [ 3 ] model.mdl model.treeUpload)
 
                 HypothesisUpload ->
                     Options.div [ Options.css "padding" "20px" ]
-                        [ Html.text "..." ]
+                        (UploadFile.view Mdl UploadMsg [ 4 ] model.mdl model.hypoUpload)
 
                 PostProjection ->
                     Options.div [ Options.css "padding" "20px" ]
