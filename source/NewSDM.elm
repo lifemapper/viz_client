@@ -33,6 +33,7 @@ import Material.List as Lists
 import Material.Icon as Icon
 import Material.Typography as Typo
 import Material.Button as Button
+import Material.Toggles as Toggles
 import Material.Helpers exposing (lift)
 import Material.Spinner as Loading
 import ScenariosView as Scns
@@ -81,13 +82,14 @@ type alias Model =
     , availableScenarios : SL.Model
     , treeUpload : UploadFile.Model
     , hypoUpload : UploadFile.Model
+    , computeStats : Bool
     , workFlowState : WorkFlowState
     , programFlags : Flags
     }
 
 
 toApi : Model -> Result String Decoder.BoomPOST
-toApi { algorithmsModel, occurrenceSets, scenarios } =
+toApi { algorithmsModel, occurrenceSets, scenarios, treeUpload, hypoUpload, computeStats } =
     Scns.toApi scenarios
         |> Result.map
             (\scenarioPackage ->
@@ -95,10 +97,21 @@ toApi { algorithmsModel, occurrenceSets, scenarios } =
                     { sdm = Just <| Algs.toApi algorithmsModel
                     , occurrence = Just <| Occs.toApi occurrenceSets
                     , scenario_package = Just scenarioPackage
-                    , global_pam = Nothing
-                    , mcpa = Nothing
-                    , pam_stats = Nothing
-                    , tree = Nothing
+                    , global_pam =
+                        Nothing
+                    , mcpa =
+                        UploadFile.getUploadedFilename hypoUpload
+                            |> Maybe.map (\filename -> Decoder.BoomMCPA { hypotheses_package_name = filename })
+                    , pam_stats =
+                        if computeStats then
+                            Just (Decoder.BoomPAMStats { compute_pam_stats = 1 })
+                        else
+                            Just (Decoder.BoomPAMStats { compute_pam_stats = 0 })
+                    , tree =
+                        UploadFile.getUploadedFilename treeUpload
+                            |> Maybe.map (Just >> Decoder.BoomPOSTTreeRecord >> Decoder.BoomPOSTTree)
+                    , archive_name =
+                        UploadFile.getUploadedFilename treeUpload |> Maybe.map ((++) "test")
                     }
             )
 
@@ -116,6 +129,7 @@ submitJob model =
                 , timeout = Nothing
                 , withCredentials = False
                 }
+                |> Debug.log "request"
                 |> Http.send JobSubmitted
 
         Err msg ->
@@ -132,6 +146,7 @@ init flags =
       , availableScenarios = SL.init flags
       , treeUpload = UploadFile.init
       , hypoUpload = UploadFile.init
+      , computeStats = False
       , workFlowState = Defining
       , programFlags = flags
       }
@@ -149,6 +164,7 @@ type Msg
     | AlgsMsg Algs.Msg
     | OccsMsg Occs.Msg
     | SLMsg SL.Msg
+    | ToggleComputeStats
     | UploadMsg UploadFile.Msg
 
 
@@ -216,6 +232,9 @@ update msg model =
                     UploadFile.update "biogeo" [ 4 ] model.programFlags msg_ model.hypoUpload
             in
                 { model | treeUpload = treeUpload_, hypoUpload = hypoUpload_ } ! [ cmd1, cmd2 ]
+
+        ToggleComputeStats ->
+            ( { model | computeStats = not model.computeStats }, Cmd.none )
 
         Mdl msg_ ->
             Material.update Mdl msg_ model
@@ -293,22 +312,22 @@ mainView model =
                                  """
                             ]
                         , Lists.ul [] <| List.map (taskLI model) tasks
+                        , Toggles.switch Mdl
+                            [ 6 ]
+                            model.mdl
+                            [ Toggles.value model.computeStats
+                            , Options.onToggle ToggleComputeStats
+                            , Options.css "margin-bottom" "20px"
+                            ]
+                            [ Html.text "Compute PAM stats" ]
                         , Button.render Mdl
-                            [ 0 ]
+                            [ 5 ]
                             model.mdl
                             [ Button.raised
                             , Button.disabled |> Options.when (not <| complete model)
                             , Options.onClick SubmitJob |> Options.when (complete model)
                             ]
                             [ Html.text "Submit Job" ]
-                          -- , Button.render Mdl
-                          --     [ 1 ]
-                          --     model.mdl
-                          --     [ Button.raised
-                          --     , Options.onClick Restart
-                          --     , Options.css "margin-left" "40px"
-                          --     ]
-                          --     [ Html.text "Start Over" ]
                         ]
 
 

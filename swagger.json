@@ -438,7 +438,7 @@
               "type": "object",
               "properties": {
                 "gridSetId": {
-                  "type": "list",
+                  "type": "array",
                   "items": {
                     "type": "object",
                     "properties": {
@@ -446,7 +446,7 @@
                         "type": "string"
                       },
                       "count": {
-                        "type": "int"
+                        "type": "integer"
                       }
                     }
                   }
@@ -2739,6 +2739,9 @@
       "type": "object",
       "description": "The projection POST object is flexible in that you can specify one or\nmore projections with a single request.  An SDM model is created, but not\nreturned, for every algorithm / occurrence set / model scenario\ncombination.  An SDM projection object is created for every algorithm /\noccurrence set / model scenario / projection scenario combination\n",
       "properties": {
+        "archive_name": {
+          "type": "string"
+        },
         "global_pam": {
           "$ref": "#/definitions/BoomGlobalPAM"
         },

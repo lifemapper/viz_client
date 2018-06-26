@@ -30,19 +30,41 @@ import Maybe.Extra as Maybe
 
 
 encodeBoomPOST : BoomPOST -> Value
-encodeBoomPOST (BoomPOST { tree, sdm, scenario_package, pam_stats, occurrence, mcpa, global_pam }) =
-    [ ( "occurrence", Maybe.map encodeBoomOccurrenceSet occurrence |> Maybe.withDefault null )
-    , ( "scenario_package", Maybe.map encodeBoomScenarioPackage scenario_package |> Maybe.withDefault null )
-    , ( "sdm", Maybe.map encodeBoomSDMs sdm |> Maybe.withDefault null )
-      -- , ( "tree",  )
+encodeBoomPOST (BoomPOST { tree, sdm, scenario_package, pam_stats, occurrence, mcpa, global_pam, archive_name }) =
+    [ occurrence |> Maybe.map (encodeBoomOccurrenceSet >> (,) "occurrence")
+    , scenario_package |> Maybe.map (encodeBoomScenarioPackage >> (,) "scenario_package")
+    , sdm |> Maybe.map (encodeBoomSDMs >> (,) "sdm")
+    , tree |> Maybe.map (encodeBoomTree >> (,) "tree")
+    , mcpa |> Maybe.map (encodeBoomMcpa >> (,) "mcpa")
+    , pam_stats |> Maybe.map (encodeBoomPAMStats >> (,) "pam_stats")
+    , archive_name |> Maybe.map (string >> (,) "archive_name")
     ]
+        |> List.concatMap Maybe.toList
+        |> object
+
+
+encodeBoomMcpa : BoomMCPA -> Value
+encodeBoomMcpa (BoomMCPA { hypotheses_package_name }) =
+    object [ ( "hypotheses_package_name", string hypotheses_package_name ) ]
+
+
+encodeBoomPAMStats : BoomPAMStats -> Value
+encodeBoomPAMStats (BoomPAMStats { compute_pam_stats }) =
+    object [ ( "compute_pam_stats", int compute_pam_stats ) ]
+
+
+encodeBoomTree : BoomPOSTTree -> Value
+encodeBoomTree (BoomPOSTTree { tree_file_name }) =
+    tree_file_name
+        |> Maybe.map (string >> (,) "tree_file_name")
+        |> Maybe.toList
         |> object
 
 
 encodeBoomOccurrenceSet : BoomOccurrenceSet -> Value
 encodeBoomOccurrenceSet (BoomOccurrenceSet { point_count_min, points_filename, occurrence_ids }) =
     [ point_count_min |> Maybe.map (int >> (,) "point_count_min")
-    , points_filename |> Maybe.map (string >> (,) "points_file_name")
+    , points_filename |> Maybe.map (string >> (,) "points_filename")
     , occurrence_ids |> Maybe.map (encodeBoomOccurrenceSetOccurrence_ids >> (,) "occurrence_ids")
     ]
         |> List.concatMap Maybe.toList

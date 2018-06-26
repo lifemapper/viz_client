@@ -63,18 +63,24 @@ type alias Model =
 
 toApi : Model -> Decoder.BoomOccurrenceSet
 toApi model =
-    let
-        occurrenceIds =
-            model.occurrenceSets
-                |> List.map (.id)
-                |> Decoder.BoomOccurrenceSetOccurrence_ids
-                |> Just
-    in
-        Decoder.BoomOccurrenceSet
-            { occurrence_ids = occurrenceIds
-            , points_filename = model.upload |> Maybe.andThen UploadFile.getUploadedFilename
-            , point_count_min = Nothing
-            }
+    case model.upload of
+        Nothing ->
+            Decoder.BoomOccurrenceSet
+                { occurrence_ids =
+                    model.occurrenceSets
+                        |> List.map (.id)
+                        |> Decoder.BoomOccurrenceSetOccurrence_ids
+                        |> Just
+                , points_filename = Nothing
+                , point_count_min = Nothing
+                }
+
+        _ ->
+            Decoder.BoomOccurrenceSet
+                { occurrence_ids = Nothing
+                , points_filename = model.upload |> Maybe.andThen UploadFile.getUploadedFilename
+                , point_count_min = Nothing
+                }
 
 
 type Msg
@@ -84,7 +90,7 @@ type Msg
     | MapOccurrences Int
     | MapCardMsg MapCard.Msg
     | UploadMsg UploadFile.Msg
-    | WantToUpload
+    | ToggleWantToUpload
     | Mdl (Material.Msg Msg)
 
 
@@ -133,8 +139,13 @@ update index msg model =
                     Nothing ->
                         ( model, Cmd.none )
 
-            WantToUpload ->
-                ( { model | upload = Just UploadFile.init }, Cmd.none )
+            ToggleWantToUpload ->
+                case model.upload of
+                    Nothing ->
+                        ( { model | upload = Just UploadFile.init }, Cmd.none )
+
+                    _ ->
+                        ( { model | upload = Nothing }, Cmd.none )
 
             ChooserMsg msg_ ->
                 chain (addSelected msg_) (liftedChooserUpdate msg_) model
@@ -251,20 +262,25 @@ occurrenceSetLI model i o =
 occurrenceSetList : Index -> Model -> Html Msg
 occurrenceSetList index model =
     Options.div [ Options.css "margin" "20px" ]
-        [ Options.styled Html.p [ Typo.title ] [ Html.text "Choose Occurrence Sets" ]
-        , L.ul [] <|
-            List.append
-                (List.indexedMap (occurrenceSetLI model) model.occurrenceSets)
-                [ (OccurrenceSetChooser.view (0 :: index) model.chooser |> Html.map ChooserMsg) ]
-        , case model.upload of
-            Nothing ->
-                Options.styled Html.a
-                    [ Options.onClick WantToUpload, Options.css "cursor" "pointer" ]
-                    [ Html.text "or upload data" ]
+        ([ Options.styled Html.p [ Typo.title ] [ Html.text "Choose Occurrence Sets" ] ]
+            ++ case model.upload of
+                Nothing ->
+                    [ L.ul [] <|
+                        List.append
+                            (List.indexedMap (occurrenceSetLI model) model.occurrenceSets)
+                            [ (OccurrenceSetChooser.view (0 :: index) model.chooser |> Html.map ChooserMsg) ]
+                    , Options.styled Html.a
+                        [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
+                        [ Html.text "or upload data" ]
+                    ]
 
-            Just upload ->
-                Options.div [] (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
-        ]
+                Just upload ->
+                    [ Options.div [] (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
+                    , Options.styled Html.a
+                        [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
+                        [ Html.text "or select existing data" ]
+                    ]
+        )
 
 
 view : Index -> Model -> Html Msg
