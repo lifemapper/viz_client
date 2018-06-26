@@ -298,7 +298,7 @@ newLink model =
 
 
 resultsLink : Model -> AtomObjectRecord -> Html Msg
-resultsLink model { modificationTime, id } =
+resultsLink model { name, id } =
     let
         selected =
             case model.page of
@@ -312,7 +312,7 @@ resultsLink model { modificationTime, id } =
                     Options.nop
     in
         Layout.link [ Options.onClick (OpenExisting id), Options.css "cursor" "pointer", selected ]
-            [ Html.text modificationTime ]
+            [ Html.text name ]
 
 
 browseProjectionsLink : Model -> Html Msg

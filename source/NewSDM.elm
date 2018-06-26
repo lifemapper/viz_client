@@ -34,6 +34,7 @@ import Material.Icon as Icon
 import Material.Typography as Typo
 import Material.Button as Button
 import Material.Toggles as Toggles
+import Material.Textfield as Textfield
 import Material.Helpers exposing (lift)
 import Material.Spinner as Loading
 import ScenariosView as Scns
@@ -83,13 +84,14 @@ type alias Model =
     , treeUpload : UploadFile.Model
     , hypoUpload : UploadFile.Model
     , computeStats : Bool
+    , archiveName : String
     , workFlowState : WorkFlowState
     , programFlags : Flags
     }
 
 
 toApi : Model -> Result String Decoder.BoomPOST
-toApi { algorithmsModel, occurrenceSets, scenarios, treeUpload, hypoUpload, computeStats } =
+toApi { algorithmsModel, occurrenceSets, scenarios, treeUpload, hypoUpload, computeStats, archiveName } =
     Scns.toApi scenarios
         |> Result.map
             (\scenarioPackage ->
@@ -110,8 +112,7 @@ toApi { algorithmsModel, occurrenceSets, scenarios, treeUpload, hypoUpload, comp
                     , tree =
                         UploadFile.getUploadedFilename treeUpload
                             |> Maybe.map (Just >> Decoder.BoomPOSTTreeRecord >> Decoder.BoomPOSTTree)
-                    , archive_name =
-                        UploadFile.getUploadedFilename treeUpload |> Maybe.map ((++) "test")
+                    , archive_name = Just archiveName
                     }
             )
 
@@ -147,6 +148,7 @@ init flags =
       , treeUpload = UploadFile.init
       , hypoUpload = UploadFile.init
       , computeStats = False
+      , archiveName = ""
       , workFlowState = Defining
       , programFlags = flags
       }
@@ -165,6 +167,7 @@ type Msg
     | OccsMsg Occs.Msg
     | SLMsg SL.Msg
     | ToggleComputeStats
+    | UpdateArchiveName String
     | UploadMsg UploadFile.Msg
 
 
@@ -235,6 +238,9 @@ update msg model =
 
         ToggleComputeStats ->
             ( { model | computeStats = not model.computeStats }, Cmd.none )
+
+        UpdateArchiveName name ->
+            ( { model | archiveName = name }, Cmd.none )
 
         Mdl msg_ ->
             Material.update Mdl msg_ model
@@ -320,14 +326,25 @@ mainView model =
                             , Options.css "margin-bottom" "20px"
                             ]
                             [ Html.text "Compute PAM stats" ]
-                        , Button.render Mdl
-                            [ 5 ]
+                        , Textfield.render Mdl
+                            [ 7 ]
                             model.mdl
-                            [ Button.raised
-                            , Button.disabled |> Options.when (not <| complete model)
-                            , Options.onClick SubmitJob |> Options.when (complete model)
+                            [ Textfield.label "Job name"
+                            , Textfield.floatingLabel
+                            , Textfield.value model.archiveName
+                            , Options.onInput UpdateArchiveName
                             ]
-                            [ Html.text "Submit Job" ]
+                            []
+                        , Html.p []
+                            [ Button.render Mdl
+                                [ 5 ]
+                                model.mdl
+                                [ Button.raised
+                                , Button.disabled |> Options.when (not <| complete model)
+                                , Options.onClick SubmitJob |> Options.when (complete model)
+                                ]
+                                [ Html.text "Submit Job" ]
+                            ]
                         ]
 
 
@@ -364,7 +381,7 @@ tasks =
 
 complete : Model -> Bool
 complete model =
-    List.all (\( _, problems ) -> problems model == Nothing) tasks
+    (model.archiveName /= "") && (List.all (\( _, problems ) -> problems model == Nothing) tasks)
 
 
 selectedTab : Model -> Int
