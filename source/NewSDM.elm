@@ -317,7 +317,11 @@ mainView model =
                                  can be submitted.
                                  """
                             ]
-                        , Lists.ul [] <| List.map (taskLI model) tasks
+                        , Lists.ul []
+                            (List.map (taskLI model) tasks
+                                ++ [ uploadTaskLI "Tree" model.treeUpload ]
+                                ++ [ uploadTaskLI "Biogeographic Hypotheses" model.hypoUpload ]
+                            )
                         , Toggles.switch Mdl
                             [ 6 ]
                             model.mdl
@@ -346,6 +350,30 @@ mainView model =
                                 [ Html.text "Submit Job" ]
                             ]
                         ]
+
+
+uploadTaskLI : String -> UploadFile.Model -> Html Msg
+uploadTaskLI title upload =
+    case UploadFile.getUploadedFilename upload of
+        Just filename ->
+            Lists.li []
+                [ Lists.content []
+                    [ Icon.i "check_box"
+                    , Html.text title
+                    , Options.span [ Options.css "margin-left" "5px", Typo.caption ]
+                        [ Html.text <| "(" ++ filename ++ ")" ]
+                    ]
+                ]
+
+        Nothing ->
+            Lists.li []
+                [ Lists.content []
+                    [ Icon.i "check_box_outline_blank"
+                    , Html.text title
+                    , Options.span [ Options.css "margin-left" "5px", Typo.caption ]
+                        [ Html.text <| "(optional)" ]
+                    ]
+                ]
 
 
 taskLI : Model -> ( Tab, Model -> Maybe String ) -> Html Msg
