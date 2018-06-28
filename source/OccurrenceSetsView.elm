@@ -275,7 +275,8 @@ occurrenceSetList index model =
                     ]
 
                 Just upload ->
-                    [ Options.div [] (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
+                    [ Options.div [ Options.css "margin-bottom" "10px" ]
+                        (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
                     , Options.styled Html.a
                         [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
                         [ Html.text "or select existing data" ]

@@ -263,7 +263,7 @@ tabTitle tab =
                 "Tree Upload"
 
             HypothesisUpload ->
-                "Hypothesis"
+                "Hypotheses"
 
             PostProjection ->
                 "Submit Project"
