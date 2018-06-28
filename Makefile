@@ -1,13 +1,13 @@
 ELMFLAGS = --yes --warn
 
-all: sdm.tar.gz mcpa.tar.gz global-pam.tar.gz
+all: boom.tar.gz mcpa.tar.gz global-pam.tar.gz
 
 debug: ELMFLAGS += --debug
 debug: all
 
-sdm.tar.gz: sdm/elm.js sdm/*
-	git describe --tags > sdm/VERSION
-	tar -zcvf sdm.tar.gz --exclude=sdmFlagsOverride.js sdm
+boom.tar.gz: boom/elm.js boom/*
+	git describe --tags > boom/VERSION
+	tar -zcvf boom.tar.gz --exclude=sdmFlagsOverride.js boom
 
 mcpa.tar.gz: mcpa/elm/AncState.js mcpa/elm/Mcpa.js mcpa/elm/Stats.js mcpa/elm/FractalTree.js mcpa/*
 	git describe --tags > mcpa/VERSION
@@ -17,8 +17,8 @@ global-pam.tar.gz: global-pam/elm/subsetpam.js
 	git describe --tags > global-pam/VERSION
 	tar -zcvf global-pam.tar.gz global-pam
 
-sdm/elm.js: source/Decoder.elm source/*
-	elm-make source/Main.elm $(ELMFLAGS) --output=sdm/elm.js
+boom/elm.js: source/Decoder.elm source/*
+	elm-make source/Main.elm $(ELMFLAGS) --output=boom/elm.js
 
 mcpa/elm/Stats.js: source/Decoder.elm source/*
 	elm-make source/StatsMain.elm $(ELMFLAGS) --output=mcpa/elm/Stats.js
@@ -42,7 +42,7 @@ source/Decoder.elm: swagger.json source/Decoder.elm.patch
 
 clean:
 	rm -f source/Decoder.elm
-	rm -f sdm.tar.gz sdm/elm.js
+	rm -f boom.tar.gz boom/elm.js
 	rm -f mcpa.tar.gz mcpa/elm/*.js
 	rm -f global-pam.tar.gz global-pam/elm/*.js
 

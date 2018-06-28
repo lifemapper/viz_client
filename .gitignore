@@ -1,9 +1,9 @@
 /elm-stuff/
 /tests/elm-stuff/
-/sdm.tar.gz
+/boom.tar.gz
 /source/Decoder.elm
-/sdm/elm.js
-/sdm/sdmFlagsOverride.js
+/boom/elm.js
+/boom/sdmFlagsOverride.js
 /mcpa.tar.gz
 /mcpa/elm/Stats.js
 /mcpa/elm/Mcpa.js
