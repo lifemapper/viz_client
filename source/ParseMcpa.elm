@@ -26,7 +26,14 @@ module ParseMcpa exposing (parseMcpa, McpaData)
 
 import Csv
 import Dict
+import Regex exposing (..)
 import Result.Extra as Result
+import Maybe.Extra as Maybe
+
+
+nodeIdRegex : Regex
+nodeIdRegex =
+    regex "Node_(\\d+)" |> caseInsensitive
 
 
 nan : Float
@@ -61,7 +68,17 @@ parseRecord variables record result =
         cladeIdStr :: valueType :: valueStrs ->
             let
                 cladeId =
-                    String.toInt cladeIdStr
+                    case Debug.log "matches" <| find (AtMost 1) nodeIdRegex cladeIdStr of
+                        [] ->
+                            String.toInt cladeIdStr
+
+                        { submatches } :: _ ->
+                            submatches
+                                |> List.head
+                                |> Maybe.join
+                                |> Maybe.map String.toInt
+                                |> Maybe.withDefault
+                                    (Err "missing node_id")
 
                 valueToFloat s =
                     case s of

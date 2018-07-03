@@ -45,7 +45,10 @@ function configureMap(element) {
         layers.forEach(function(layer) {  map.removeLayer(layer); });
     }
 
-    const node = nodeLookup.find(function(d) { return d.header == element.dataset["mapColumn"]; });
+    const node = nodeLookup.find(function(d) {
+        let mapColumn = element.dataset["mapColumn"];
+        return d.header == mapColumn || d.header.toLowerCase() == ("node_" + mapColumn);
+    });
     const dataColumn = node && node.index;
 
     console.log("adding layer");
