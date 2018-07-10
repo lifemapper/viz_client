@@ -26,13 +26,24 @@ port module StatsMain exposing (..)
 
 import List.Extra as List
 import Maybe.Extra as Maybe
+import Set exposing (Set)
 import Html
 import Html.Attributes
 import Html.Events
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
-import ExampleStats exposing (exampleStats)
-import Csv exposing (Csv)
+
+
+type alias StatsForSite =
+    { id : Int
+    , stats : List ( String, Maybe Float )
+    }
+
+
+port requestStats : () -> Cmd msg
+
+
+port statsForSites : (List StatsForSite -> msg) -> Sub msg
 
 
 type alias DataScale =
@@ -132,9 +143,10 @@ port sitesSelected : (List Int -> msg) -> Sub msg
 type alias Model =
     { selected : List Record
     , selecting : Maybe ( SvgPoint, SvgPoint )
-    , data : Csv
-    , xCol : Int
-    , yCol : Int
+    , variables : List String
+    , stats : List StatsForSite
+    , xCol : String
+    , yCol : String
     }
 
 
@@ -143,30 +155,34 @@ type Msg
     | SitesSelectedMsg (List Int)
     | XColSelectedMsg String
     | YColSelectedMsg String
+    | ReceivedStats (List StatsForSite)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ReceivedStats stats ->
+            let
+                variables =
+                    stats
+                        |> List.concatMap (.stats >> List.map Tuple.first)
+                        |> List.foldl Set.insert Set.empty
+                        |> Set.toList
+                        |> List.sort
+            in
+                ( { model | variables = variables, stats = stats }, Cmd.none )
+
         XColSelectedMsg col ->
-            col
-                |> String.toInt
-                |> Result.toMaybe
-                |> Maybe.map (\i -> ( { model | xCol = i }, Cmd.none ))
-                |> Maybe.withDefault ( model, Cmd.none )
+            ( { model | xCol = col }, Cmd.none )
 
         YColSelectedMsg col ->
-            col
-                |> String.toInt
-                |> Result.toMaybe
-                |> Maybe.map (\i -> ( { model | yCol = i }, Cmd.none ))
-                |> Maybe.withDefault ( model, Cmd.none )
+            ( { model | yCol = col }, Cmd.none )
 
         SitesSelectedMsg sites ->
             let
                 selected =
-                    model.data
-                        |> recordsFromCsv model.xCol model.yCol
+                    model.stats
+                        |> recordsFromStats model.xCol model.yCol
                         |> List.filter (\r -> List.member r.siteId sites)
             in
                 ( { model | selected = selected }, Cmd.none )
@@ -206,7 +222,7 @@ update msg model =
                         Just ( p1_, _ ) ->
                             let
                                 records =
-                                    recordsFromCsv model.xCol model.yCol model.data
+                                    recordsFromStats model.xCol model.yCol model.stats
 
                                 scale =
                                     computeScale records
@@ -245,29 +261,24 @@ type alias Record =
     { siteId : Int, x : Float, y : Float }
 
 
-extractRecord : Int -> Int -> List String -> Maybe Record
-extractRecord xCol yCol record =
+extractRecord : String -> String -> StatsForSite -> Maybe Record
+extractRecord xCol yCol stats =
     let
         siteId =
-            List.getAt 0 record |> Result.fromMaybe "No SiteId in CSV" |> Result.andThen String.toInt
+            stats.id
 
         x =
-            List.getAt (xCol + 3) record |> Result.fromMaybe "missing column in CSV" |> Result.andThen String.toFloat
+            stats.stats |> List.find (Tuple.first >> ((==) xCol)) |> Maybe.map Tuple.second |> Maybe.join |> Result.fromMaybe "missing value"
 
         y =
-            List.getAt (yCol + 3) record |> Result.fromMaybe "missing column in CSV" |> Result.andThen String.toFloat
+            stats.stats |> List.find (Tuple.first >> ((==) yCol)) |> Maybe.map Tuple.second |> Maybe.join |> Result.fromMaybe "missing value"
     in
-        Result.map3 Record siteId x y |> Result.toMaybe
+        Result.map2 (Record siteId) x y |> Result.toMaybe
 
 
-recordsFromCsv : Int -> Int -> Csv -> List Record
-recordsFromCsv xCol yCol csv =
-    List.map (extractRecord xCol yCol) csv.records |> Maybe.values
-
-
-variables : Csv -> List String
-variables csv =
-    List.drop 3 csv.headers
+recordsFromStats : String -> String -> List StatsForSite -> List Record
+recordsFromStats xCol yCol stats =
+    List.map (extractRecord xCol yCol) stats |> Maybe.values
 
 
 agg : (number -> number -> number) -> List number -> Maybe number
@@ -283,17 +294,8 @@ agg fn xs =
 drawScatter : Model -> List (Svg msg)
 drawScatter model =
     let
-        vars =
-            variables model.data
-
-        xVar =
-            List.getAt model.xCol vars |> Maybe.withDefault ""
-
-        yVar =
-            List.getAt model.yCol vars |> Maybe.withDefault ""
-
         records =
-            recordsFromCsv model.xCol model.yCol model.data
+            recordsFromStats model.xCol model.yCol model.stats
 
         scale =
             computeScale records
@@ -315,8 +317,8 @@ drawScatter model =
                     ]
                     []
     in
-        drawXAxis xVar scale.minX scale.maxX
-            ++ drawYAxis yVar scale.minY scale.maxY
+        drawXAxis model.xCol scale.minX scale.maxX
+            ++ drawYAxis model.yCol scale.minY scale.maxY
             ++ List.map plot records
 
 
@@ -381,19 +383,16 @@ view model =
             model.selected |> List.map (.siteId >> toString) |> String.join " "
 
         records =
-            recordsFromCsv model.xCol model.yCol model.data
-
-        availableVariables =
-            variables model.data
+            recordsFromStats model.xCol model.yCol model.stats
 
         variableSelector selected select =
             Html.select [ Html.Events.onInput select ]
-                (availableVariables
-                    |> List.indexedMap
-                        (\i v ->
+                (model.variables
+                    |> List.map
+                        (\v ->
                             Html.option
-                                [ Html.Attributes.selected (i == selected)
-                                , Html.Attributes.value (toString i)
+                                [ Html.Attributes.selected (v == selected)
+                                , Html.Attributes.value v
                                 ]
                                 [ Html.text v ]
                         )
@@ -433,11 +432,12 @@ main =
         { init =
             ( { selected = []
               , selecting = Nothing
-              , data = exampleStats
-              , xCol = 0
-              , yCol = 3
+              , variables = []
+              , stats = []
+              , xCol = ""
+              , yCol = ""
               }
-            , Cmd.none
+            , requestStats ()
             )
         , update = update
         , view = view
@@ -446,5 +446,6 @@ main =
                 Sub.batch
                     [ mouseEvent MouseMsg
                     , sitesSelected SitesSelectedMsg
+                    , statsForSites ReceivedStats
                     ]
         }

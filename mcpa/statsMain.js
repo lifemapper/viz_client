@@ -28,6 +28,12 @@ var app = Elm.StatsMain.fullscreen();
 var maps = {};
 var mapLayers = {};
 
+app.ports.requestStats.subscribe(function() {
+    app.ports.statsForSites.send(sitesObserved.features.map(function(feature) {
+        return {id: feature.id, stats: Object.entries(feature.properties)};
+    }));
+});
+
 document.onmousemove = document.onmouseup = document.onmousedown = function(event) {
     const plot = document.getElementById("plot");
     if (plot == null) return;
@@ -56,7 +62,7 @@ function configureMap(element) {
 
     if (layers == null || layers.length === 0) {
         mapLayers[element._leaflet_id] = [
-            L.geoJSON(ancPam, {style: style(sites)}).addTo(map)
+            L.geoJSON(sitesObserved, {style: style(sites)}).addTo(map)
         ];
     } else {
         layers[0].setStyle(style(sites));
@@ -65,7 +71,7 @@ function configureMap(element) {
 
 function style(sites) {
     return function(feature) {
-        const site = "" + feature.properties.siteid;
+        const site = "" + feature.id;
         const style = {
             fillOpacity: 0.6,
             stroke: false,
@@ -76,15 +82,15 @@ function style(sites) {
     };
 }
 
-var centers = turf.featureCollection(
-    turf.featureReduce(ancPam, function(centers, feature) {
-        return centers.concat(
-            turf.point([feature.properties.centerX, feature.properties.centerY], feature.properties)
-        );
-    }, [])
-);
+// var centers = turf.featureCollection(
+//     turf.featureReduce(ancPam, function(centers, feature) {
+//         return centers.concat(
+//             turf.point([feature.properties.centerX, feature.properties.centerY], feature.properties)
+//         );
+//     }, [])
+// );
 
-var bbox = turf.bbox(ancPam);
+var bbox = turf.bbox(sitesObserved);
 
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(m) {
