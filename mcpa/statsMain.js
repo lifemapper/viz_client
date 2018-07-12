@@ -123,11 +123,14 @@ var observer = new MutationObserver(function(mutations) {
 
                 map.on(L.Draw.Event.CREATED, function(e) {
                     editableLayers.addLayer(e.layer);
+                    const selection = editableLayers.toGeoJSON().features[0];
                     app.ports.sitesSelected.send(
                         turf.featureReduce(
-                            turf.within(centers, editableLayers.toGeoJSON()),
+                            sitesObserved,
                             function(sites, feature) {
-                                return sites.concat(feature.properties.siteid);
+                                return turf.booleanWithin(feature, selection) ?
+                                    sites.concat(feature.id) :
+                                    sites;
                             }, [])
                     );
                 });
