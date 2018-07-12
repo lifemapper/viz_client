@@ -145,6 +145,8 @@ type alias Model =
     , selecting : Maybe ( SvgPoint, SvgPoint )
     , variables : List String
     , stats : List StatsForSite
+    , displayedRecords : List Record
+    , scale : DataScale
     , xCol : String
     , yCol : String
     }
@@ -169,21 +171,54 @@ update msg model =
                         |> List.foldl Set.insert Set.empty
                         |> Set.toList
                         |> List.sort
+
+                xCol =
+                    variables |> List.getAt 2 |> Maybe.withDefault ""
+
+                yCol =
+                    variables |> List.getAt 3 |> Maybe.withDefault ""
+
+                records =
+                    recordsFromStats xCol yCol stats
+
+                scale =
+                    computeScale records
             in
-                ( { model | variables = variables, stats = stats }, Cmd.none )
+                ( { model
+                    | variables = variables
+                    , stats = stats
+                    , xCol = xCol
+                    , yCol = yCol
+                    , displayedRecords = records
+                    , scale = scale
+                  }
+                , Cmd.none
+                )
 
         XColSelectedMsg col ->
-            ( { model | xCol = col }, Cmd.none )
+            let
+                records =
+                    recordsFromStats col model.yCol model.stats
+
+                scale =
+                    computeScale records
+            in
+                ( { model | xCol = col, displayedRecords = records, scale = scale }, Cmd.none )
 
         YColSelectedMsg col ->
-            ( { model | yCol = col }, Cmd.none )
+            let
+                records =
+                    recordsFromStats model.xCol col model.stats
+
+                scale =
+                    computeScale records
+            in
+                ( { model | yCol = col, displayedRecords = records, scale = scale }, Cmd.none )
 
         SitesSelectedMsg sites ->
             let
                 selected =
-                    model.stats
-                        |> recordsFromStats model.xCol model.yCol
-                        |> List.filter (\r -> List.member r.siteId sites)
+                    model.displayedRecords |> List.filter (\r -> List.member r.siteId sites)
             in
                 ( { model | selected = selected }, Cmd.none )
 
@@ -221,17 +256,11 @@ update msg model =
                     case model.selecting of
                         Just ( p1_, _ ) ->
                             let
-                                records =
-                                    recordsFromStats model.xCol model.yCol model.stats
-
-                                scale =
-                                    computeScale records
-
                                 p2_ =
                                     pixel2svg svgViewBox (PixelPoint { x = event.x, y = event.y })
 
                                 ( DataPoint p1, DataPoint p2 ) =
-                                    ( svg2data scale p1_, svg2data scale p2_ )
+                                    ( svg2data model.scale p1_, svg2data model.scale p2_ )
 
                                 ( x1, y1 ) =
                                     ( Basics.min p1.x p2.x, Basics.min p1.y p2.y )
@@ -240,7 +269,7 @@ update msg model =
                                     ( Basics.max p1.x p2.x, Basics.max p1.y p2.y )
 
                                 newlySelected =
-                                    records |> List.filter (\d -> d.x > x1 && d.x < x2 && d.y > y1 && d.y < y2)
+                                    model.displayedRecords |> List.filter (\d -> d.x > x1 && d.x < x2 && d.y > y1 && d.y < y2)
 
                                 selected =
                                     if event.ctrlKey then
@@ -264,16 +293,14 @@ type alias Record =
 extractRecord : String -> String -> StatsForSite -> Maybe Record
 extractRecord xCol yCol stats =
     let
-        siteId =
-            stats.id
-
-        x =
-            stats.stats |> List.find (Tuple.first >> ((==) xCol)) |> Maybe.map Tuple.second |> Maybe.join |> Result.fromMaybe "missing value"
-
-        y =
-            stats.stats |> List.find (Tuple.first >> ((==) yCol)) |> Maybe.map Tuple.second |> Maybe.join |> Result.fromMaybe "missing value"
+        getValue col =
+            stats.stats
+                |> List.find (Tuple.first >> ((==) col))
+                |> Maybe.map Tuple.second
+                |> Maybe.join
+                |> Result.fromMaybe "missing value"
     in
-        Result.map2 (Record siteId) x y |> Result.toMaybe
+        Result.map2 (Record stats.id) (getValue xCol) (getValue yCol) |> Result.toMaybe
 
 
 recordsFromStats : String -> String -> List StatsForSite -> List Record
@@ -294,16 +321,10 @@ agg fn xs =
 drawScatter : Model -> List (Svg msg)
 drawScatter model =
     let
-        records =
-            recordsFromStats model.xCol model.yCol model.stats
-
-        scale =
-            computeScale records
-
         plot record =
             let
                 (SvgPoint point) =
-                    data2svg scale (DataPoint { x = record.x, y = record.y })
+                    data2svg model.scale (DataPoint { x = record.x, y = record.y })
             in
                 circle
                     [ point.x |> toString |> cx
@@ -317,9 +338,9 @@ drawScatter model =
                     ]
                     []
     in
-        drawXAxis model.xCol scale.minX scale.maxX
-            ++ drawYAxis model.yCol scale.minY scale.maxY
-            ++ List.map plot records
+        drawXAxis model.xCol model.scale.minX model.scale.maxX
+            ++ drawYAxis model.yCol model.scale.minY model.scale.maxY
+            ++ List.map plot model.displayedRecords
 
 
 drawXAxis : String -> Float -> Float -> List (Svg msg)
@@ -355,6 +376,9 @@ svgViewBox2String { width, height, minX, minY, maxX, maxY } =
 
 view : Model -> Html.Html Msg
 view model =
+    -- Html.div [ Html.Attributes.style [("width", "1000px"), ("height", "800px"), ("background-color", "blue")]
+    --                   , Html.Attributes.id "plot"
+    -- ] []
     let
         selectionBox =
             model.selecting
@@ -381,9 +405,6 @@ view model =
 
         selectedSiteIds =
             model.selected |> List.map (.siteId >> toString) |> String.join " "
-
-        records =
-            recordsFromStats model.xCol model.yCol model.stats
 
         variableSelector selected select =
             Html.select [ Html.Events.onInput select ]
@@ -434,6 +455,8 @@ main =
               , selecting = Nothing
               , variables = []
               , stats = []
+              , displayedRecords = []
+              , scale = DataScale 1 1 1 1
               , xCol = ""
               , yCol = ""
               }
