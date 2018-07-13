@@ -29,9 +29,12 @@ var maps = {};
 var mapLayers = {};
 
 app.ports.requestStats.subscribe(function() {
-    app.ports.statsForSites.send(sitesObserved.features.map(function(feature) {
-        return {id: feature.id, stats: Object.entries(feature.properties)};
-    }));
+    app.ports.statsForSites.send({
+        sitesObserved: sitesObserved.features.map(function(feature) {
+            return {id: feature.id, stats: Object.entries(feature.properties)};
+        }),
+        statNameLookup: Object.entries(statNameLookup)
+    });
 });
 
 document.onmousemove = document.onmouseup = document.onmousedown = function(event) {

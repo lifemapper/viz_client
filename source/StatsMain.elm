@@ -27,6 +27,7 @@ port module StatsMain exposing (..)
 import List.Extra as List
 import Maybe.Extra as Maybe
 import Set exposing (Set)
+import Dict exposing (Dict)
 import Html
 import Html.Attributes
 import Html.Events
@@ -43,7 +44,7 @@ type alias StatsForSite =
 port requestStats : () -> Cmd msg
 
 
-port statsForSites : (List StatsForSite -> msg) -> Sub msg
+port statsForSites : ({ sitesObserved : List StatsForSite, statNameLookup : List ( String, String ) } -> msg) -> Sub msg
 
 
 type alias DataScale =
@@ -144,6 +145,7 @@ type alias Model =
     { selected : List Record
     , selecting : Maybe ( SvgPoint, SvgPoint )
     , variables : List String
+    , statNames : Dict String String
     , stats : List StatsForSite
     , displayedRecords : List Record
     , scale : DataScale
@@ -157,16 +159,16 @@ type Msg
     | SitesSelectedMsg (List Int)
     | XColSelectedMsg String
     | YColSelectedMsg String
-    | ReceivedStats (List StatsForSite)
+    | ReceivedStats { sitesObserved : List StatsForSite, statNameLookup : List ( String, String ) }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ReceivedStats stats ->
+        ReceivedStats { sitesObserved, statNameLookup } ->
             let
                 variables =
-                    stats
+                    sitesObserved
                         |> List.concatMap (.stats >> List.map Tuple.first)
                         |> List.foldl Set.insert Set.empty
                         |> Set.toList
@@ -179,14 +181,15 @@ update msg model =
                     variables |> List.getAt 3 |> Maybe.withDefault ""
 
                 records =
-                    recordsFromStats xCol yCol stats
+                    recordsFromStats xCol yCol sitesObserved
 
                 scale =
                     computeScale records
             in
                 ( { model
                     | variables = variables
-                    , stats = stats
+                    , statNames = Dict.fromList statNameLookup
+                    , stats = sitesObserved
                     , xCol = xCol
                     , yCol = yCol
                     , displayedRecords = records
@@ -415,7 +418,7 @@ view model =
                                 [ Html.Attributes.selected (v == selected)
                                 , Html.Attributes.value v
                                 ]
-                                [ Html.text v ]
+                                [ Dict.get v model.statNames |> Maybe.withDefault v |> Html.text ]
                         )
                 )
     in
@@ -454,6 +457,7 @@ main =
             ( { selected = []
               , selecting = Nothing
               , variables = []
+              , statNames = Dict.empty
               , stats = []
               , displayedRecords = []
               , scale = DataScale 1 1 1 1
