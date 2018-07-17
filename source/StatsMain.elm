@@ -368,6 +368,22 @@ drawYAxis label min max =
                 |> List.map (\y -> line [ y1 y, y2 y, x1 "0", x2 "-0.02", strokeWidth "0.001", stroke "black" ] [])
     in
         (line [ y1 "0", y2 "1", x1 "0", x2 "0", strokeWidth "0.001", stroke "black" ] []
+            -- :: (text_
+            --         [ x "-0.01"
+            --         , y "1"
+            --         , textAnchor "end"
+            --         , Html.Attributes.style [ ( "font-size", "0.02px" ) ]
+            --         ]
+            --         [ min |> toString |> text ]
+            --    )
+            -- :: (text_
+            --         [ x "-0.01"
+            --         , y "0.03"
+            --         , textAnchor "end"
+            --         , Html.Attributes.style [ ( "font-size", "0.02px" ) ]
+            --         ]
+            --         [ max |> toString |> text ]
+            --    )
             :: ticks
         )
 
@@ -379,9 +395,6 @@ svgViewBox2String { width, height, minX, minY, maxX, maxY } =
 
 view : Model -> Html.Html Msg
 view model =
-    -- Html.div [ Html.Attributes.style [("width", "1000px"), ("height", "800px"), ("background-color", "blue")]
-    --                   , Html.Attributes.id "plot"
-    -- ] []
     let
         selectionBox =
             model.selecting
@@ -424,21 +437,16 @@ view model =
     in
         Html.div
             -- [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
-            [ Html.Attributes.style [ ( "display", "flex" ), ( "flex-direction", "flex-row" ) ]
+            [ Html.Attributes.style
+                [ ( "display", "flex" )
+                , ( "flex-direction", "flex-row" )
+                , ( "font-family", "sans-serif" )
+                ]
             , Html.Attributes.tabindex 0
             ]
-            [ Html.div
-                [ Html.Attributes.class "leaflet-map"
-                , Html.Attributes.attribute "data-map-sites" selectedSiteIds
-                , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
-                ]
-                []
-            , Html.div []
-                [ Html.p [ Html.Attributes.style [ ( "text-align", "center" ), ( "margin-bottom", "0" ) ] ]
-                    [ variableSelector model.yCol YColSelectedMsg
-                    , Html.text " vs "
-                    , variableSelector model.xCol XColSelectedMsg
-                    ]
+            [ Html.div []
+                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                    [ Html.text "Site Based Stat Relationships" ]
                 , svg
                     [ width <| toString svgViewBox.width
                     , height <| toString svgViewBox.height
@@ -446,6 +454,27 @@ view model =
                     , Html.Attributes.id "plot"
                     ]
                     ([ g [ transform "" ] <| (drawScatter model) ] ++ selectionBox)
+                , Html.p [ Html.Attributes.style [ ( "text-align", "center" ), ( "margin-top", "-50px" ) ] ]
+                    [ variableSelector model.yCol YColSelectedMsg
+                    , Html.text " vs "
+                    , variableSelector model.xCol XColSelectedMsg
+                    ]
+                ]
+            , Html.div
+                [ Html.Attributes.style [ ( "flex-grow", "1" ) ] ]
+                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                    [ Html.text "Site Map" ]
+                , Html.div
+                    [ Html.Attributes.class "leaflet-map"
+                    , Html.Attributes.attribute "data-map-sites" selectedSiteIds
+                    , Html.Attributes.style
+                        [ ( "max-width", "900px" )
+                        , ( "height", "500px" )
+                        , ( "margin-left", "auto" )
+                        , ( "margin-right", "auto" )
+                        ]
+                    ]
+                    []
                 ]
             ]
 
