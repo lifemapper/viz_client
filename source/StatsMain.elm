@@ -175,10 +175,10 @@ update msg model =
                         |> List.sort
 
                 xCol =
-                    variables |> List.getAt 2 |> Maybe.withDefault ""
+                    variables |> List.getAt 0 |> Maybe.withDefault ""
 
                 yCol =
-                    variables |> List.getAt 3 |> Maybe.withDefault ""
+                    variables |> List.getAt 1 |> Maybe.withDefault ""
 
                 records =
                     recordsFromStats xCol yCol sitesObserved
