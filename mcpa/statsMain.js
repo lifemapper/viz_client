@@ -74,12 +74,12 @@ function configureMap(element) {
 
 function style(sites) {
     return function(feature) {
-        const site = "" + feature.id;
+        const included =  sites.includes("" + feature.id);
         const style = {
             fillOpacity: 0.6,
             stroke: false,
-            fill: true,
-            fillColor: sites.includes(site) ? "red" : "black"
+            fill: included,
+            fillColor: "red"
         };
         return style;
     };
