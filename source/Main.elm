@@ -275,7 +275,7 @@ header : String -> List (Html Msg)
 header title =
     [ Layout.row []
         [ Layout.title []
-            [ Html.text "Lifemapper BOOM | "
+            [ Html.text "Biotaphy | "
             , Options.span [ Typo.subhead ] [ Html.text title ]
             ]
         ]
@@ -324,7 +324,7 @@ title : Auth.Model -> Html msg
 title login =
     Auth.getUserName login
         |> Maybe.map (\userName -> "Welcome, " ++ userName)
-        |> Maybe.withDefault "Lifemapper BOOM"
+        |> Maybe.withDefault "Biotaphy BOOM"
         |> Html.text
 
 
