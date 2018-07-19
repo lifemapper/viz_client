@@ -213,8 +213,8 @@ displaySeparate infos =
 
 makeSeparateMap : ProjectionInfo -> MapCard.Model
 makeSeparateMap info =
-    -- [ makeBackgroundMap info
-    [ makeProjectionMap info |> Maybe.toList
+    [ makeBackgroundMap info
+    , makeProjectionMap info |> Maybe.toList
     , makeOccurrenceMap info
     ]
         |> List.concat
@@ -237,8 +237,8 @@ makeGroupedMap projections =
             MapCard.init Nothing []
 
         first :: _ ->
-            -- [ makeBackgroundMap first
-            [ List.filterMap makeProjectionMap projections
+            [ makeBackgroundMap first
+            , List.filterMap makeProjectionMap projections
             , makeOccurrenceMap first
             ]
                 |> List.concat

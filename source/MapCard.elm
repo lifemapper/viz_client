@@ -66,7 +66,7 @@ update msg model =
 
 selectLayers : Int -> WMSInfo -> WMSInfo
 selectLayers i mapInfo =
-    { mapInfo | layers = mapInfo.layers |> List.getAt i |> Maybe.toList }
+    { mapInfo | layers = "bmng" :: (mapInfo.layers |> List.getAt i |> Maybe.toList) }
 
 
 view : Index -> String -> Model -> Html Msg
