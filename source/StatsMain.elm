@@ -181,13 +181,15 @@ update msg model =
                         |> List.concatMap (.stats >> List.map Tuple.first)
                         |> List.foldl Set.insert Set.empty
                         |> Set.toList
-                        |> List.sort
+                        |> List.sortBy String.toLower
 
                 xCol =
-                    variables |> List.getAt 0 |> Maybe.withDefault ""
+                    "alpha"
+                    -- variables |> List.getAt 0 |> Maybe.withDefault ""
 
                 yCol =
-                    variables |> List.getAt 1 |> Maybe.withDefault ""
+                    "phi"
+                    -- variables |> List.getAt 1 |> Maybe.withDefault ""
 
                 records =
                     recordsFromStats xCol yCol sitesObserved

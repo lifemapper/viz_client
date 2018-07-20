@@ -77,10 +77,12 @@ update msg model =
                         |> List.concatMap (.stats >> List.map Tuple.first)
                         |> List.foldl Set.insert Set.empty
                         |> Set.toList
-                        |> List.sort
+                        |> List.sortBy String.toLower
 
                 selectedVariable =
-                    variables |> List.getAt 0 |> Maybe.withDefault ""
+                    "alpha"
+
+                -- variables |> List.getAt 0 |> Maybe.withDefault ""
             in
                 ( { model
                     | variables = variables
