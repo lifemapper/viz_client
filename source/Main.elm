@@ -33,6 +33,7 @@ import Material.Helpers exposing (lift)
 import Material.Spinner as Loading
 import Material.Color as Color
 import Html exposing (Html)
+import Html.Attributes
 import Navigation as Nav exposing (Location)
 import UrlParser as Url exposing ((</>))
 import Http
@@ -332,6 +333,12 @@ drawer : Model -> List (Html Msg)
 drawer model =
     [ Layout.title [] [ title model.login ]
     , Layout.navigation [] (Auth.view "#sign-up/" model.login |> List.map (Html.map AuthMsg))
+    , Layout.navigation []
+        [ Layout.link []
+            [ Html.a [ Html.Attributes.href "./subsetpam.html" ]
+                [ Html.text "Subset the Global PAM" ]
+            ]
+        ]
     , Layout.navigation [] [ newLink model ]
       -- , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
