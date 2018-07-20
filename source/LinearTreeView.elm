@@ -36,24 +36,13 @@ scaleLength totalLength thisLength =
     30 * thisLength / totalLength
 
 
-logistic : Float -> Float
-logistic x =
-    1.0 / (1.0 + e ^ (-3.0 * x))
-
-
 computeColor : Float -> Float -> String
 computeColor opacity value =
     let
-        v =
-            logistic value * 256 |> round
-
-        r =
-            256 - v |> toString
-
-        g =
-            v |> toString
+        s =
+            clamp 0 100 (value * 100) |> toString
     in
-        "rgba(" ++ r ++ "," ++ g ++ ",0," ++ (toString opacity) ++ ")"
+        "hsla(10," ++ s ++ "%,50%," ++ (toString opacity) ++ ")"
 
 
 type alias TreeConfig msg =

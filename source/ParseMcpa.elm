@@ -86,7 +86,7 @@ parseRecord variables record result =
                             Ok nan
 
                         _ ->
-                            String.toFloat s
+                            String.toFloat s |> Result.map abs
 
                 values =
                     valueStrs |> List.map valueToFloat |> Result.combine
