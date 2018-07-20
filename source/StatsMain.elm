@@ -44,7 +44,13 @@ type alias StatsForSite =
 port requestStats : () -> Cmd msg
 
 
-port statsForSites : ({ sitesObserved : List StatsForSite, statNameLookup : List ( String, String ) } -> msg) -> Sub msg
+port statsForSites :
+    ({ sitesObserved : List StatsForSite
+     , statNameLookup : List ( String, { name : String, description : String } )
+     }
+     -> msg
+    )
+    -> Sub msg
 
 
 type alias DataScale =
@@ -145,7 +151,7 @@ type alias Model =
     { selected : List Record
     , selecting : Maybe ( SvgPoint, SvgPoint )
     , variables : List String
-    , statNames : Dict String String
+    , statNames : Dict String { name : String, description : String }
     , stats : List StatsForSite
     , displayedRecords : List Record
     , scale : DataScale
@@ -159,7 +165,10 @@ type Msg
     | SitesSelectedMsg (List Int)
     | XColSelectedMsg String
     | YColSelectedMsg String
-    | ReceivedStats { sitesObserved : List StatsForSite, statNameLookup : List ( String, String ) }
+    | ReceivedStats
+        { sitesObserved : List StatsForSite
+        , statNameLookup : List ( String, { name : String, description : String } )
+        }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -384,7 +393,8 @@ drawYAxis label min max =
             --         ]
             --         [ max |> toString |> text ]
             --    )
-            :: ticks
+            ::
+                ticks
         )
 
 
@@ -431,7 +441,11 @@ view model =
                                 [ Html.Attributes.selected (v == selected)
                                 , Html.Attributes.value v
                                 ]
-                                [ Dict.get v model.statNames |> Maybe.withDefault v |> Html.text ]
+                                [ Dict.get v model.statNames
+                                    |> Maybe.map .name
+                                    |> Maybe.withDefault v
+                                    |> Html.text
+                                ]
                         )
                 )
     in

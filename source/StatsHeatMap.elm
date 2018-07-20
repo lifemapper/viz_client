@@ -42,21 +42,29 @@ type alias StatsForSite =
 port requestStats : () -> Cmd msg
 
 
-port statsForSites : ({ sitesObserved : List StatsForSite, statNameLookup : List ( String, String ) } -> msg) -> Sub msg
+port statsForSites :
+    ({ sitesObserved : List StatsForSite
+     , statNameLookup : List ( String, { name : String, description : String } )
+     }
+     -> msg
+    )
+    -> Sub msg
 
 
 type alias Model =
     { variables : List String
     , statNames :
-        Dict String String
-        -- , stats : List StatsForSite
+        Dict String { name : String, description : String }
     , selectedVariable : String
     }
 
 
 type Msg
     = VariableSelectedMsg String
-    | ReceivedStats { sitesObserved : List StatsForSite, statNameLookup : List ( String, String ) }
+    | ReceivedStats
+        { sitesObserved : List StatsForSite
+        , statNameLookup : List ( String, { name : String, description : String } )
+        }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -120,7 +128,12 @@ view model =
                                 [ Html.Attributes.selected (v == selected)
                                 , Html.Attributes.value v
                                 ]
-                                [ Dict.get v model.statNames |> Maybe.withDefault v |> Html.text ]
+                                [ Dict.get v
+                                    model.statNames
+                                    |> Maybe.map .name
+                                    |> Maybe.withDefault v
+                                    |> Html.text
+                                ]
                         )
                 )
     in
