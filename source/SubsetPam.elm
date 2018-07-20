@@ -33,6 +33,7 @@ import Html.Attributes
 import Http
 import QueryString as Q
 import Decoder exposing (SolrList(..), SolrPAV(..), SolrPAVRecord)
+import ProgramFlags exposing (Flags)
 
 
 port bboxSelected : (List Float -> msg) -> Sub msg
@@ -85,6 +86,7 @@ type alias Model =
     , loadingPavs : Bool
     , archiveName : String
     , postStatus : PostStatus
+    , flags : Flags
     }
 
 
@@ -160,7 +162,8 @@ view model =
                     [ Html.text "Processing complete. "
                     , Html.a
                         [ Html.Attributes.href <|
-                            "http://notyeti-193.lifemapper.org/api/v2/gridset/"
+                            model.flags.apiRoot
+                                ++ "gridset/"
                                 ++ (toString id)
                                 ++ "/package"
                         ]
@@ -307,7 +310,7 @@ displayName selectedSpecies ( name, squid ) =
 updateFilters : Dict String String -> Model -> ( Model, Cmd Msg )
 updateFilters filters model =
     -- if Dict.member "taxonKingdom" filters then
-    ( { model | filters = filters, loadingPavs = True, selectedSpecies = Nothing }, getSolrList filters )
+    ( { model | filters = filters, loadingPavs = True, selectedSpecies = Nothing }, getSolrList model.flags filters )
 
 
 
@@ -348,13 +351,13 @@ update msg model =
 
         RunMCPA ->
             ( { model | postStatus = Posted }
-            , runMCPA model.archiveName model.filters (model.selectedSpecies |> Maybe.withDefault [])
+            , runMCPA model.flags model.archiveName model.filters (model.selectedSpecies |> Maybe.withDefault [])
             )
 
         GotPostResponse result ->
             case result of
                 Ok (Decoder.AtomObject { id }) ->
-                    ( { model | postStatus = PostFinished }, checkStatus id )
+                    ( { model | postStatus = PostFinished }, checkStatus model.flags id )
 
                 Err err ->
                     Debug.log "Post failed" err
@@ -378,7 +381,7 @@ update msg model =
                     if completed == total then
                         Cmd.none
                     else
-                        checkStatus id
+                        checkStatus model.flags id
             in
                 ( { model | postStatus = postStatus }, cmd )
 
@@ -403,12 +406,12 @@ addAttrs (SolrPAV pav) facets =
         }
 
 
-checkStatus : Int -> Cmd Msg
-checkStatus id =
+checkStatus : Flags -> Int -> Cmd Msg
+checkStatus flags id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = "http://notyeti-193.lifemapper.org/api/v2/gridset/" ++ (toString id)
+        , url = flags.apiRoot ++ "gridset/" ++ (toString id)
         , body = Http.emptyBody
         , expect = Http.expectJson Decoder.decodeGridSet
         , timeout = Nothing
@@ -427,12 +430,12 @@ gotGridSet result =
             Debug.crash (toString err)
 
 
-getShapeGrid : Cmd Msg
-getShapeGrid =
+getShapeGrid : Flags -> Cmd Msg
+getShapeGrid flags =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = "http://notyeti-193.lifemapper.org/api/v2/shapegrid/92107/geojson"
+        , url = flags.apiRoot ++ "shapegrid/92107/geojson"
         , body = Http.emptyBody
         , expect = Http.expectString
         , timeout = Nothing
@@ -451,8 +454,8 @@ gotShapeGrid result =
             Debug.crash (toString err)
 
 
-runMCPA : String -> Dict String String -> List String -> Cmd Msg
-runMCPA archiveName filters selectedSpecies =
+runMCPA : Flags -> String -> Dict String String -> List String -> Cmd Msg
+runMCPA flags archiveName filters selectedSpecies =
     let
         queryWithFilters =
             filters
@@ -468,7 +471,7 @@ runMCPA archiveName filters selectedSpecies =
         Http.request
             { method = "POST"
             , headers = [ Http.header "Accept" "application/json" ]
-            , url = "http://notyeti-193.lifemapper.org/api/v2/globalPam" ++ (Q.render query)
+            , url = flags.apiRoot ++ "globalPam" ++ (Q.render query)
             , body = Http.emptyBody
             , expect = Http.expectJson Decoder.decodeAtomObject
             , timeout = Nothing
@@ -477,8 +480,8 @@ runMCPA archiveName filters selectedSpecies =
             |> Http.send GotPostResponse
 
 
-getSolrList : Dict String String -> Cmd Msg
-getSolrList filters =
+getSolrList : Flags -> Dict String String -> Cmd Msg
+getSolrList flags filters =
     let
         query =
             filters
@@ -490,7 +493,7 @@ getSolrList filters =
         Http.request
             { method = "GET"
             , headers = [ Http.header "Accept" "application/json" ]
-            , url = "http://notyeti-193.lifemapper.org/api/v2/globalPam" ++ query
+            , url = flags.apiRoot ++ "globalPam" ++ query
             , body = Http.emptyBody
             , expect = Http.expectJson Decoder.decodeSolrList
             , timeout = Nothing
@@ -509,8 +512,8 @@ gotSolrList result =
             Debug.crash (toString err)
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Flags -> ( Model, Cmd Msg )
+init flags =
     { facets = initFacets
     , filters = Dict.empty
     , selectedSpecies = Nothing
@@ -519,8 +522,9 @@ init =
     , loadingPavs = False
     , archiveName = ""
     , postStatus = NotPosted
+    , flags = flags
     }
-        ! [ getShapeGrid, getSolrList Dict.empty ]
+        ! [ getShapeGrid flags, getSolrList flags Dict.empty ]
 
 
 subscriptions : Model -> Sub Msg
@@ -533,9 +537,9 @@ subscriptions model =
             Sub.none
 
 
-main : Program Never Model Msg
+main : Program Flags Model Msg
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , update = update
         , subscriptions = subscriptions

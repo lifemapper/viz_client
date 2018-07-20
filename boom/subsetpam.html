@@ -12,13 +12,17 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@0.4.12/dist/leaflet.draw.css"/>
     <script src="https://unpkg.com/leaflet-draw@0.4.12/dist/leaflet.draw.js"></script>
     <script src="https://npmcdn.com/@turf/turf/turf.min.js"></script>
-
+    <script>
+      var sdmFlags = {
+        apiRoot: "/api/v2/",
+        minimumOccurrencePoints: 30,
+        completedPollingSeconds: 5
+      };
+    </script>
+    <script src="./sdmFlagsOverride.js"></script>
   </head>
   <body>
-    <script src="./subsetPamMain.js"></script>
     <script src="./elm/subsetpam.js"></script>
-    <script>
-      var app = Elm.SubsetPam.fullscreen();
-    </script>
+    <script src="./subsetPamMain.js"></script>
   </body>
 </html>
