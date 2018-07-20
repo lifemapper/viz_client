@@ -148,10 +148,24 @@ view model =
                 ]
             , Html.Attributes.tabindex 0
             ]
-            [ Html.div
+            [ Html.div [ Html.Attributes.style [ ( "margin-left", "20px" ), ( "width", "800px" ) ] ]
+                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                    [ Html.text "Site Based Statistics" ]
+                , Html.p []
+                    [ Html.text "Currently mapping: "
+                    , variableSelector model.selectedVariable VariableSelectedMsg
+                    ]
+                , Html.p []
+                    [ Dict.get model.selectedVariable model.statNames
+                        |> Maybe.map (.description >> flip (++) ".")
+                        |> Maybe.withDefault ""
+                        |> Html.text
+                    ]
+                ]
+            , Html.div
                 [ Html.Attributes.style [ ( "flex-grow", "1" ) ] ]
                 [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
-                    [ Html.text "Site Based Statistics Heat Map" ]
+                    [ Html.text "Heat Map" ]
                 , Html.div
                     [ Html.Attributes.class "leaflet-map"
                     , Html.Attributes.attribute "data-map-selected-var" model.selectedVariable
@@ -163,9 +177,6 @@ view model =
                         ]
                     ]
                     []
-                , Html.p [ Html.Attributes.style [ ( "text-align", "center" ) ] ]
-                    [ variableSelector model.selectedVariable VariableSelectedMsg
-                    ]
                 ]
             ]
 
