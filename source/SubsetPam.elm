@@ -87,6 +87,7 @@ type alias Model =
     , archiveName : String
     , postStatus : PostStatus
     , flags : Flags
+    , gridSetId : Int
     }
 
 
@@ -100,6 +101,8 @@ type PostStatus
 
 type Msg
     = Nop
+    | GotPamGridSetId String
+    | GotPamGridSet { id : Int, shapegridId : Int }
     | GotSolrList SolrList
     | GotShapeGrid String
     | SetFilter String String
@@ -310,7 +313,9 @@ displayName selectedSpecies ( name, squid ) =
 updateFilters : Dict String String -> Model -> ( Model, Cmd Msg )
 updateFilters filters model =
     -- if Dict.member "taxonKingdom" filters then
-    ( { model | filters = filters, loadingPavs = True, selectedSpecies = Nothing }, getSolrList model.flags filters )
+    ( { model | filters = filters, loadingPavs = True, selectedSpecies = Nothing }
+    , getSolrList model.flags model.gridSetId filters
+    )
 
 
 
@@ -323,6 +328,12 @@ update msg model =
     case msg of
         Nop ->
             ( model, Cmd.none )
+
+        GotPamGridSetId id ->
+            ( model, getPamGridSet model.flags id )
+
+        GotPamGridSet { id, shapegridId } ->
+            { model | gridSetId = id } ! [ getShapeGrid model.flags shapegridId, getSolrList model.flags id Dict.empty ]
 
         GotSolrList (SolrList pavs) ->
             let
@@ -351,7 +362,11 @@ update msg model =
 
         RunMCPA ->
             ( { model | postStatus = Posted }
-            , runMCPA model.flags model.archiveName model.filters (model.selectedSpecies |> Maybe.withDefault [])
+            , runMCPA model.flags
+                model.gridSetId
+                model.archiveName
+                model.filters
+                (model.selectedSpecies |> Maybe.withDefault [])
             )
 
         GotPostResponse result ->
@@ -406,6 +421,78 @@ addAttrs (SolrPAV pav) facets =
         }
 
 
+getPamGridSet : Flags -> String -> Cmd Msg
+getPamGridSet flags id =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = flags.apiRoot ++ "gridset/" ++ id
+        , body = Http.emptyBody
+        , expect =
+            Http.expectJson <|
+                Json.map2 (,) (Json.field "id" Json.int) (Json.field "shapegridId" Json.int)
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send gotPamGridSet
+
+
+gotPamGridSet : Result Http.Error ( Int, Int ) -> Msg
+gotPamGridSet result =
+    case result of
+        Err err ->
+            Debug.crash (toString err)
+
+        Ok ( id, shapegridId ) ->
+            GotPamGridSet { id = id, shapegridId = shapegridId }
+
+
+getPamGridSets : Flags -> Cmd Msg
+getPamGridSets flags =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = flags.apiRoot ++ "globalpam/gridset"
+        , body = Http.emptyBody
+        , expect =
+            Http.expectJson
+                (Json.field "gridSetId" <|
+                    Json.list <|
+                        Json.map2 (,)
+                            (Json.field "gridSetId" Json.string)
+                            (Json.field "count" Json.int)
+                )
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send gotPamGridSets
+
+
+gotPamGridSets : Result Http.Error (List ( String, Int )) -> Msg
+gotPamGridSets result =
+    case result of
+        Err err ->
+            Debug.crash (toString err)
+
+        Ok [] ->
+            Debug.crash "no global pam gridsets available"
+
+        Ok gridsets ->
+            let
+                gridsetid =
+                    gridsets
+                        |> List.sortBy (Tuple.second >> (*) -1)
+                        |> List.head
+                        |> Maybe.map Tuple.first
+            in
+                case gridsetid of
+                    Just id ->
+                        GotPamGridSetId id
+
+                    Nothing ->
+                        Debug.crash "this shouldn't happen"
+
+
 checkStatus : Flags -> Int -> Cmd Msg
 checkStatus flags id =
     Http.request
@@ -430,12 +517,12 @@ gotGridSet result =
             Debug.crash (toString err)
 
 
-getShapeGrid : Flags -> Cmd Msg
-getShapeGrid flags =
+getShapeGrid : Flags -> Int -> Cmd Msg
+getShapeGrid flags shapegridId =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = flags.apiRoot ++ "shapegrid/92107/geojson"
+        , url = flags.apiRoot ++ "shapegrid/" ++ (toString shapegridId) ++ "/geojson"
         , body = Http.emptyBody
         , expect = Http.expectString
         , timeout = Nothing
@@ -454,13 +541,13 @@ gotShapeGrid result =
             Debug.crash (toString err)
 
 
-runMCPA : Flags -> String -> Dict String String -> List String -> Cmd Msg
-runMCPA flags archiveName filters selectedSpecies =
+runMCPA : Flags -> Int -> String -> Dict String String -> List String -> Cmd Msg
+runMCPA flags gridsetId archiveName filters selectedSpecies =
     let
         queryWithFilters =
             filters
                 |> Dict.insert "archiveName" archiveName
-                |> Dict.insert "gridSetId" "77"
+                |> Dict.insert "gridSetId" (toString gridsetId)
                 |> Dict.insert "user" "public"
                 |> Dict.foldr Q.add Q.empty
 
@@ -480,12 +567,12 @@ runMCPA flags archiveName filters selectedSpecies =
             |> Http.send GotPostResponse
 
 
-getSolrList : Flags -> Dict String String -> Cmd Msg
-getSolrList flags filters =
+getSolrList : Flags -> Int -> Dict String String -> Cmd Msg
+getSolrList flags gridSetId filters =
     let
         query =
             filters
-                |> Dict.insert "gridsetid" "77"
+                |> Dict.insert "gridsetid" (toString gridSetId)
                 |> Dict.insert "user" "public"
                 |> Dict.foldr Q.add Q.empty
                 |> Q.render
@@ -523,8 +610,15 @@ init flags =
     , archiveName = ""
     , postStatus = NotPosted
     , flags = flags
+    , gridSetId =
+        0
+        -- yuck
     }
-        ! [ getShapeGrid flags, getSolrList flags Dict.empty ]
+        ! [ getPamGridSets flags ]
+
+
+
+-- , getShapeGrid flags, getSolrList flags Dict.empty ]
 
 
 subscriptions : Model -> Sub Msg
