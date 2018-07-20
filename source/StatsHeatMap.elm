@@ -24,6 +24,7 @@
 
 port module StatsHeatMap exposing (..)
 
+import Formatting as F exposing ((<>))
 import List.Extra as List
 import Maybe.Extra as Maybe
 import Set exposing (Set)
@@ -45,6 +46,7 @@ port requestStats : () -> Cmd msg
 port statsForSites :
     ({ sitesObserved : List StatsForSite
      , statNameLookup : List ( String, { name : String, description : String } )
+     , statRanges : List ( String, { min : Float, max : Float } )
      }
      -> msg
     )
@@ -53,8 +55,8 @@ port statsForSites :
 
 type alias Model =
     { variables : List String
-    , statNames :
-        Dict String { name : String, description : String }
+    , statNames : Dict String { name : String, description : String }
+    , statRanges : Dict String { min : Float, max : Float }
     , selectedVariable : String
     }
 
@@ -64,13 +66,14 @@ type Msg
     | ReceivedStats
         { sitesObserved : List StatsForSite
         , statNameLookup : List ( String, { name : String, description : String } )
+        , statRanges : List ( String, { min : Float, max : Float } )
         }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ReceivedStats { sitesObserved, statNameLookup } ->
+        ReceivedStats { sitesObserved, statNameLookup, statRanges } ->
             let
                 variables =
                     sitesObserved
@@ -87,6 +90,7 @@ update msg model =
                 ( { model
                     | variables = variables
                     , statNames = Dict.fromList statNameLookup
+                    , statRanges = Dict.fromList statRanges
                     , selectedVariable = selectedVariable
                   }
                 , Cmd.none
@@ -116,6 +120,11 @@ extractRecord xCol yCol stats =
 recordsFromStats : String -> String -> List StatsForSite -> List Record
 recordsFromStats xCol yCol stats =
     List.map (extractRecord xCol yCol) stats |> Maybe.values
+
+
+rangeFormat : Float -> String
+rangeFormat value =
+    F.print (F.roundTo 1) value
 
 
 view : Model -> Html.Html Msg
@@ -166,17 +175,43 @@ view model =
                 [ Html.Attributes.style [ ( "flex-grow", "1" ) ] ]
                 [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
                     [ Html.text "Heat Map" ]
-                , Html.div
-                    [ Html.Attributes.class "leaflet-map"
-                    , Html.Attributes.attribute "data-map-selected-var" model.selectedVariable
-                    , Html.Attributes.style
-                        [ ( "max-width", "900px" )
-                        , ( "height", "500px" )
-                        , ( "margin-left", "auto" )
-                        , ( "margin-right", "auto" )
+                , Html.div [ Html.Attributes.style [ ( "display", "flex" ) ] ]
+                    [ Html.div
+                        [ Html.Attributes.style
+                            [ ( "height", "400px" )
+                              -- , ( "width", "50px" )
+                            , ( "background", "linear-gradient(white, red)" )
+                            , ( "display", "flex" )
+                            , ( "flex-direction", "column" )
+                            , ( "justify-content", "space-between" )
+                            , ( "margin", "50px 10px" )
+                            , ( "border", "solid 2px" )
+                            ]
                         ]
+                        [ Html.p [ Html.Attributes.style [ ( "text-align", "right" ), ( "margin", "0 5px" ) ] ]
+                            [ Dict.get model.selectedVariable model.statRanges
+                                |> Maybe.map (.min >> rangeFormat)
+                                |> Maybe.withDefault ""
+                                |> Html.text
+                            ]
+                        , Html.p [ Html.Attributes.style [ ( "text-align", "right" ), ( "margin", "0 5px" ) ] ]
+                            [ Dict.get model.selectedVariable model.statRanges
+                                |> Maybe.map (.max >> rangeFormat)
+                                |> Maybe.withDefault ""
+                                |> Html.text
+                            ]
+                        ]
+                    , Html.div
+                        [ Html.Attributes.class "leaflet-map"
+                        , Html.Attributes.attribute "data-map-selected-var" model.selectedVariable
+                        , Html.Attributes.style
+                            [ ( "max-width", "900px" )
+                            , ( "height", "500px" )
+                            , ( "flex-grow", "1" )
+                            ]
+                        ]
+                        []
                     ]
-                    []
                 ]
             ]
 
@@ -187,6 +222,7 @@ main =
         { init =
             ( { variables = []
               , statNames = Dict.empty
+              , statRanges = Dict.empty
               , selectedVariable = ""
               }
             , requestStats ()
