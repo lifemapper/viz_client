@@ -54,7 +54,7 @@ view model =
                         ]
                         [ Html.text "MCPA data for Selected Node" ]
                     ]
-                , Html.tr [] [ Html.th [] [ Html.text "Observed (p-value)" ], Html.th [] [ Html.text "Variable" ] ]
+                , Html.tr [] [ Html.th [] [ Html.text "Observed" ], Html.th [] [ Html.text "Variable" ] ]
                 ]
     in
         MultiSpeciesView.view model tableHead True variableFormatter model.variables selectData dataForVar
@@ -62,4 +62,4 @@ view model =
 
 variableFormatter : ( Float, Float ) -> String
 variableFormatter ( observed, pValue ) =
-    F.print (F.roundTo 3 <> F.s " (" <> F.roundTo 3 <> F.s ") ") observed pValue
+    F.print (F.roundTo 3) observed
