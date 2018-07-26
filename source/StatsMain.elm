@@ -118,8 +118,8 @@ svgViewBox =
     , height = 800
     , minX = -0.1
     , minY = 0
-    , maxX = 1.1
-    , maxY = 1.1
+    , maxX = 1.02
+    , maxY = 1.02
     }
 
 
@@ -148,7 +148,7 @@ port sitesSelected : (List Int -> msg) -> Sub msg
 
 
 type alias Model =
-    { selected : List Record
+    { selected : List Int
     , selecting : Maybe ( SvgPoint, SvgPoint )
     , variables : List String
     , statNames : Dict String { name : String, description : String }
@@ -185,12 +185,12 @@ update msg model =
 
                 xCol =
                     "alpha"
-                    -- variables |> List.getAt 0 |> Maybe.withDefault ""
 
+                -- variables |> List.getAt 0 |> Maybe.withDefault ""
                 yCol =
                     "phi"
-                    -- variables |> List.getAt 1 |> Maybe.withDefault ""
 
+                -- variables |> List.getAt 1 |> Maybe.withDefault ""
                 records =
                     recordsFromStats xCol yCol sitesObserved
 
@@ -230,11 +230,7 @@ update msg model =
                 ( { model | yCol = col, displayedRecords = records, scale = scale }, Cmd.none )
 
         SitesSelectedMsg sites ->
-            let
-                selected =
-                    model.displayedRecords |> List.filter (\r -> List.member r.siteId sites)
-            in
-                ( { model | selected = selected }, Cmd.none )
+            ( { model | selected = sites }, Cmd.none )
 
         MouseMsg event ->
             case event.eventType of
@@ -283,7 +279,9 @@ update msg model =
                                     ( Basics.max p1.x p2.x, Basics.max p1.y p2.y )
 
                                 newlySelected =
-                                    model.displayedRecords |> List.filter (\d -> d.x > x1 && d.x < x2 && d.y > y1 && d.y < y2)
+                                    model.displayedRecords
+                                        |> List.filter (\d -> d.x > x1 && d.x < x2 && d.y > y1 && d.y < y2)
+                                        |> List.map .siteId
 
                                 selected =
                                     if event.ctrlKey then
@@ -345,7 +343,7 @@ drawScatter model =
                     , point.y |> toString |> cy
                     , r "0.006"
                     , fillOpacity "0.8"
-                    , if List.member record model.selected then
+                    , if List.member record.siteId model.selected then
                         fill "red"
                       else
                         fill "black"
@@ -432,7 +430,7 @@ view model =
                     )
 
         selectedSiteIds =
-            model.selected |> List.map (.siteId >> toString) |> String.join " "
+            model.selected |> List.map toString |> String.join " "
 
         variableSelector selected select =
             Html.select [ Html.Events.onInput select ]
@@ -470,7 +468,7 @@ view model =
                     , Html.Attributes.id "plot"
                     ]
                     ([ g [ transform "" ] <| (drawScatter model) ] ++ selectionBox)
-                , Html.p [ Html.Attributes.style [ ( "text-align", "center" ), ( "margin-top", "-50px" ) ] ]
+                , Html.p [ Html.Attributes.style [ ( "text-align", "center" ) ] ]
                     [ variableSelector model.yCol YColSelectedMsg
                     , Html.text " vs "
                     , variableSelector model.xCol XColSelectedMsg
