@@ -148,7 +148,7 @@ port sitesSelected : (List Int -> msg) -> Sub msg
 
 
 type alias Model =
-    { selected : List Int
+    { selected : Set Int
     , selecting : Maybe ( SvgPoint, SvgPoint )
     , variables : List String
     , statNames : Dict String { name : String, description : String }
@@ -230,7 +230,7 @@ update msg model =
                 ( { model | yCol = col, displayedRecords = records, scale = scale }, Cmd.none )
 
         SitesSelectedMsg sites ->
-            ( { model | selected = sites }, Cmd.none )
+            ( { model | selected = Set.fromList sites }, Cmd.none )
 
         MouseMsg event ->
             case event.eventType of
@@ -282,10 +282,11 @@ update msg model =
                                     model.displayedRecords
                                         |> List.filter (\d -> d.x > x1 && d.x < x2 && d.y > y1 && d.y < y2)
                                         |> List.map .siteId
+                                        |> Set.fromList
 
                                 selected =
                                     if event.ctrlKey then
-                                        model.selected ++ newlySelected
+                                        Set.union model.selected newlySelected
                                     else
                                         newlySelected
                             in
@@ -343,7 +344,7 @@ drawScatter model =
                     , point.y |> toString |> cy
                     , r "0.006"
                     , fillOpacity "0.8"
-                    , if List.member record.siteId model.selected then
+                    , if Set.member record.siteId model.selected then
                         fill "red"
                       else
                         fill "black"
@@ -430,7 +431,7 @@ view model =
                     )
 
         selectedSiteIds =
-            model.selected |> List.map toString |> String.join " "
+            model.selected |> Set.toList |> List.map toString |> String.join " "
 
         variableSelector selected select =
             Html.select [ Html.Events.onInput select ]
@@ -497,7 +498,7 @@ main : Program Never Model Msg
 main =
     Html.program
         { init =
-            ( { selected = []
+            ( { selected = Set.empty
               , selecting = Nothing
               , variables = []
               , statNames = Dict.empty
