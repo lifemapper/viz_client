@@ -94,12 +94,12 @@ type DataPoint
 
 data2svg : DataScale -> DataPoint -> SvgPoint
 data2svg ds (DataPoint { x, y }) =
-    SvgPoint { x = (x - ds.minX) / (ds.maxX - ds.minX), y = 1 - (y - ds.minY) / (ds.maxY - ds.minY) }
+    SvgPoint { x = 1000 * (x - ds.minX) / (ds.maxX - ds.minX), y = 1000 * (1 - (y - ds.minY) / (ds.maxY - ds.minY)) }
 
 
 svg2data : DataScale -> SvgPoint -> DataPoint
 svg2data ds (SvgPoint { x, y }) =
-    DataPoint { x = x * (ds.maxX - ds.minX) + ds.minX, y = (1 - y) * (ds.maxY - ds.minY) + ds.minY }
+    DataPoint { x = x / 1000 * (ds.maxX - ds.minX) + ds.minX, y = (1 - y / 1000) * (ds.maxY - ds.minY) + ds.minY }
 
 
 type alias SvgViewBox =
@@ -116,10 +116,10 @@ svgViewBox : SvgViewBox
 svgViewBox =
     { width = 800
     , height = 800
-    , minX = -0.1
+    , minX = -100
     , minY = 0
-    , maxX = 1.02
-    , maxY = 1.02
+    , maxX = 1020
+    , maxY = 1020
     }
 
 
@@ -342,7 +342,7 @@ drawScatter model =
                 circle
                     [ point.x |> toString |> cx
                     , point.y |> toString |> cy
-                    , r "0.006"
+                    , r "6"
                     , fillOpacity "0.8"
                     , if Set.member record.siteId model.selected then
                         fill "red"
@@ -361,10 +361,10 @@ drawXAxis label min max =
     let
         ticks =
             List.range 1 10
-                |> List.map (toFloat >> ((*) 0.1) >> toString)
-                |> List.map (\x -> line [ x1 x, x2 x, y1 "1", y2 "1.02", strokeWidth "0.001", stroke "black" ] [])
+                |> List.map (toFloat >> ((*) 100) >> toString)
+                |> List.map (\x -> line [ x1 x, x2 x, y1 "1000", y2 "1020", strokeWidth "1", stroke "black" ] [])
     in
-        (line [ x1 "0", x2 "1", y1 "1", y2 "1", strokeWidth "0.001", stroke "black" ] []
+        (line [ x1 "0", x2 "1000", y1 "1000", y2 "1000", strokeWidth "1", stroke "black" ] []
             :: ticks
         )
 
@@ -374,10 +374,10 @@ drawYAxis label min max =
     let
         ticks =
             List.range 1 10
-                |> List.map (toFloat >> ((*) 0.1) >> ((-) 1) >> toString)
-                |> List.map (\y -> line [ y1 y, y2 y, x1 "0", x2 "-0.02", strokeWidth "0.001", stroke "black" ] [])
+                |> List.map (toFloat >> ((*) 100) >> ((-) 1000) >> toString)
+                |> List.map (\y -> line [ y1 y, y2 y, x1 "0", x2 "-20", strokeWidth "1", stroke "black" ] [])
     in
-        (line [ y1 "0", y2 "1", x1 "0", x2 "0", strokeWidth "0.001", stroke "black" ] []
+        (line [ y1 "0", y2 "1000", x1 "0", x2 "0", strokeWidth "1", stroke "black" ] []
             -- :: (text_
             --         [ x "-0.01"
             --         , y "1"
