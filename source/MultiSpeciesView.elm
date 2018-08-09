@@ -37,9 +37,10 @@ import LinearTreeView exposing (computeColor, drawTree, gradientDefinitions)
 barGraph : ( Float, Float ) -> Html.Html Msg
 barGraph ( observedValue, pValue ) =
     let
-        width =
-            (1.0 - e ^ (-1.0 * abs observedValue) |> (*) 100 |> toString) ++ "%"
+        height =
+            (100 * abs observedValue |> toString) ++ "%"
 
+        -- (1.0 - e ^ (-1.0 * abs observedValue) |> (*) 100 |> toString) ++ "%"
         opacity =
             1.0 - (pValue / 1.2)
 
@@ -48,10 +49,10 @@ barGraph ( observedValue, pValue ) =
     in
         Html.div
             [ Html.Attributes.style
-                [ ( "width", width )
-                , ( "height", "100%" )
+                [ ( "width", "100%" )
+                , ( "height", height )
                 , ( "position", "absolute" )
-                , ( "top", "0" )
+                , ( "bottom", "0" )
                 , ( "background-color", background )
                 , ( "z-index", "-1" )
                 ]
@@ -79,11 +80,19 @@ drawVariable showBarGraph formatter var ( observed, pValue, significant ) =
                 |> Maybe.map formatter
                 |> Maybe.withDefault ""
     in
-        Html.tr []
-            [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ), ( "padding-right", "12px" ) ] ]
-                [ Html.text values ]
-            , Html.td [ Html.Attributes.style [ ( "position", "relative" ), fontWeight ] ] (bar ++ [ Html.text var ])
+        Html.td
+            [ Html.Attributes.style [ ( "position", "relative" ), fontWeight ]
+            , Html.Attributes.title (var ++ "\n" ++ values)
             ]
+            bar
+
+
+
+-- Html.tr []
+--     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ), ( "padding-right", "12px" ) ] ]
+--         [ Html.text values ]
+--     , Html.td [ Html.Attributes.style [ ( "position", "relative" ), fontWeight ] ] (bar ++ [ Html.text var ])
+--     ]
 
 
 view :
@@ -165,21 +174,36 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead s
         ( envVarTableRows, bgVarTableRows ) =
             case selectedNode of
                 Just _ ->
-                    ( envVars |> List.map (\var -> dataForVar var |> drawVariable showBarGraph variableFormatter var)
-                    , bgVars |> List.map (\var -> dataForVar var |> drawVariable showBarGraph variableFormatter var)
+                    ( envVars
+                        |> List.map (\var -> dataForVar var |> drawVariable showBarGraph variableFormatter var)
+                        |> Html.tr
+                            [ Html.Attributes.style
+                                [ ( "height", "400px" )
+                                , ( "border-bottom", "1px solid" )
+                                , ( "border-right", "1px solid" )
+                                ]
+                            ]
+                    , bgVars
+                        |> List.reverse
+                        |> List.map (\var -> dataForVar var |> drawVariable showBarGraph variableFormatter var)
+                        |> Html.tr
+                            [ Html.Attributes.style
+                                [ ( "height", "400px" )
+                                , ( "border-bottom", "1px solid" )
+                                , ( "border-left", "1px solid" )
+                                ]
+                            ]
                     )
 
                 Nothing ->
-                    ( [ Html.tr []
-                            [ Html.td [ Html.Attributes.colspan 2, Html.Attributes.style [ ( "text-align", "center" ) ] ]
-                                [ Html.text "No node selected." ]
-                            ]
-                      ]
-                    , [ Html.tr []
-                            [ Html.td [ Html.Attributes.colspan 2, Html.Attributes.style [ ( "text-align", "center" ) ] ]
-                                [ Html.text "No node selected." ]
-                            ]
-                      ]
+                    ( Html.tr []
+                        [ Html.td [ Html.Attributes.colspan 2, Html.Attributes.style [ ( "text-align", "center" ) ] ]
+                            [ Html.text "No node selected." ]
+                        ]
+                    , Html.tr []
+                        [ Html.td [ Html.Attributes.colspan 2, Html.Attributes.style [ ( "text-align", "center" ) ] ]
+                            [ Html.text "No node selected." ]
+                        ]
                     )
     in
         Html.div
@@ -238,22 +262,56 @@ view { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead s
                         ]
                         []
                     ]
-                , Html.div
-                    [ Html.Attributes.style
-                        [ ( "overflow-y", "auto" )
-                        , ( "display", "flex" )
-                        , ( "justify-content", "space-around" )
-                        , ( "margin-top", "10px" )
+                , Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                    [ Html.text "Semipartial Correlations b/w Clade and Predictors" ]
+                , Html.div [ Html.Attributes.style [ ( "width", "100%" ) ] ]
+                    [ Html.div
+                        [ Html.Attributes.style
+                            [ ( "display", "flex" )
+                            , ( "justify-content", "center" )
+                            , ( "margin-top", "10px" )
+                            , ( "margin-left", "auto" )
+                            , ( "margin-right", "auto" )
+                            , ( "max-width", "900px" )
+                            ]
                         ]
-                    ]
-                    [ Html.table
-                        [-- Html.Attributes.style [ ( "width", "600px" ), ( "min-width", "400px" ), ( "flex-shrink", "1" ) ]
+                        [ Html.table
+                            [ Html.Attributes.style
+                                [ ( "width"
+                                  , 100
+                                        * toFloat (List.length envVars)
+                                        / toFloat (List.length vars)
+                                        |> toString
+                                        |> flip (++) "%"
+                                  )
+                                ]
+                            ]
+                            [ envVarTableRows
+                            , Html.tr []
+                                [ Html.th [ Html.Attributes.colspan <| List.length envVars ]
+                                    [ Html.text "Environmental Variables" ]
+                                ]
+                            ]
+                        , Html.table
+                            [ Html.Attributes.style
+                                [ ( "width"
+                                  , 100
+                                        * toFloat (List.length bgVars)
+                                        / toFloat (List.length vars)
+                                        |> toString
+                                        |> flip (++) "%"
+                                  )
+                                ]
+                            ]
+                            [ bgVarTableRows
+                            , Html.tr []
+                                [ Html.th
+                                    [ Html.Attributes.colspan <| List.length bgVars
+                                    ]
+                                    [ Html.text "Biogeographic Hypotheses" ]
+                                ]
+                            ]
                         ]
-                        (tableHead :: envVarTableRows)
-                    , Html.table
-                        [-- Html.Attributes.style [ ( "width", "600px" ), ( "min-width", "400px" ), ( "flex-shrink", "1" ) ]
-                        ]
-                        (tableHead :: bgVarTableRows)
                     ]
                 ]
             ]
