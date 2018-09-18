@@ -2214,6 +2214,13 @@
             ]
           },
           {
+            "name": "metadata",
+            "in": "query",
+            "description": "Metadata about the occurrence upload (if posting occurrence data).\nShould match schema at '#/definitions/OccurrenceMetadata'\n",
+            "required": false,
+            "type": "string"
+          },
+          {
             "name": "file",
             "in": "formData",
             "description": "The data posted as a file",
@@ -2463,6 +2470,68 @@
         }
       }
     },
+    "OccurrenceMetadata": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "Original field name in CSV or column index (zero-based)"
+              },
+              "shortName": {
+                "type": "string",
+                "description": "A short name for this field (10 characters or less)"
+              },
+              "fieldType": {
+                "type": "string",
+                "description": "The content of this filed",
+                "enum": [
+                  "integer",
+                  "real",
+                  "string"
+                ]
+              }
+            }
+          }
+        },
+        "role": {
+          "type": "object",
+          "required": [
+            "groupBy"
+          ],
+          "properties": {
+            "geopoint": {
+              "description": "The field key of the field that has geopoint information.  Either\nthis or latitude and longitude must be provided.\n",
+              "type": "string"
+            },
+            "groupBy": {
+              "description": "Group records by this field key",
+              "type": "string"
+            },
+            "latitude": {
+              "description": "The field key for the field with latitude information.  Required\nif geopoint is not provided\n",
+              "type": "string"
+            },
+            "longitude": {
+              "description": "The field key for the field with longitude information.  Required\nif geopoint is not provided\n",
+              "type": "string"
+            },
+            "taxaName": {
+              "description": "The field key for the field containing taxon names",
+              "type": "string"
+            },
+            "uniqueId": {
+              "description": "The field key for the field containing a unique identifier for \nthe records.\n",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
     "OccurrenceSet": {
       "type": "object",
       "required": [
@@ -2597,16 +2666,21 @@
           ],
           "properties": {
             "min_presence": {
-              "type": "integer"
+              "description": "The minimum value that should be considered \"present\"",
+              "type": "integer",
+              "minimum": 1
             },
             "max_presence": {
-              "type": "integer"
+              "description": "The maximum value that should be considered \"present\"",
+              "type": "integer",
+              "minimum": 1
             },
             "value_name": {
               "description": "Use pixel for rasters",
               "type": "string"
             },
             "min_percent": {
+              "description": "The minimum percentage of the grid cell classified as present to \nconsider the grid cell present\n",
               "type": "integer"
             }
           }
@@ -2777,6 +2851,10 @@
       "properties": {
         "scenario_package_filename": {
           "type": "string"
+        },
+        "scenario_package_name": {
+          "type": "string",
+          "description": "The name of a scenario package to use"
         },
         "model_scenario": {
           "type": "object",
@@ -3040,12 +3118,28 @@
           "type": "number"
         },
         "resolution": {
+          "description": "The size of each grid cell, in \"map_units\"",
           "type": "number"
         },
         "cell_sides": {
+          "description": "The number of sides for each grid cell.  Use 4 for squares and 6 for hexagons.\n",
+          "enum": [
+            4,
+            6
+          ],
           "type": "integer"
         },
         "map_units": {
+          "description": "The spatial units of the shapegrid.  Cell size will be measured in this unit.\nNote that \"dd\" means decimal degrees\n",
+          "enum": [
+            "feet",
+            "inches",
+            "kilometers",
+            "meters",
+            "miles",
+            "dd",
+            "ds"
+          ],
           "type": "string"
         },
         "cutout_wkt": {

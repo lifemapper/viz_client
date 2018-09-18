@@ -89,6 +89,7 @@ toApi { modelScenario, projectionScenarios } =
                             |> BoomScenarioPackageProjection_scenario
                             |> Just
                     , scenario_package_filename = Nothing
+                    , scenario_package_name = Nothing
                     }
 
         Nothing ->
