@@ -262,26 +262,15 @@ occurrenceSetLI model i o =
 occurrenceSetList : Index -> Model -> Html Msg
 occurrenceSetList index model =
     Options.div [ Options.css "margin" "20px" ]
-        ([ Options.styled Html.p [ Typo.title ] [ Html.text "Choose Occurrence Sets" ] ]
-            ++ case model.upload of
-                Nothing ->
-                    [ L.ul [] <|
-                        List.append
-                            (List.indexedMap (occurrenceSetLI model) model.occurrenceSets)
-                            [ (OccurrenceSetChooser.view (0 :: index) model.chooser |> Html.map ChooserMsg) ]
-                    , Options.styled Html.a
-                        [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
-                        [ Html.text "or upload data" ]
-                    ]
-
-                Just upload ->
-                    [ Options.div [ Options.css "margin-bottom" "10px" ]
-                        (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
-                    , Options.styled Html.a
-                        [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
-                        [ Html.text "or select existing data" ]
-                    ]
-        )
+        [ Options.styled Html.p [ Typo.title ] [ Html.text "Choose Occurrence Sets" ]
+        , L.ul [] <|
+            List.append
+                (List.indexedMap (occurrenceSetLI model) model.occurrenceSets)
+                [ (OccurrenceSetChooser.view (0 :: index) model.chooser |> Html.map ChooserMsg) ]
+        , Options.styled Html.a
+            [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
+            [ Html.text "or upload data" ]
+        ]
 
 
 view : Index -> Model -> Html Msg
@@ -290,10 +279,23 @@ view index model =
         mapCardTitle =
             model.mappedSet |> Maybe.andThen .speciesName |> Maybe.withDefault "Map"
     in
-        Options.div [ Options.css "display" "flex" ]
-            [ occurrenceSetList index model
-            , MapCard.view index mapCardTitle model.mapCard |> Html.map MapCardMsg
-            ]
+        case model.upload of
+            Nothing ->
+                Options.div [ Options.css "display" "flex" ]
+                    [ occurrenceSetList index model
+                    , MapCard.view index mapCardTitle model.mapCard |> Html.map MapCardMsg
+                    ]
+
+            Just upload ->
+                Options.div [ Options.css "display" "flex" ]
+                    [ Options.div [ Options.css "margin" "20px" ]
+                        [ Options.div [ Options.css "margin-bottom" "10px" ]
+                            (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
+                        , Options.styled Html.a
+                            [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
+                            [ Html.text "or select existing data" ]
+                        ]
+                    ]
 
 
 problems : Model -> Maybe String

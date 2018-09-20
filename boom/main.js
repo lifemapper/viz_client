@@ -31,7 +31,12 @@ app.ports.fileSelected.subscribe(function(id) {
     var node = document.getElementById(id);
     var file = node.files[0];
     files[id] = file;
-    app.ports.selectedFileName.send({id: id, filename: file.name});
+    Papa.parse(file, {
+        preview: 10,
+        complete: function(results) {
+            app.ports.selectedFileName.send({id: id, filename: file.name, preview: results.data});
+        }
+    });
 
     // var reader = new FileReader();
     // reader.onload = (function(event) {

@@ -24,11 +24,14 @@
 
 port module UploadFile exposing (Model, Msg, init, getUploadedFilename, update, view, subscriptions)
 
+import List.Extra as List
+import Ternary exposing ((?))
 import Html exposing (Html)
 import Html.Attributes as Attribute
 import Html.Events as Events
 import ProgramFlags exposing (Flags)
 import Material
+import Material.Toggles as Toggles
 import Material.Textfield as Textfield
 import Material.Progress as Progress
 import Material.Options as Options
@@ -55,7 +58,7 @@ port uploadCanceled : (String -> msg) -> Sub msg
 port uploadCmd : { id : String, url : String } -> Cmd msg
 
 
-port selectedFileName : ({ id : String, filename : String } -> msg) -> Sub msg
+port selectedFileName : ({ id : String, filename : String, preview : List (List String) } -> msg) -> Sub msg
 
 
 type UploadStatus
@@ -69,10 +72,43 @@ type UploadStatus
 type FileSelectState
     = FileNotSelected
     | FileSelected
-    | GotFileName { localFileName : String, uploadAs : String }
+    | GotFileName { localFileName : String, uploadAs : String, metadata : Metadata }
     | UploadingFile { localFileName : String, uploadAs : String, status : UploadStatus }
     | FileNameConflict { localFileName : String, uploadAs : String }
     | Finished String
+
+
+type alias Metadata =
+    { fields : List { shortName : String, fieldType : String }
+    , roles :
+        { groupBy : Maybe Int
+        , geopoint : Maybe Int
+        , latitude : Maybe Int
+        , longitude : Maybe Int
+        , taxaName : Maybe Int
+        , uniqueId : Maybe Int
+        }
+    , preview : List (List String)
+    }
+
+
+initMetadata : List (List String) -> Metadata
+initMetadata preview =
+    { fields =
+        preview
+            |> List.getAt 0
+            |> Maybe.withDefault []
+            |> List.map (always { shortName = "", fieldType = "string" })
+    , roles =
+        { groupBy = Nothing
+        , geopoint = Nothing
+        , latitude = Nothing
+        , longitude = Nothing
+        , taxaName = Nothing
+        , uniqueId = Nothing
+        }
+    , preview = preview
+    }
 
 
 type alias Model =
@@ -96,10 +132,21 @@ getUploadedFilename state =
 
 type UploadMsg
     = FileSelectedMsg String
-    | GotFileNameMsg { id : String, filename : String }
+    | GotFileNameMsg { id : String, filename : String, preview : List (List String) }
+    | MetadataMsg MetadataMsg
     | GotUploadStatus { id : String, status : UploadStatus }
     | UpdateUploadFilename String
     | DoUpload
+
+
+type MetadataMsg
+    = UpdateFieldName Int String
+    | ToggleGroupBy Int
+    | ToggleGeopoint Int
+    | ToggleLatitude Int
+    | ToggleLongitude Int
+    | ToggleTaxaName Int
+    | ToggleUniqueId Int
 
 
 type alias Msg =
@@ -111,6 +158,116 @@ fileSelectId index =
     "file-select" ++ (index |> List.map toString |> String.join "-")
 
 
+updateMetadata : MetadataMsg -> Metadata -> Metadata
+updateMetadata msg metadata =
+    case Debug.log "updateMetadata" msg of
+        UpdateFieldName i name ->
+            let
+                fields =
+                    metadata.fields
+                        |> List.indexedMap
+                            (\j field ->
+                                if j == i then
+                                    { field | shortName = name }
+                                else
+                                    field
+                            )
+            in
+                { metadata | fields = fields }
+
+        ToggleGroupBy i ->
+            let
+                roles =
+                    metadata.roles
+            in
+                { metadata | roles = { roles | groupBy = Just i } }
+
+        ToggleGeopoint i ->
+            let
+                roles =
+                    metadata.roles
+
+                roles_ =
+                    if roles.geopoint == Just i then
+                        { roles | geopoint = Nothing }
+                    else
+                        { roles
+                            | geopoint = Just i
+                            , taxaName = (roles.taxaName == Just i) ? Nothing <| roles.taxaName
+                            , latitude = Nothing
+                            , longitude = Nothing
+                        }
+            in
+                { metadata | roles = roles_ }
+
+        ToggleLatitude i ->
+            let
+                roles =
+                    metadata.roles
+
+                roles_ =
+                    if roles.latitude == Just i then
+                        { roles | latitude = Nothing }
+                    else
+                        { roles
+                            | latitude = Just i
+                            , geopoint = Nothing
+                            , longitude = (roles.longitude == Just i) ? Nothing <| roles.longitude
+                            , taxaName = (roles.taxaName == Just i) ? Nothing <| roles.taxaName
+                        }
+            in
+                { metadata | roles = roles_ }
+
+        ToggleLongitude i ->
+            let
+                roles =
+                    metadata.roles
+
+                roles_ =
+                    if roles.longitude == Just i then
+                        { roles | latitude = Nothing }
+                    else
+                        { roles
+                            | longitude = Just i
+                            , geopoint = Nothing
+                            , latitude = (roles.latitude == Just i) ? Nothing <| roles.latitude
+                            , taxaName = (roles.taxaName == Just i) ? Nothing <| roles.taxaName
+                        }
+            in
+                { metadata | roles = roles_ }
+
+        ToggleTaxaName i ->
+            let
+                roles =
+                    metadata.roles
+
+                roles_ =
+                    if roles.taxaName == Just i then
+                        { roles | taxaName = Nothing }
+                    else
+                        { roles
+                            | taxaName = Just i
+                            , geopoint = (roles.geopoint == Just i) ? Nothing <| roles.geopoint
+                            , latitude = (roles.latitude == Just i) ? Nothing <| roles.latitude
+                            , longitude = (roles.longitude == Just i) ? Nothing <| roles.longitude
+                        }
+            in
+                { metadata | roles = roles_ }
+
+        ToggleUniqueId i ->
+            let
+                roles =
+                    metadata.roles
+
+                uniqueId =
+                    if roles.uniqueId == Just i then
+                        Nothing
+                    else
+                        Just i
+            in
+                { metadata | roles = { roles | uniqueId = uniqueId } }
+
+
 update : String -> Index -> Flags -> UploadMsg -> FileSelectState -> ( FileSelectState, Cmd msg )
 update uploadType index flags msg state =
     case msg of
@@ -120,11 +277,19 @@ update uploadType index flags msg state =
             else
                 ( state, Cmd.none )
 
-        GotFileNameMsg { id, filename } ->
+        GotFileNameMsg { id, filename, preview } ->
             if id == fileSelectId index then
-                ( GotFileName { localFileName = filename, uploadAs = filename }, Cmd.none )
+                ( GotFileName { localFileName = filename, uploadAs = filename, metadata = initMetadata preview }, Cmd.none )
             else
                 ( state, Cmd.none )
+
+        MetadataMsg msg_ ->
+            case state of
+                GotFileName info ->
+                    ( GotFileName { info | metadata = updateMetadata msg_ info.metadata }, Cmd.none )
+
+                _ ->
+                    ( state, Cmd.none )
 
         UpdateUploadFilename uploadAs ->
             case state of
@@ -173,7 +338,7 @@ update uploadType index flags msg state =
                 ( state, Cmd.none )
 
 
-doUpload : String -> Index -> Flags -> { localFileName : String, uploadAs : String } -> ( FileSelectState, Cmd msg )
+doUpload : String -> Index -> Flags -> { a | localFileName : String, uploadAs : String } -> ( FileSelectState, Cmd msg )
 doUpload uploadType index flags { localFileName, uploadAs } =
     let
         url =
@@ -236,8 +401,9 @@ view mapMdlMsg mapMsg index mdl state =
                 UploadCanceled ->
                     [ Html.text <| "Failed uploading " ++ uploadAs ++ "." ]
 
-        GotFileName { localFileName, uploadAs } ->
+        GotFileName { localFileName, uploadAs, metadata } ->
             [ Html.p [] [ Html.text ("File selected: " ++ localFileName) ]
+            , metadataTable mapMdlMsg mapMsg (2 :: index) mdl metadata
             , Html.p []
                 [ Textfield.render mapMdlMsg
                     (0 :: index)
@@ -267,6 +433,81 @@ view mapMdlMsg mapMsg index mdl state =
                 ]
                 []
             ]
+
+
+metadataTable : (Material.Msg msg -> msg) -> (UploadMsg -> msg) -> Index -> Material.Model -> Metadata -> Html msg
+metadataTable mapMdlMsg mapMsg index mdl metadata =
+    let
+        formColumn i cell =
+            [ Options.div [ Options.css "display" "flex", Options.css "flex-direction" "column" ]
+                [ Textfield.render mapMdlMsg
+                    (0 :: i :: index)
+                    mdl
+                    [ Textfield.floatingLabel
+                    , Textfield.label "Column Name"
+                    , Textfield.maxlength 10
+                    , Textfield.value <| (metadata.fields |> List.getAt i |> Maybe.map .shortName |> Maybe.withDefault "")
+                    , Options.onInput (UpdateFieldName i >> MetadataMsg >> mapMsg)
+                    ]
+                    []
+                , Html.select [] <| List.map (\v -> Html.option [] [ Html.text v ]) [ "string", "integer", "real" ]
+                , Toggles.radio mapMdlMsg
+                    (0 :: 1 :: i :: index)
+                    mdl
+                    [ Options.onToggle (ToggleGroupBy i |> MetadataMsg |> mapMsg)
+                    , Toggles.value (metadata.roles.groupBy == Just i)
+                    ]
+                    [ Html.text "Group By" ]
+                , Toggles.checkbox mapMdlMsg
+                    (1 :: 1 :: i :: index)
+                    mdl
+                    [ Options.onToggle (ToggleGeopoint i |> MetadataMsg |> mapMsg)
+                    , Toggles.value (metadata.roles.geopoint == Just i)
+                    ]
+                    [ Html.text "Geopoint" ]
+                , Toggles.checkbox mapMdlMsg
+                    (2 :: 1 :: i :: index)
+                    mdl
+                    [ Options.onToggle (ToggleLatitude i |> MetadataMsg |> mapMsg)
+                    , Toggles.value (metadata.roles.latitude == Just i)
+                    ]
+                    [ Html.text "Latitude" ]
+                , Toggles.checkbox mapMdlMsg
+                    (3 :: 1 :: i :: index)
+                    mdl
+                    [ Options.onToggle (ToggleLongitude i |> MetadataMsg |> mapMsg)
+                    , Toggles.value (metadata.roles.longitude == Just i)
+                    ]
+                    [ Html.text "Longitude" ]
+                , Toggles.checkbox mapMdlMsg
+                    (4 :: 1 :: i :: index)
+                    mdl
+                    [ Options.onToggle (ToggleTaxaName i |> MetadataMsg |> mapMsg)
+                    , Toggles.value (metadata.roles.taxaName == Just i)
+                    ]
+                    [ Html.text "Taxon" ]
+                , Toggles.checkbox mapMdlMsg
+                    (5 :: 1 :: i :: index)
+                    mdl
+                    [ Options.onToggle (ToggleUniqueId i |> MetadataMsg |> mapMsg)
+                    , Toggles.value (metadata.roles.uniqueId == Just i)
+                    ]
+                    [ Html.text "Unique ID" ]
+                ]
+            ]
+
+        header =
+            metadata.preview
+                |> List.getAt 0
+                |> Maybe.withDefault []
+                |> List.indexedMap formColumn
+                |> List.map (Html.td [])
+                |> Html.tr []
+
+        previewRows =
+            metadata.preview |> List.map (List.map (\cell -> Html.td [] [ Html.text cell ]) >> Html.tr [])
+    in
+        Html.table [] (header :: previewRows)
 
 
 subscriptions : (UploadMsg -> msg) -> Sub msg
