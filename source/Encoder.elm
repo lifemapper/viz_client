@@ -29,6 +29,56 @@ import Json.Encode exposing (..)
 import Maybe.Extra as Maybe
 
 
+encodeOccurrenceMetadata : OccurrenceMetadata -> Value
+encodeOccurrenceMetadata (OccurrenceMetadata { role, field }) =
+    [ role |> Maybe.map (encodeOccurrenceMetadataRole >> (,) "role")
+    , field |> Maybe.map (encodeOccurrenceMetadataField >> (,) "field")
+    ]
+        |> List.concatMap Maybe.toList
+        |> object
+
+
+encodeOccurrenceMetadataRole : OccurrenceMetadataRole -> Value
+encodeOccurrenceMetadataRole (OccurrenceMetadataRole { uniqueId, taxaName, longitude, latitude, groupBy, geopoint }) =
+    [ uniqueId |> Maybe.map (string >> (,) "uniqueId")
+    , taxaName |> Maybe.map (string >> (,) "taxaName")
+    , longitude |> Maybe.map (string >> (,) "longitude")
+    , latitude |> Maybe.map (string >> (,) "latitude")
+    , geopoint |> Maybe.map (string >> (,) "geopoint")
+    , groupBy |> string |> (,) "groupBy" |> Just
+    ]
+        |> List.concatMap Maybe.toList
+        |> object
+
+
+encodeOccurrenceMetadataField : OccurrenceMetadataField -> Value
+encodeOccurrenceMetadataField (OccurrenceMetadataField fields) =
+    fields |> List.map encodeOccurrenceMetadataFieldItem |> list
+
+
+encodeOccurrenceMetadataFieldItem : OccurrenceMetadataFieldItem -> Value
+encodeOccurrenceMetadataFieldItem (OccurrenceMetadataFieldItem { key, shortName, fieldType }) =
+    [ key |> Maybe.map (string >> (,) "key")
+    , shortName |> Maybe.map (string >> (,) "shortName")
+    , fieldType |> Maybe.map (encodeOccurrenceMetadataFieldItemFieldType >> (,) "fieldType")
+    ]
+        |> List.concatMap Maybe.toList
+        |> object
+
+
+encodeOccurrenceMetadataFieldItemFieldType : OccurrenceMetadataFieldItemFieldType -> Value
+encodeOccurrenceMetadataFieldItemFieldType fieldType =
+    case fieldType of
+        String ->
+            string "string"
+
+        Integer ->
+            string "integer"
+
+        Real ->
+            string "real"
+
+
 encodeBoomPOST : BoomPOST -> Value
 encodeBoomPOST (BoomPOST { tree, sdm, scenario_package, pam_stats, occurrence, mcpa, global_pam, archive_name }) =
     [ occurrence |> Maybe.map (encodeBoomOccurrenceSet >> (,) "occurrence")

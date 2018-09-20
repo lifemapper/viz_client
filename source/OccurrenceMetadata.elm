@@ -22,16 +22,28 @@
 -}
 
 
-module OccurrenceMetadata exposing (Metadata, initMetadata, MetadataMsg, updateMetadata, metadataTable)
+module OccurrenceMetadata exposing (Metadata, initMetadata, MetadataMsg, updateMetadata, metadataTable, toJson)
 
 import List.Extra as List
 import Ternary exposing ((?))
 import Html exposing (Html)
+import Html.Attributes
+import Html.Events
 import Material
 import Material.Toggles as Toggles
 import Material.Textfield as Textfield
 import Material.Options as Options
 import Helpers exposing (Index)
+import Json.Encode exposing (encode)
+import Encoder exposing (encodeOccurrenceMetadata)
+import Decoder
+    exposing
+        ( OccurrenceMetadata(..)
+        , OccurrenceMetadataField(..)
+        , OccurrenceMetadataFieldItem(..)
+        , OccurrenceMetadataFieldItemFieldType(..)
+        , OccurrenceMetadataRole(..)
+        )
 
 
 type alias Metadata =
@@ -46,6 +58,47 @@ type alias Metadata =
         }
     , preview : List (List String)
     }
+
+
+toJson : Metadata -> String
+toJson metadata =
+    let
+        fields =
+            metadata.fields
+                |> List.indexedMap
+                    (\i field ->
+                        OccurrenceMetadataFieldItem
+                            { key = Just (i |> toString)
+                            , shortName = Just field.shortName
+                            , fieldType =
+                                case field.fieldType of
+                                    "string" ->
+                                        Just String
+
+                                    "integer" ->
+                                        Just Integer
+
+                                    "real" ->
+                                        Just Real
+
+                                    _ ->
+                                        Nothing
+                            }
+                    )
+
+        roles =
+            OccurrenceMetadataRole
+                { uniqueId = metadata.roles.uniqueId |> Maybe.map toString
+                , taxaName = metadata.roles.taxaName |> Maybe.map toString
+                , longitude = metadata.roles.longitude |> Maybe.map toString
+                , latitude = metadata.roles.latitude |> Maybe.map toString
+                , groupBy = metadata.roles.groupBy |> Maybe.map toString |> Maybe.withDefault ""
+                , geopoint = metadata.roles.geopoint |> Maybe.map toString
+                }
+    in
+        OccurrenceMetadata { role = Just roles, field = Just <| OccurrenceMetadataField fields }
+            |> encodeOccurrenceMetadata
+            |> encode 0
 
 
 initMetadata : List (List String) -> Metadata
@@ -69,6 +122,7 @@ initMetadata preview =
 
 type MetadataMsg
     = UpdateFieldName Int String
+    | UpdateFieldType Int String
     | ToggleGroupBy Int
     | ToggleGeopoint Int
     | ToggleLatitude Int
@@ -88,6 +142,20 @@ updateMetadata msg metadata =
                             (\j field ->
                                 if j == i then
                                     { field | shortName = name }
+                                else
+                                    field
+                            )
+            in
+                { metadata | fields = fields }
+
+        UpdateFieldType i fieldType ->
+            let
+                fields =
+                    metadata.fields
+                        |> List.indexedMap
+                            (\j field ->
+                                if j == i then
+                                    { field | fieldType = fieldType }
                                 else
                                     field
                             )
@@ -198,11 +266,25 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                     [ Textfield.floatingLabel
                     , Textfield.label "Column Name"
                     , Textfield.maxlength 10
-                    , Textfield.value <| (metadata.fields |> List.getAt i |> Maybe.map .shortName |> Maybe.withDefault "")
+                    , Textfield.value (metadata.fields |> List.getAt i |> Maybe.map .shortName |> Maybe.withDefault "")
                     , Options.onInput (UpdateFieldName i >> mapMsg)
                     ]
                     []
-                , Html.select [] <| List.map (\v -> Html.option [] [ Html.text v ]) [ "string", "integer", "real" ]
+                , Html.select [ Html.Events.onInput (UpdateFieldType i >> mapMsg) ] <|
+                    List.map
+                        (\v ->
+                            Html.option
+                                [ Html.Attributes.selected
+                                    (metadata.fields
+                                        |> List.getAt i
+                                        |> Maybe.map .fieldType
+                                        |> Maybe.withDefault ""
+                                        |> (==) v
+                                    )
+                                ]
+                                [ Html.text v ]
+                        )
+                        [ "string", "integer", "real" ]
                 , Toggles.radio mapMdlMsg
                     (0 :: 1 :: i :: index)
                     mdl

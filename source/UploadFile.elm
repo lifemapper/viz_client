@@ -28,6 +28,7 @@ import Html exposing (Html)
 import Html.Attributes as Attribute
 import Html.Events as Events
 import ProgramFlags exposing (Flags)
+import QueryString as Q
 import Material
 import Material.Textfield as Textfield
 import Material.Progress as Progress
@@ -187,8 +188,14 @@ update uploadType index flags msg state =
 doUpload : String -> Index -> Flags -> { a | localFileName : String, uploadAs : String, metadata : Metadata } -> ( FileSelectState, Cmd msg )
 doUpload uploadType index flags { localFileName, uploadAs, metadata } =
     let
+        metadataJson =
+            OccurrenceMetadata.toJson metadata
+
+        query =
+            Q.empty |> Q.add "uploadType" uploadType |> Q.add "fileName" uploadAs |> Q.add "metadata" metadataJson
+
         url =
-            flags.apiRoot ++ "upload?uploadType=" ++ uploadType ++ "&fileName=" ++ uploadAs
+            flags.apiRoot ++ "upload" ++ (Q.render query)
     in
         ( UploadingFile
             { localFileName = localFileName
