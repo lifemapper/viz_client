@@ -71,8 +71,8 @@ type FileSelectState
     = FileNotSelected
     | FileSelected
     | GotFileName { localFileName : String, uploadAs : String, metadata : Metadata }
-    | UploadingFile { localFileName : String, uploadAs : String, status : UploadStatus }
-    | FileNameConflict { localFileName : String, uploadAs : String }
+    | UploadingFile { localFileName : String, uploadAs : String, metadata : Metadata, status : UploadStatus }
+    | FileNameConflict { localFileName : String, uploadAs : String, metadata : Metadata }
     | Finished String
 
 
@@ -161,12 +161,13 @@ update uploadType index flags msg state =
         GotUploadStatus { id, status } ->
             if id == fileSelectId index then
                 case state of
-                    UploadingFile ({ localFileName, uploadAs } as info) ->
+                    UploadingFile ({ localFileName, uploadAs, metadata } as info) ->
                         case status of
                             UploadComplete 409 _ ->
                                 ( FileNameConflict
                                     { localFileName = localFileName
                                     , uploadAs = uploadAs
+                                    , metadata = metadata
                                     }
                                 , Cmd.none
                                 )
@@ -183,8 +184,8 @@ update uploadType index flags msg state =
                 ( state, Cmd.none )
 
 
-doUpload : String -> Index -> Flags -> { a | localFileName : String, uploadAs : String } -> ( FileSelectState, Cmd msg )
-doUpload uploadType index flags { localFileName, uploadAs } =
+doUpload : String -> Index -> Flags -> { a | localFileName : String, uploadAs : String, metadata : Metadata } -> ( FileSelectState, Cmd msg )
+doUpload uploadType index flags { localFileName, uploadAs, metadata } =
     let
         url =
             flags.apiRoot ++ "upload?uploadType=" ++ uploadType ++ "&fileName=" ++ uploadAs
@@ -192,6 +193,7 @@ doUpload uploadType index flags { localFileName, uploadAs } =
         ( UploadingFile
             { localFileName = localFileName
             , uploadAs = uploadAs
+            , metadata = metadata
             , status = StartingUpload
             }
         , uploadCmd { id = fileSelectId index, url = url }
