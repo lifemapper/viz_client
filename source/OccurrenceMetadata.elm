@@ -133,7 +133,7 @@ type MetadataMsg
 
 updateMetadata : MetadataMsg -> Metadata -> Metadata
 updateMetadata msg metadata =
-    case Debug.log "updateMetadata" msg of
+    case msg of
         UpdateFieldName i name ->
             let
                 fields =
