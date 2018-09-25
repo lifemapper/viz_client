@@ -229,10 +229,10 @@ update msg model =
         UploadMsg msg_ ->
             let
                 ( treeUpload_, cmd1 ) =
-                    UploadFile.update "tree" [ 3 ] model.programFlags msg_ model.treeUpload
+                    UploadFile.update UploadFile.Tree [ 3 ] model.programFlags msg_ model.treeUpload
 
                 ( hypoUpload_, cmd2 ) =
-                    UploadFile.update "biogeo" [ 4 ] model.programFlags msg_ model.hypoUpload
+                    UploadFile.update UploadFile.Biogeo [ 4 ] model.programFlags msg_ model.hypoUpload
             in
                 { model | treeUpload = treeUpload_, hypoUpload = hypoUpload_ } ! [ cmd1, cmd2 ]
 

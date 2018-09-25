@@ -132,7 +132,7 @@ update index msg model =
                     Just upload ->
                         let
                             ( upload_, cmd ) =
-                                UploadFile.update "occurrence" (1 :: index) model.programFlags msg_ upload
+                                UploadFile.update UploadFile.Occurrence (1 :: index) model.programFlags msg_ upload
                         in
                             ( { model | upload = Just upload_ }, cmd )
 

@@ -27,22 +27,21 @@ var app = Elm.Main.fullscreen(sdmFlags);
 
 var files = {};
 
-app.ports.fileSelected.subscribe(function(id) {
+app.ports.fileSelected.subscribe(function(args) {
+    var id = args[0], doPreview = args[1];
     var node = document.getElementById(id);
     var file = node.files[0];
     files[id] = file;
-    Papa.parse(file, {
-        preview: 10,
-        complete: function(results) {
-            app.ports.selectedFileName.send({id: id, filename: file.name, preview: results.data});
-        }
-    });
-
-    // var reader = new FileReader();
-    // reader.onload = (function(event) {
-    //     app.ports.fileContentRead.send({contents: event.target.result, filename: file.name});
-    // });
-    // reader.readAsText(file);
+    if (doPreview) {
+        Papa.parse(file, {
+            preview: 10,
+            complete: function(results) {
+                app.ports.selectedFileName.send({id: id, filename: file.name, preview: results.data});
+            }
+        });
+    } else {
+        app.ports.selectedFileName.send({id: id, filename: file.name, preview: []});
+    }
 });
 
 app.ports.uploadCmd.subscribe(function(info) {

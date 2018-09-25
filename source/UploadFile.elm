@@ -22,7 +22,7 @@
 -}
 
 
-port module UploadFile exposing (Model, Msg, init, getUploadedFilename, update, view, subscriptions)
+port module UploadFile exposing (Model, Msg, UploadType(..), init, getUploadedFilename, update, view, subscriptions)
 
 import Html exposing (Html)
 import Html.Attributes as Attribute
@@ -39,7 +39,7 @@ import Helpers exposing (Index)
 import OccurrenceMetadata exposing (..)
 
 
-port fileSelected : String -> Cmd msg
+port fileSelected : ( String, Bool ) -> Cmd msg
 
 
 port uploadProgress : ({ id : String, loaded : Int, total : Int } -> msg) -> Sub msg
@@ -58,6 +58,13 @@ port uploadCmd : { id : String, url : String } -> Cmd msg
 
 
 port selectedFileName : ({ id : String, filename : String, preview : List (List String) } -> msg) -> Sub msg
+
+
+type UploadType
+    = Biogeo
+    | Climate
+    | Occurrence
+    | Tree
 
 
 type UploadStatus
@@ -114,12 +121,12 @@ fileSelectId index =
     "file-select" ++ (index |> List.map toString |> String.join "-")
 
 
-update : String -> Index -> Flags -> UploadMsg -> FileSelectState -> ( FileSelectState, Cmd msg )
+update : UploadType -> Index -> Flags -> UploadMsg -> FileSelectState -> ( FileSelectState, Cmd msg )
 update uploadType index flags msg state =
     case msg of
         FileSelectedMsg id ->
             if id == fileSelectId index then
-                ( FileSelected, fileSelected id )
+                ( FileSelected, fileSelected ( id, uploadType == Occurrence ) )
             else
                 ( state, Cmd.none )
 
@@ -185,14 +192,23 @@ update uploadType index flags msg state =
                 ( state, Cmd.none )
 
 
-doUpload : String -> Index -> Flags -> { a | localFileName : String, uploadAs : String, metadata : Metadata } -> ( FileSelectState, Cmd msg )
+doUpload : UploadType -> Index -> Flags -> { a | localFileName : String, uploadAs : String, metadata : Metadata } -> ( FileSelectState, Cmd msg )
 doUpload uploadType index flags { localFileName, uploadAs, metadata } =
     let
         metadataJson =
             OccurrenceMetadata.toJson metadata
 
+        uploadTypeStr =
+            uploadType |> toString |> String.toLower
+
         query =
-            Q.empty |> Q.add "uploadType" uploadType |> Q.add "fileName" uploadAs |> Q.add "metadata" metadataJson
+            Q.empty
+                |> Q.add "uploadType" uploadTypeStr
+                |> Q.add "fileName" uploadAs
+                |> if uploadType == Occurrence then
+                    Q.add "metadata" metadataJson
+                   else
+                    identity
 
         url =
             flags.apiRoot ++ "upload" ++ (Q.render query)
