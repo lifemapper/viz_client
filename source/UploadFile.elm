@@ -34,6 +34,7 @@ import Material.Textfield as Textfield
 import Material.Progress as Progress
 import Material.Options as Options
 import Material.Button as Button
+import Material.Color as Color
 import Json.Decode as Decode
 import Helpers exposing (Index)
 import OccurrenceMetadata exposing (..)
@@ -78,7 +79,7 @@ type UploadStatus
 type FileSelectState
     = FileNotSelected
     | FileSelected
-    | GotFileName { localFileName : String, uploadAs : String, metadata : Metadata }
+    | GotFileName { localFileName : String, uploadAs : String, metadata : Metadata, metadataIssues : List MetadataIssues }
     | UploadingFile { localFileName : String, uploadAs : String, metadata : Metadata, status : UploadStatus }
     | FileNameConflict { localFileName : String, uploadAs : String, metadata : Metadata }
     | Finished String
@@ -132,7 +133,14 @@ update uploadType index flags msg state =
 
         GotFileNameMsg { id, filename, preview } ->
             if id == fileSelectId index then
-                ( GotFileName { localFileName = filename, uploadAs = filename, metadata = initMetadata preview }, Cmd.none )
+                ( GotFileName
+                    { localFileName = filename
+                    , uploadAs = filename
+                    , metadata = initMetadata preview
+                    , metadataIssues = []
+                    }
+                , Cmd.none
+                )
             else
                 ( state, Cmd.none )
 
@@ -195,6 +203,14 @@ update uploadType index flags msg state =
 doUpload : UploadType -> Index -> Flags -> { a | localFileName : String, uploadAs : String, metadata : Metadata } -> ( FileSelectState, Cmd msg )
 doUpload uploadType index flags { localFileName, uploadAs, metadata } =
     let
+        metadataIssues =
+            case uploadType of
+                Occurrence ->
+                    validateMetadata metadata
+
+                _ ->
+                    []
+
         metadataJson =
             OccurrenceMetadata.toJson metadata
 
@@ -213,14 +229,26 @@ doUpload uploadType index flags { localFileName, uploadAs, metadata } =
         url =
             flags.apiRoot ++ "upload" ++ (Q.render query)
     in
-        ( UploadingFile
-            { localFileName = localFileName
-            , uploadAs = uploadAs
-            , metadata = metadata
-            , status = StartingUpload
-            }
-        , uploadCmd { id = fileSelectId index, url = url }
-        )
+        case metadataIssues of
+            [] ->
+                ( UploadingFile
+                    { localFileName = localFileName
+                    , uploadAs = uploadAs
+                    , metadata = metadata
+                    , status = StartingUpload
+                    }
+                , uploadCmd { id = fileSelectId index, url = url }
+                )
+
+            issues ->
+                ( GotFileName
+                    { localFileName = localFileName
+                    , uploadAs = uploadAs
+                    , metadata = metadata
+                    , metadataIssues = issues
+                    }
+                , Cmd.none
+                )
 
 
 view : (Material.Msg msg -> msg) -> (UploadMsg -> msg) -> Index -> Material.Model -> FileSelectState -> List (Html msg)
@@ -271,7 +299,7 @@ view mapMdlMsg mapMsg index mdl state =
                 UploadCanceled ->
                     [ Html.text <| "Failed uploading " ++ uploadAs ++ "." ]
 
-        GotFileName { localFileName, uploadAs, metadata } ->
+        GotFileName { localFileName, uploadAs, metadata, metadataIssues } ->
             [ Html.p [] [ Html.text ("File selected: " ++ localFileName) ]
             , metadataTable mapMdlMsg (MetadataMsg >> mapMsg) (2 :: index) mdl metadata
             , Html.p []
@@ -285,6 +313,7 @@ view mapMdlMsg mapMsg index mdl state =
                     ]
                     []
                 ]
+            , Html.ul [] <| List.map formatIssue metadataIssues
             , Button.render mapMdlMsg
                 (1 :: index)
                 mdl
@@ -303,6 +332,22 @@ view mapMdlMsg mapMsg index mdl state =
                 ]
                 []
             ]
+
+
+formatIssue : MetadataIssues -> Html msg
+formatIssue issue =
+    case issue of
+        MissingGroupBy ->
+            Html.li []
+                [ Options.span [ Color.text Color.accent ]
+                    [ Html.text "A group by column must be chosen." ]
+                ]
+
+        MissingGeo ->
+            Html.li []
+                [ Options.span [ Color.text Color.accent ]
+                    [ Html.text "Columns for either geopoint or latitude and longitude must be chosen." ]
+                ]
 
 
 subscriptions : (UploadMsg -> msg) -> Sub msg

@@ -22,9 +22,20 @@
 -}
 
 
-module OccurrenceMetadata exposing (Metadata, initMetadata, MetadataMsg, updateMetadata, metadataTable, toJson)
+module OccurrenceMetadata
+    exposing
+        ( Metadata
+        , initMetadata
+        , MetadataIssues(..)
+        , validateMetadata
+        , MetadataMsg
+        , updateMetadata
+        , metadataTable
+        , toJson
+        )
 
 import List.Extra as List
+import Maybe.Extra as Maybe
 import Ternary exposing ((?))
 import Html exposing (Html)
 import Html.Attributes
@@ -118,6 +129,25 @@ initMetadata preview =
         }
     , preview = preview
     }
+
+
+type MetadataIssues
+    = MissingGroupBy
+    | MissingGeo
+
+
+validateMetadata : Metadata -> List MetadataIssues
+validateMetadata { roles } =
+    [ if roles.groupBy == Nothing then
+        Just MissingGroupBy
+      else
+        Nothing
+    , if roles.geopoint == Nothing && (roles.latitude == Nothing || roles.longitude == Nothing) then
+        Just MissingGeo
+      else
+        Nothing
+    ]
+        |> List.concatMap Maybe.toList
 
 
 type MetadataMsg
@@ -270,21 +300,6 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                     , Options.onInput (UpdateFieldName i >> mapMsg)
                     ]
                     []
-                , Html.select [ Html.Events.onInput (UpdateFieldType i >> mapMsg) ] <|
-                    List.map
-                        (\v ->
-                            Html.option
-                                [ Html.Attributes.selected
-                                    (metadata.fields
-                                        |> List.getAt i
-                                        |> Maybe.map .fieldType
-                                        |> Maybe.withDefault ""
-                                        |> (==) v
-                                    )
-                                ]
-                                [ Html.text v ]
-                        )
-                        [ "string", "integer", "real" ]
                 , Toggles.radio mapMdlMsg
                     (0 :: 1 :: i :: index)
                     mdl
@@ -327,6 +342,21 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                     , Toggles.value (metadata.roles.uniqueId == Just i)
                     ]
                     [ Html.text "Unique ID" ]
+                , Html.select [ Html.Events.onInput (UpdateFieldType i >> mapMsg) ] <|
+                    List.map
+                        (\v ->
+                            Html.option
+                                [ Html.Attributes.selected
+                                    (metadata.fields
+                                        |> List.getAt i
+                                        |> Maybe.map .fieldType
+                                        |> Maybe.withDefault ""
+                                        |> (==) v
+                                    )
+                                ]
+                                [ Html.text v ]
+                        )
+                        [ "string", "integer", "real" ]
                 ]
             ]
 
