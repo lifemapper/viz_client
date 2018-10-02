@@ -34,7 +34,7 @@ app.ports.fileSelected.subscribe(function(args) {
     files[id] = file;
     if (doPreview) {
         Papa.parse(file, {
-            preview: 10,
+            preview: 4,
             complete: function(results) {
                 app.ports.selectedFileName.send({id: id, filename: file.name, preview: results.data});
             }

@@ -214,8 +214,18 @@ updateMetadata msg metadata =
                             , latitude = Nothing
                             , longitude = Nothing
                         }
+
+                fields =
+                    metadata.fields
+                        |> List.indexedMap
+                            (\j field ->
+                                if j == i then
+                                    { field | fieldType = "string" }
+                                else
+                                    field
+                            )
             in
-                { metadata | roles = roles_ }
+                { metadata | roles = roles_, fields = fields }
 
         ToggleLatitude i ->
             let
@@ -232,8 +242,18 @@ updateMetadata msg metadata =
                             , longitude = (roles.longitude == Just i) ? Nothing <| roles.longitude
                             , taxaName = (roles.taxaName == Just i) ? Nothing <| roles.taxaName
                         }
+
+                fields =
+                    metadata.fields
+                        |> List.indexedMap
+                            (\j field ->
+                                if j == i then
+                                    { field | fieldType = "real" }
+                                else
+                                    field
+                            )
             in
-                { metadata | roles = roles_ }
+                { metadata | roles = roles_, fields = fields }
 
         ToggleLongitude i ->
             let
@@ -250,8 +270,18 @@ updateMetadata msg metadata =
                             , latitude = (roles.latitude == Just i) ? Nothing <| roles.latitude
                             , taxaName = (roles.taxaName == Just i) ? Nothing <| roles.taxaName
                         }
+
+                fields =
+                    metadata.fields
+                        |> List.indexedMap
+                            (\j field ->
+                                if j == i then
+                                    { field | fieldType = "real" }
+                                else
+                                    field
+                            )
             in
-                { metadata | roles = roles_ }
+                { metadata | roles = roles_, fields = fields }
 
         ToggleTaxaName i ->
             let
@@ -268,8 +298,18 @@ updateMetadata msg metadata =
                             , latitude = (roles.latitude == Just i) ? Nothing <| roles.latitude
                             , longitude = (roles.longitude == Just i) ? Nothing <| roles.longitude
                         }
+
+                fields =
+                    metadata.fields
+                        |> List.indexedMap
+                            (\j field ->
+                                if j == i then
+                                    { field | fieldType = "string" }
+                                else
+                                    field
+                            )
             in
-                { metadata | roles = roles_ }
+                { metadata | roles = roles_, fields = fields }
 
         ToggleUniqueId i ->
             let
@@ -369,6 +409,14 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                 |> Html.tr []
 
         previewRows =
-            metadata.preview |> List.map (List.map (\cell -> Html.td [] [ Html.text cell ]) >> Html.tr [])
+            metadata.preview
+                |> List.map
+                    (List.map
+                        (\cell ->
+                            Html.td [ Html.Attributes.style [ ( "border", "1px solid" ), ( "padding", "5px" ) ] ]
+                                [ Html.text cell ]
+                        )
+                        >> Html.tr []
+                    )
     in
         Html.table [] (header :: previewRows)
