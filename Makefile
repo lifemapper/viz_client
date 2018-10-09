@@ -9,7 +9,7 @@ boom.tar.gz: boom/elm/boomMain.js boom/elm/subsetpam.js boom/*
 	git describe --tags > boom/VERSION
 	tar -zcvf boom.tar.gz --exclude=sdmFlagsOverride.js boom
 
-mcpa.tar.gz: mcpa/elm/AncState.js mcpa/elm/Mcpa.js mcpa/elm/Stats.js mcpa/elm/StatsHeatMap.js mcpa/elm/FractalTree.js mcpa/*
+mcpa.tar.gz: mcpa/elm/AncState.js mcpa/elm/Mcpa.js mcpa/elm/Stats.js mcpa/elm/StatsHeatMap.js mcpa/elm/StatsTreeMap.js mcpa/elm/FractalTree.js mcpa/*
 	git describe --tags > mcpa/VERSION
 	tar -zcvf mcpa.tar.gz mcpa
 
@@ -24,6 +24,9 @@ mcpa/elm/Stats.js: source/Decoder.elm source/*
 
 mcpa/elm/StatsHeatMap.js: source/Decoder.elm source/*
 	elm-make source/StatsHeatMap.elm $(ELMFLAGS) --output=mcpa/elm/StatsHeatMap.js
+
+mcpa/elm/StatsTreeMap.js: source/Decoder.elm source/*
+	elm-make source/StatsTreeMap.elm $(ELMFLAGS) --output=mcpa/elm/StatsTreeMap.js
 
 mcpa/elm/Mcpa.js: source/Decoder.elm source/*
 	elm-make source/McpaMain.elm $(ELMFLAGS) --output=mcpa/elm/Mcpa.js
