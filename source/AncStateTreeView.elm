@@ -29,8 +29,9 @@ import Html.Attributes
 import Dict
 import Formatting as F exposing ((<>))
 import McpaModel exposing (..)
-import MultiSpeciesView
 import ParseAncState exposing (AncStateData)
+import McpaTreeView exposing (viewTree)
+import McpaGraphView exposing (viewGraph)
 
 
 view : Model AncStateData -> Html.Html Msg
@@ -52,20 +53,18 @@ view model =
             , Just 0.0
             , Just 0.0
             )
-
-        tableHead =
-            Html.thead []
-                [ Html.tr []
-                    [ Html.th
-                        [ Html.Attributes.colspan 2
-                        , Html.Attributes.style [ ( "text-decoration", "underline" ) ]
-                        ]
-                        [ Html.text "Ancestral data for Selected Node" ]
-                    ]
-                , Html.tr [] [ Html.th [] [ Html.text "Value" ], Html.th [] [ Html.text "Variable" ] ]
-                ]
     in
-        MultiSpeciesView.view model tableHead False variableFormatter model.variables selectData dataForVar
+        Html.div
+            [ Html.Attributes.style
+                [ ( "display", "flex" )
+                  -- , ( "justify-content", "space-between" )
+                , ( "font-family", "sans-serif" )
+                , ( "height", "100vh" )
+                ]
+            ]
+            [ viewTree model selectData
+            , viewGraph model.selectedNode False variableFormatter model.variables dataForVar
+            ]
 
 
 variableFormatter : ( Float, Float ) -> String

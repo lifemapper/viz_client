@@ -34,13 +34,8 @@ import McpaModel exposing (..)
 import LinearTreeView exposing (computeColor, drawTree, gradientDefinitions)
 
 
-viewTree :
-    Model data
-    -> Html.Html Msg
-    -> List String
-    -> (Int -> Maybe Float)
-    -> Html.Html Msg
-viewTree { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHead vars selectData =
+viewTree : Model data -> (Int -> Maybe Float) -> Html.Html Msg
+viewTree { selectedVariable, showBranchLengths, treeInfo, selectedNode, variables } selectData =
     let
         computeColor_ opacity cladeId =
             selectData cladeId
@@ -65,7 +60,7 @@ viewTree { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHe
         select =
             String.toInt
                 >> Result.toMaybe
-                >> Maybe.andThen (\i -> List.getAt i vars)
+                >> Maybe.andThen (\i -> List.getAt i variables)
                 >> Maybe.withDefault ""
                 >> SelectVariable
 
@@ -73,7 +68,7 @@ viewTree { selectedVariable, showBranchLengths, treeInfo, selectedNode } tableHe
             Html.div [ Html.Attributes.style [ ( "margin-bottom", "8px" ) ] ]
                 [ Html.span [] [ Html.text "Node color: " ]
                 , Html.select [ Html.Events.onInput select, Html.Attributes.style [ ( "max-width", "355px" ) ] ]
-                    (vars
+                    (variables
                         |> List.indexedMap
                             (\i v ->
                                 Html.option

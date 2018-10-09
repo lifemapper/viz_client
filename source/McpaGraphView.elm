@@ -27,11 +27,10 @@ module McpaGraphView exposing (viewGraph)
 import Html
 import Html.Attributes
 import List.Extra as List
-import McpaModel exposing (..)
 import LinearTreeView exposing (computeColor)
 
 
-barGraph : ( Float, Float ) -> Html.Html Msg
+barGraph : ( Float, Float ) -> Html.Html msg
 barGraph ( observedValue, pValue ) =
     let
         height =
@@ -57,7 +56,7 @@ barGraph ( observedValue, pValue ) =
             []
 
 
-drawVariable : Bool -> (( Float, Float ) -> String) -> String -> ( Maybe Float, Maybe Float, Maybe Float ) -> Html.Html Msg
+drawVariable : Bool -> (( Float, Float ) -> String) -> String -> ( Maybe Float, Maybe Float, Maybe Float ) -> Html.Html msg
 drawVariable showBarGraph formatter var ( observed, pValue, significant ) =
     let
         fontWeight =
@@ -85,13 +84,13 @@ drawVariable showBarGraph formatter var ( observed, pValue, significant ) =
 
 
 viewGraph :
-    Model data
+    Maybe Int
     -> Bool
     -> (( Float, Float ) -> String)
     -> List String
     -> (String -> ( Maybe Float, Maybe Float, Maybe Float ))
-    -> Html.Html Msg
-viewGraph { selectedNode } showBarGraph variableFormatter vars dataForVar =
+    -> Html.Html msg
+viewGraph selectedNode showBarGraph variableFormatter vars dataForVar =
     let
         ( envVars, bgVars ) =
             case List.findIndex ((==) "ENV - Adjusted R-squared") vars of
