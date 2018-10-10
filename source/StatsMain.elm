@@ -404,8 +404,8 @@ svgViewBox2String { width, height, minX, minY, maxX, maxY } =
     [ minX, minY, maxX - minX, maxY - minY ] |> List.map toString |> String.join " "
 
 
-view : Model -> Html.Html Msg
-view model =
+viewPlot : Model -> Html.Html Msg
+viewPlot model =
     let
         selectionBox =
             model.selecting
@@ -430,9 +430,6 @@ view model =
                                 []
                     )
 
-        selectedSiteIds =
-            model.selected |> Set.toList |> List.map toString |> String.join " "
-
         variableSelector selected select =
             Html.select [ Html.Events.onInput select ]
                 (model.variables
@@ -450,6 +447,30 @@ view model =
                         )
                 )
     in
+        Html.div []
+            [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                [ Html.text "Site Based Stat Relationships" ]
+            , svg
+                [ width <| toString svgViewBox.width
+                , height <| toString svgViewBox.height
+                , viewBox <| svgViewBox2String svgViewBox
+                , Html.Attributes.id "plot"
+                ]
+                ([ g [ transform "" ] <| (drawScatter model) ] ++ selectionBox)
+            , Html.p [ Html.Attributes.style [ ( "text-align", "center" ) ] ]
+                [ variableSelector model.yCol YColSelectedMsg
+                , Html.text " vs "
+                , variableSelector model.xCol XColSelectedMsg
+                ]
+            ]
+
+
+view : Model -> Html.Html Msg
+view model =
+    let
+        selectedSiteIds =
+            model.selected |> Set.toList |> List.map toString |> String.join " "
+    in
         Html.div
             -- [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
             [ Html.Attributes.style
@@ -459,22 +480,7 @@ view model =
                 ]
             , Html.Attributes.tabindex 0
             ]
-            [ Html.div []
-                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
-                    [ Html.text "Site Based Stat Relationships" ]
-                , svg
-                    [ width <| toString svgViewBox.width
-                    , height <| toString svgViewBox.height
-                    , viewBox <| svgViewBox2String svgViewBox
-                    , Html.Attributes.id "plot"
-                    ]
-                    ([ g [ transform "" ] <| (drawScatter model) ] ++ selectionBox)
-                , Html.p [ Html.Attributes.style [ ( "text-align", "center" ) ] ]
-                    [ variableSelector model.yCol YColSelectedMsg
-                    , Html.text " vs "
-                    , variableSelector model.xCol XColSelectedMsg
-                    ]
-                ]
+            [ viewPlot model
             , Html.div
                 [ Html.Attributes.style [ ( "flex-grow", "1" ) ] ]
                 [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
@@ -494,29 +500,37 @@ view model =
             ]
 
 
+init : ( Model, Cmd Msg )
+init =
+    ( { selected = Set.empty
+      , selecting = Nothing
+      , variables = []
+      , statNames = Dict.empty
+      , stats = []
+      , displayedRecords = []
+      , scale = DataScale 1 1 1 1
+      , xCol = ""
+      , yCol = ""
+      }
+    , requestStats ()
+    )
+
+
+subscriptions : Model -> Sub Msg
+subscriptions =
+    always <|
+        Sub.batch
+            [ mouseEvent MouseMsg
+            , sitesSelected SitesSelectedMsg
+            , statsForSites ReceivedStats
+            ]
+
+
 main : Program Never Model Msg
 main =
     Html.program
-        { init =
-            ( { selected = Set.empty
-              , selecting = Nothing
-              , variables = []
-              , statNames = Dict.empty
-              , stats = []
-              , displayedRecords = []
-              , scale = DataScale 1 1 1 1
-              , xCol = ""
-              , yCol = ""
-              }
-            , requestStats ()
-            )
+        { init = init
         , update = update
         , view = view
-        , subscriptions =
-            always <|
-                Sub.batch
-                    [ mouseEvent MouseMsg
-                    , sitesSelected SitesSelectedMsg
-                    , statsForSites ReceivedStats
-                    ]
+        , subscriptions = subscriptions
         }

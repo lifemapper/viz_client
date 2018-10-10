@@ -27,10 +27,40 @@ module StatsTreeMap exposing (..)
 import Html
 import Html.Attributes
 import Dict
-import McpaModel exposing (..)
+import Set
+import McpaModel
 import ParseMcpa exposing (McpaData, parseMcpa)
 import McpaTreeView exposing (viewTree)
 import StatsMain
+
+
+type alias Model =
+    { mcpaModel : McpaModel.Model McpaData
+    , statsModel : StatsMain.Model
+    }
+
+
+type Msg
+    = McpaMsg McpaModel.Msg
+    | StatsMsg StatsMain.Msg
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        McpaMsg msg_ ->
+            let
+                ( mcpaModel, cmd ) =
+                    McpaModel.update msg_ model.mcpaModel
+            in
+                ( { model | mcpaModel = mcpaModel }, Cmd.map McpaMsg cmd )
+
+        StatsMsg msg_ ->
+            let
+                ( statsModel, cmd ) =
+                    StatsMain.update msg_ model.statsModel
+            in
+                ( { model | statsModel = statsModel }, Cmd.map StatsMsg cmd )
 
 
 parseData : String -> ( List String, McpaData )
@@ -43,11 +73,14 @@ parseData data =
             Debug.crash ("failed to decode MCPA matrix: " ++ err)
 
 
-view : Model McpaData -> Html.Html Msg
-view model =
+view : Model -> Html.Html Msg
+view { mcpaModel, statsModel } =
     let
+        selectedSiteIds =
+            statsModel.selected |> Set.toList |> List.map toString |> String.join " "
+
         selectData cladeId =
-            Dict.get ( cladeId, "Observed", model.selectedVariable ) model.data
+            Dict.get ( cladeId, "Observed", mcpaModel.selectedVariable ) mcpaModel.data
     in
         Html.div
             [ Html.Attributes.style
@@ -57,7 +90,7 @@ view model =
                 , ( "height", "100vh" )
                 ]
             ]
-            [ viewTree model selectData
+            [ viewTree mcpaModel selectData |> Html.map McpaMsg
             , Html.div
                 [ Html.Attributes.style
                     [ ( "display", "flex" )
@@ -71,8 +104,8 @@ view model =
                         [ Html.text "Mappy McMapface" ]
                     , Html.div
                         [ Html.Attributes.class "leaflet-map"
-                        , Html.Attributes.attribute "data-map-sites" ""
-                            -- (model.selectedNode |> Maybe.map toString |> Maybe.withDefault "")
+                        , Html.Attributes.attribute "data-map-sites" selectedSiteIds
+                          -- (mcpaModel.selectedNode |> Maybe.map toString |> Maybe.withDefault "")
                         , Html.Attributes.style
                             [ ( "max-width", "900px" )
                             , ( "height", "500px" )
@@ -82,14 +115,40 @@ view model =
                         ]
                         []
                     ]
+                , StatsMain.viewPlot statsModel |> Html.map StatsMsg
                 ]
             ]
 
 
-main : Program Flags (Model McpaData) Msg
+init : McpaModel.Flags -> ( Model, Cmd Msg )
+init flags =
+    let
+        ( mcpaModel, mcpaCmd ) =
+            McpaModel.init parseData flags
+
+        ( statsModel, statsCmd ) =
+            StatsMain.init
+    in
+        ( { mcpaModel = mcpaModel, statsModel = statsModel }
+        , Cmd.batch
+            [ Cmd.map McpaMsg mcpaCmd
+            , Cmd.map StatsMsg statsCmd
+            ]
+        )
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    [ McpaModel.subscriptions model.mcpaModel |> Sub.map McpaMsg
+    , StatsMain.subscriptions model.statsModel |> Sub.map StatsMsg
+    ]
+        |> Sub.batch
+
+
+main : Program McpaModel.Flags Model Msg
 main =
     Html.programWithFlags
-        { init = init parseData
+        { init = init
         , update = update
         , view = view
         , subscriptions = subscriptions
