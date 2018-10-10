@@ -25,9 +25,12 @@
 module StatsTreeMap exposing (..)
 
 import Html
+import Html.Attributes
+import Dict
 import McpaModel exposing (..)
-import McpaView exposing (view)
 import ParseMcpa exposing (McpaData, parseMcpa)
+import McpaTreeView exposing (viewTree)
+import StatsMain
 
 
 parseData : String -> ( List String, McpaData )
@@ -38,6 +41,49 @@ parseData data =
 
         Err err ->
             Debug.crash ("failed to decode MCPA matrix: " ++ err)
+
+
+view : Model McpaData -> Html.Html Msg
+view model =
+    let
+        selectData cladeId =
+            Dict.get ( cladeId, "Observed", model.selectedVariable ) model.data
+    in
+        Html.div
+            [ Html.Attributes.style
+                [ ( "display", "flex" )
+                  -- , ( "justify-content", "space-between" )
+                , ( "font-family", "sans-serif" )
+                , ( "height", "100vh" )
+                ]
+            ]
+            [ viewTree model selectData
+            , Html.div
+                [ Html.Attributes.style
+                    [ ( "display", "flex" )
+                    , ( "flex-direction", "column" )
+                    , ( "flex-grow", "1" )
+                    ]
+                ]
+                [ Html.div
+                    [ Html.Attributes.style [ ( "flex-shrink", "0" ), ( "margin", "0 12px" ) ] ]
+                    [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                        [ Html.text "Mappy McMapface" ]
+                    , Html.div
+                        [ Html.Attributes.class "leaflet-map"
+                        , Html.Attributes.attribute "data-map-sites" ""
+                            -- (model.selectedNode |> Maybe.map toString |> Maybe.withDefault "")
+                        , Html.Attributes.style
+                            [ ( "max-width", "900px" )
+                            , ( "height", "500px" )
+                            , ( "margin-left", "auto" )
+                            , ( "margin-right", "auto" )
+                            ]
+                        ]
+                        []
+                    ]
+                ]
+            ]
 
 
 main : Program Flags (Model McpaData) Msg
