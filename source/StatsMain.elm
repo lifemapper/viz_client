@@ -379,18 +379,18 @@ drawYAxis label min max =
     in
         (line [ y1 "0", y2 "1000", x1 "0", x2 "0", strokeWidth "1", stroke "black" ] []
             -- :: (text_
-            --         [ x "-0.01"
-            --         , y "1"
+            --         [ x "-10"
+            --         , y "1000"
             --         , textAnchor "end"
-            --         , Html.Attributes.style [ ( "font-size", "0.02px" ) ]
+            --         , Html.Attributes.style [ ( "font-size", "20px" ) ]
             --         ]
             --         [ min |> toString |> text ]
             --    )
             -- :: (text_
-            --         [ x "-0.01"
-            --         , y "0.03"
+            --         [ x "-10"
+            --         , y "30"
             --         , textAnchor "end"
-            --         , Html.Attributes.style [ ( "font-size", "0.02px" ) ]
+            --         , Html.Attributes.style [ ( "font-size", "20px" ) ]
             --         ]
             --         [ max |> toString |> text ]
             --    )
