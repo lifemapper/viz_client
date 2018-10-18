@@ -22,7 +22,7 @@
 -}
 
 
-module StatsTreeMap exposing (..)
+port module StatsTreeMap exposing (..)
 
 import Html
 import Html.Attributes
@@ -34,6 +34,18 @@ import McpaTreeView exposing (viewTree)
 import StatsMain
 
 
+port requestSitesForNode : Int -> Cmd msg
+
+
+port sitesForNode : (List Int -> msg) -> Sub msg
+
+
+port requestNodesForSites : List Int -> Cmd msg
+
+
+port nodesForSites : (( List Int, List Int ) -> msg) -> Sub msg
+
+
 type alias Model =
     { mcpaModel : McpaModel.Model McpaData
     , statsModel : StatsMain.Model
@@ -43,11 +55,40 @@ type alias Model =
 type Msg
     = McpaMsg McpaModel.Msg
     | StatsMsg StatsMain.Msg
+    | SetSelectedSites (List Int)
+    | SetSelectedNodes ( List Int, List Int )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        SetSelectedNodes ( leftNodes, rightNodes ) ->
+            let
+                mcpaModel =
+                    model.mcpaModel
+            in
+                ( { model | mcpaModel = { mcpaModel | selectedNode = Nothing, flaggedNodes = ( leftNodes, rightNodes ) } }
+                , Cmd.none
+                )
+
+        SetSelectedSites sites ->
+            let
+                selected =
+                    Set.fromList sites
+
+                statsModel =
+                    model.statsModel
+            in
+                ( { model | statsModel = { statsModel | selected = selected } }, Cmd.none )
+
+        McpaMsg ((McpaModel.SelectNode n) as msg_) ->
+            let
+                ( mcpaModel, cmd ) =
+                    McpaModel.update msg_ model.mcpaModel
+            in
+                { model | mcpaModel = { mcpaModel | flaggedNodes = ( [], [] ) } }
+                    ! [ Cmd.map McpaMsg cmd, requestSitesForNode n ]
+
         McpaMsg msg_ ->
             let
                 ( mcpaModel, cmd ) =
@@ -59,8 +100,14 @@ update msg model =
             let
                 ( statsModel, cmd ) =
                     StatsMain.update msg_ model.statsModel
+
+                getNodes =
+                    if statsModel.selected /= model.statsModel.selected then
+                        requestNodesForSites <| Set.toList statsModel.selected
+                    else
+                        Cmd.none
             in
-                ( { model | statsModel = statsModel }, Cmd.map StatsMsg cmd )
+                { model | statsModel = statsModel } ! [ Cmd.map StatsMsg cmd, getNodes ]
 
 
 parseData : String -> ( List String, McpaData )
@@ -90,7 +137,7 @@ view { mcpaModel, statsModel } =
                 , ( "height", "100vh" )
                 ]
             ]
-            [ viewTree mcpaModel selectData |> Html.map McpaMsg
+            [ viewTree mcpaModel False selectData |> Html.map McpaMsg
             , Html.div
                 [ Html.Attributes.style
                     [ ( "display", "flex" )
@@ -101,7 +148,7 @@ view { mcpaModel, statsModel } =
                 [ Html.div
                     [ Html.Attributes.style [ ( "flex-shrink", "0" ), ( "margin", "0 12px" ) ] ]
                     [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
-                        [ Html.text "Mappy McMapface" ]
+                        [ Html.text "Sites" ]
                     , Html.div
                         [ Html.Attributes.class "leaflet-map"
                         , Html.Attributes.attribute "data-map-sites" selectedSiteIds
@@ -141,6 +188,8 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     [ McpaModel.subscriptions model.mcpaModel |> Sub.map McpaMsg
     , StatsMain.subscriptions model.statsModel |> Sub.map StatsMsg
+    , sitesForNode SetSelectedSites
+    , nodesForSites SetSelectedNodes
     ]
         |> Sub.batch
 

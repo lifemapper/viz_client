@@ -34,8 +34,8 @@ import McpaModel exposing (..)
 import LinearTreeView exposing (computeColor, drawTree, gradientDefinitions)
 
 
-viewTree : Model data -> (Int -> Maybe Float) -> Html.Html Msg
-viewTree { selectedVariable, showBranchLengths, treeInfo, selectedNode, variables } selectData =
+viewTree : Model data -> Bool -> (Int -> Maybe Float) -> Html.Html Msg
+viewTree { selectedVariable, showBranchLengths, treeInfo, flaggedNodes, selectedNode, variables } redBlue selectData =
     let
         computeColor_ opacity cladeId =
             selectData cladeId
@@ -48,8 +48,10 @@ viewTree { selectedVariable, showBranchLengths, treeInfo, selectedNode, variable
                 , showBranchLengths = showBranchLengths
                 , treeDepth = treeInfo.depth
                 , totalLength = treeInfo.length
+                , flaggedNodes = flaggedNodes
                 , selectedNode = selectedNode
                 , selectNode = SelectNode
+                , redBlue = redBlue
                 }
                 "#ccc"
                 treeInfo.root

@@ -68,7 +68,7 @@ parseRecord variables record result =
         cladeIdStr :: valueType :: valueStrs ->
             let
                 cladeId =
-                    case Debug.log "matches" <| find (AtMost 1) nodeIdRegex cladeIdStr of
+                    case find (AtMost 1) nodeIdRegex cladeIdStr of
                         [] ->
                             String.toInt cladeIdStr
 

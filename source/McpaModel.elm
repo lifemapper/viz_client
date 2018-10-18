@@ -47,6 +47,7 @@ type alias Model data =
     { treeInfo : TreeInfo
     , variables : List String
     , data : data
+    , flaggedNodes : ( List Int, List Int )
     , selectedVariable : String
     , selectedNode : Maybe Int
     , showBranchLengths : Bool
@@ -77,6 +78,7 @@ init parseData flags =
         ( { treeInfo = treeInfo
           , variables = variables
           , selectedVariable = List.head variables |> Maybe.withDefault ""
+          , flaggedNodes = ( [], [] )
           , selectedNode = Nothing
           , showBranchLengths = False
           , data = data

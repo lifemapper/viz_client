@@ -62,7 +62,7 @@ view model =
                 , ( "height", "100vh" )
                 ]
             ]
-            [ viewTree model selectData
+            [ viewTree model True selectData
             , viewGraph model.selectedNode False variableFormatter model.variables dataForVar
             ]
 

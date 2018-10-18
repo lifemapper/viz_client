@@ -52,6 +52,8 @@ type alias TreeConfig msg =
     , totalLength : Float
     , selectedNode : Maybe Int
     , selectNode : Int -> msg
+    , flaggedNodes : ( List Int, List Int )
+    , redBlue : Bool
     }
 
 
@@ -129,7 +131,12 @@ drawTree config parentColor tree =
                             , y "0"
                             , width "100"
                             , height <| toString leftHeight
-                            , fill "#00f"
+                            , fill
+                                (if config.redBlue then
+                                    "#00f"
+                                 else
+                                    "#f00"
+                                )
                             , fillOpacity "0.5"
                             ]
                             []
@@ -144,7 +151,44 @@ drawTree config parentColor tree =
                             []
                         ]
                     else
-                        []
+                        [ case left of
+                            Leaf _ ->
+                                if List.member data.cladeId (Tuple.first config.flaggedNodes) then
+                                    [ rect
+                                        [ x <| toString length
+                                        , y "0"
+                                        , width "100"
+                                        , height <| toString leftHeight
+                                        , fill "#f00"
+                                        , fillOpacity "0.5"
+                                        ]
+                                        []
+                                    ]
+                                else
+                                    []
+
+                            _ ->
+                                []
+                        , case right of
+                            Leaf _ ->
+                                if List.member data.cladeId (Tuple.second config.flaggedNodes) then
+                                    [ rect
+                                        [ x <| toString length
+                                        , y <| toString leftHeight
+                                        , width "100"
+                                        , height <| toString rightHeight
+                                        , fill "#f00"
+                                        , fillOpacity "0.5"
+                                        ]
+                                        []
+                                    ]
+                                else
+                                    []
+
+                            _ ->
+                                []
+                        ]
+                            |> List.concat
             in
                 ( thisHeight
                 , thisGrad :: (leftGrads ++ rightGrads)
