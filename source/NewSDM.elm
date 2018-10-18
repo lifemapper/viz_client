@@ -318,7 +318,8 @@ mainView model =
                                  """
                             ]
                         , Lists.ul []
-                            (List.map (taskLI model) tasks
+                            ([ jobNameLI model ]
+                                ++ List.map (taskLI model) tasks
                                 ++ [ uploadTaskLI "Tree" model.treeUpload ]
                                 ++ [ uploadTaskLI "Biogeographic Hypotheses" model.hypoUpload ]
                             )
@@ -330,15 +331,6 @@ mainView model =
                             , Options.css "margin-bottom" "20px"
                             ]
                             [ Html.text "Compute PAM stats" ]
-                        , Textfield.render Mdl
-                            [ 7 ]
-                            model.mdl
-                            [ Textfield.label "Job name"
-                            , Textfield.floatingLabel
-                            , Textfield.value model.archiveName
-                            , Options.onInput UpdateArchiveName
-                            ]
-                            []
                         , Html.p []
                             [ Button.render Mdl
                                 [ 5 ]
@@ -350,6 +342,31 @@ mainView model =
                                 [ Html.text "Submit Job" ]
                             ]
                         ]
+
+
+jobNameLI : Model -> Html Msg
+jobNameLI model =
+    let
+        icon =
+            if model.archiveName == "" then
+                Icon.i "check_box_outline_blank"
+            else
+                Icon.i "check_box"
+    in
+        Lists.li []
+            [ Lists.content [] <|
+                [ icon
+                , Textfield.render Mdl
+                    [ 7 ]
+                    model.mdl
+                    [ Textfield.label "Job name"
+                    , Textfield.floatingLabel
+                    , Textfield.value model.archiveName
+                    , Options.onInput UpdateArchiveName
+                    ]
+                    []
+                ]
+            ]
 
 
 uploadTaskLI : String -> UploadFile.Model -> Html Msg
