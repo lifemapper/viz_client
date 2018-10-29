@@ -50,12 +50,17 @@ import MapCard
 import UploadFile
 
 
+type OccurrenceSource
+    = Choose
+    | Upload UploadFile.Model
+
+
 type alias Model =
     { occurrenceSets : List AtomObjectRecord
     , chooser : OccurrenceSetChooser.Model
     , mappedSet : Maybe OccurrenceSetRecord
     , mapCard : MapCard.Model
-    , upload : Maybe UploadFile.Model
+    , source : OccurrenceSource
     , mdl : Material.Model
     , programFlags : Flags
     }
@@ -63,8 +68,8 @@ type alias Model =
 
 toApi : Model -> Decoder.BoomOccurrenceSet
 toApi model =
-    case model.upload of
-        Nothing ->
+    case model.source of
+        Choose ->
             Decoder.BoomOccurrenceSet
                 { occurrence_ids =
                     model.occurrenceSets
@@ -75,10 +80,10 @@ toApi model =
                 , point_count_min = Nothing
                 }
 
-        _ ->
+        Upload upload ->
             Decoder.BoomOccurrenceSet
                 { occurrence_ids = Nothing
-                , points_filename = model.upload |> Maybe.andThen UploadFile.getUploadedFilename
+                , points_filename = upload |> UploadFile.getUploadedFilename
                 , point_count_min = Nothing
                 }
 
@@ -128,24 +133,24 @@ update index msg model =
                 liftedMapCardUpdate msg_ model
 
             UploadMsg msg_ ->
-                case model.upload of
-                    Just upload ->
+                case model.source of
+                    Upload upload ->
                         let
                             ( upload_, cmd ) =
                                 UploadFile.update UploadFile.Occurrence (1 :: index) model.programFlags msg_ upload
                         in
-                            ( { model | upload = Just upload_ }, cmd )
+                            ( { model | source = Upload upload_ }, cmd )
 
-                    Nothing ->
+                    Choose ->
                         ( model, Cmd.none )
 
             ToggleWantToUpload ->
-                case model.upload of
-                    Nothing ->
-                        ( { model | upload = Just UploadFile.init }, Cmd.none )
+                case model.source of
+                    Choose ->
+                        ( { model | source = Upload UploadFile.init }, Cmd.none )
 
                     _ ->
-                        ( { model | upload = Nothing }, Cmd.none )
+                        ( { model | source = Choose }, Cmd.none )
 
             ChooserMsg msg_ ->
                 chain (addSelected msg_) (liftedChooserUpdate msg_) model
@@ -232,7 +237,7 @@ init flags =
     , mappedSet = Nothing
     , chooser = OccurrenceSetChooser.init flags
     , mapCard = MapCard.init Nothing Nothing
-    , upload = Nothing
+    , source = Choose
     , mdl = Material.model
     , programFlags = flags
     }
@@ -279,14 +284,14 @@ view index model =
         mapCardTitle =
             model.mappedSet |> Maybe.andThen .speciesName |> Maybe.withDefault "Map"
     in
-        case model.upload of
-            Nothing ->
+        case model.source of
+            Choose ->
                 Options.div [ Options.css "display" "flex" ]
                     [ occurrenceSetList index model
                     , MapCard.view index mapCardTitle model.mapCard |> Html.map MapCardMsg
                     ]
 
-            Just upload ->
+            Upload upload ->
                 Options.div [ Options.css "display" "flex" ]
                     [ Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
@@ -302,7 +307,12 @@ problems : Model -> Maybe String
 problems model =
     let
         uploadedFile =
-            model.upload |> Maybe.andThen UploadFile.getUploadedFilename
+            case model.source of
+                Upload upload ->
+                    upload |> UploadFile.getUploadedFilename
+
+                _ ->
+                    Nothing
     in
         case model.occurrenceSets of
             [] ->
