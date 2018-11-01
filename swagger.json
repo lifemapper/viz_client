@@ -2019,6 +2019,57 @@
         }
       }
     },
+    "/taxonomy": {
+      "get": {
+        "summary": "Gets a list of taxonomy objects that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/TaxonKingdom"
+          },
+          {
+            "$ref": "#/parameters/TaxonPhylum"
+          },
+          {
+            "$ref": "#/parameters/TaxonClass"
+          },
+          {
+            "$ref": "#/parameters/TaxonOrder"
+          },
+          {
+            "$ref": "#/parameters/TaxonFamily"
+          },
+          {
+            "$ref": "#/parameters/TaxonGenus"
+          },
+          {
+            "$ref": "#/parameters/TaxonKey"
+          },
+          {
+            "$ref": "#/parameters/ScientificName"
+          },
+          {
+            "$ref": "#/parameters/CanonicalName"
+          },
+          {
+            "$ref": "#/parameters/Squid"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          }
+        ],
+        "tags": [
+          "Taxonomy"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of taxonmy objects matching the criteria",
+            "schema": {
+              "$ref": "#/definitions/TaxonomyList"
+            }
+          }
+        }
+      }
+    },
     "/tree": {
       "get": {
         "summary": "Get a list of trees that match your criteria",
@@ -3382,6 +3433,53 @@
         }
       }
     },
+    "TaxonomyList": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "canonical_name": {
+            "type": "string"
+          },
+          "scientific_name": {
+            "type": "string"
+          },
+          "squid": {
+            "type": "string"
+          },
+          "taxon_class": {
+            "type": "string"
+          },
+          "taxon_family": {
+            "type": "string"
+          },
+          "taxon_genus": {
+            "type": "string"
+          },
+          "taxon_key": {
+            "type": "string"
+          },
+          "taxon_kingdom": {
+            "type": "string"
+          },
+          "taxon_order": {
+            "type": "string"
+          },
+          "taxon_phylum": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "taxon_source_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "Tree": {
       "type": "object"
     },
@@ -3529,6 +3627,12 @@
       "in": "query",
       "description": "Return experiments modified before this time",
       "required": false,
+      "type": "string"
+    },
+    "CanonicalName": {
+      "name": "canonicalName",
+      "in": "query",
+      "description": "Limit search results to those with this canonical name",
       "type": "string"
     },
     "CellSides": {
@@ -3807,6 +3911,12 @@
       "type": "integer",
       "minimum": 0
     },
+    "ScientificName": {
+      "name": "scientificName",
+      "in": "query",
+      "description": "Limit search results to those with this scientific name",
+      "type": "string"
+    },
     "ShapegridId": {
       "name": "shapegridId",
       "in": "query",
@@ -3839,42 +3949,49 @@
     "TaxonFamily": {
       "name": "taxonFamily",
       "in": "query",
-      "description": "Limit the Global PAM results to only those in this family",
+      "description": "Limit the search results to only those in this family",
       "required": false,
       "type": "string"
     },
     "TaxonGenus": {
       "name": "taxonGenus",
       "in": "query",
-      "description": "Limit the Global PAM results to only those in this genus",
+      "description": "Limit the search results to only those in this genus",
+      "required": false,
+      "type": "string"
+    },
+    "TaxonKey": {
+      "name": "taxonKey",
+      "in": "query",
+      "description": "Limit the search results to only those with this taxon key",
       "required": false,
       "type": "string"
     },
     "TaxonKingdom": {
       "name": "taxonKingdom",
       "in": "query",
-      "description": "Limit the Global PAM results to only those in this kingdom",
+      "description": "Limit the search results to only those in this kingdom",
       "required": false,
       "type": "string"
     },
     "TaxonOrder": {
       "name": "taxonOrder",
       "in": "query",
-      "description": "Limit the Global PAM results to only those in this order",
+      "description": "Limit the search results to only those in this order",
       "required": false,
       "type": "string"
     },
     "TaxonPhylum": {
       "name": "taxonPhylum",
       "in": "query",
-      "description": "Limit the Global PAM results to only those in this phylum",
+      "description": "Limit the search results to only those in this phylum",
       "required": false,
       "type": "string"
     },
     "TaxonSpecies": {
       "name": "taxonSpecies",
       "in": "query",
-      "description": "Limit the Global PAM results to only those with this species name (without genus)",
+      "description": "Limit the search results to only those with this species name \n(without genus)\n",
       "required": false,
       "type": "string"
     },

@@ -48,11 +48,13 @@ import List.Extra exposing (removeAt)
 import Helpers exposing (Index, chain)
 import MapCard
 import UploadFile
+import OccurrenceFromTaxonomy
 
 
 type OccurrenceSource
     = Choose
     | Upload UploadFile.Model
+    | Taxonomy OccurrenceFromTaxonomy.Model
 
 
 type alias Model =
@@ -87,6 +89,9 @@ toApi model =
                 , point_count_min = Nothing
                 }
 
+        Taxonomy _ ->
+            Debug.crash "not implemented"
+
 
 type Msg
     = ChooserMsg OccurrenceSetChooser.Msg
@@ -95,6 +100,7 @@ type Msg
     | MapOccurrences Int
     | MapCardMsg MapCard.Msg
     | UploadMsg UploadFile.Msg
+    | TaxonomyMsg OccurrenceFromTaxonomy.Msg
     | ToggleWantToUpload
     | Mdl (Material.Msg Msg)
 
@@ -141,7 +147,19 @@ update index msg model =
                         in
                             ( { model | source = Upload upload_ }, cmd )
 
-                    Choose ->
+                    _ ->
+                        ( model, Cmd.none )
+
+            TaxonomyMsg msg_ ->
+                case model.source of
+                    Taxonomy tax ->
+                        let
+                            ( tax_, cmd ) =
+                                OccurrenceFromTaxonomy.update msg_ tax
+                        in
+                            ( { model | source = Taxonomy tax_ }, Cmd.map TaxonomyMsg cmd )
+
+                    _ ->
                         ( model, Cmd.none )
 
             ToggleWantToUpload ->
@@ -237,7 +255,7 @@ init flags =
     , mappedSet = Nothing
     , chooser = OccurrenceSetChooser.init flags
     , mapCard = MapCard.init Nothing Nothing
-    , source = Choose
+    , source = Taxonomy <| OccurrenceFromTaxonomy.init flags
     , mdl = Material.model
     , programFlags = flags
     }
@@ -296,6 +314,18 @@ view index model =
                     [ Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
                             (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
+                        , Options.styled Html.a
+                            [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
+                            [ Html.text "or select existing data" ]
+                        ]
+                    ]
+
+            Taxonomy model_ ->
+                Options.div [ Options.css "display" "flex" ]
+                    [ Options.div [ Options.css "margin" "20px" ]
+                        [ Options.div [ Options.css "margin-bottom" "10px" ]
+                            [ OccurrenceFromTaxonomy.view model_ |> Html.map TaxonomyMsg ]
+                          -- (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
                         , Options.styled Html.a
                             [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
                             [ Html.text "or select existing data" ]
