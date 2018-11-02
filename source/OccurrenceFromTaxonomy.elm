@@ -22,7 +22,7 @@
 -}
 
 
-module OccurrenceFromTaxonomy exposing (..)
+module OccurrenceFromTaxonomy exposing (Model, Msg, init, update, view)
 
 import Maybe.Extra exposing ((?))
 import Set exposing (Set)
