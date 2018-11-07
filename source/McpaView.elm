@@ -43,7 +43,7 @@ view model =
         dataForVar var =
             ( model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "Observed", var ) model.data)
             , model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "P-Values", var ) model.data)
-            , model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "BH Significant", var ) model.data)
+            , model.selectedNode |> Maybe.andThen (\cladeId -> Dict.get ( cladeId, "BH Corrected", var ) model.data)
             )
     in
         Html.div
@@ -55,7 +55,7 @@ view model =
                 ]
             ]
             [ viewTree model True selectData
-            , viewGraph model.selectedNode False variableFormatter model.variables dataForVar
+            , viewGraph model.selectedNode True variableFormatter model.variables dataForVar
             ]
 
 

@@ -27,6 +27,7 @@ module McpaGraphView exposing (viewGraph)
 import Html
 import Html.Attributes
 import List.Extra as List
+import Maybe.Extra exposing ((?))
 import LinearTreeView exposing (computeColor)
 
 
@@ -67,7 +68,10 @@ drawVariable showBarGraph formatter var ( observed, pValue, significant ) =
 
         bar =
             if showBarGraph then
-                Maybe.map2 (,) observed pValue |> Maybe.map (List.singleton << barGraph) |> Maybe.withDefault []
+                observed
+                    |> Maybe.map (\observed -> ( observed, pValue ? 0.0 ))
+                    |> Maybe.map (List.singleton << barGraph)
+                    |> Maybe.withDefault [ Html.text "na" ]
             else
                 []
 
@@ -93,7 +97,7 @@ viewGraph :
 viewGraph selectedNode showBarGraph variableFormatter vars dataForVar =
     let
         ( envVars, bgVars ) =
-            case List.findIndex ((==) "ENV - Adjusted R-squared") vars of
+            case List.findIndex ((==) "Env - Adjusted R-squared") vars of
                 Just i ->
                     List.splitAt (i + 1) vars
 

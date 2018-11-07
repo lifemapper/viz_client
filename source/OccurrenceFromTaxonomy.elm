@@ -22,7 +22,7 @@
 -}
 
 
-module OccurrenceFromTaxonomy exposing (Model, Msg, init, update, view)
+module OccurrenceFromTaxonomy exposing (Model, Msg, init, getTaxonIds, update, view)
 
 import Maybe.Extra exposing ((?))
 import Set exposing (Set)
@@ -88,6 +88,17 @@ init flags =
     , loading = False
     , flags = flags
     }
+
+
+getTaxonIds : Model -> Decoder.BoomOccurrenceSetTaxon_ids
+getTaxonIds model =
+    model.speciesForOccurrences
+        |> List.filterMap
+            (\(TaxonomyListItem { id }) ->
+                id
+                    |> Maybe.andThen (String.toInt >> Result.toMaybe)
+            )
+        |> Decoder.BoomOccurrenceSetTaxon_ids
 
 
 type Msg
@@ -215,32 +226,33 @@ gotSpecies result =
 view : Model -> Html Msg
 view ({ facets, filters, loading } as model) =
     Html.div [ Html.Attributes.style [ ( "display", "flex" ) ] ]
-        [ Html.table
-            [-- Html.Attributes.style [ ( "width", "800px" ) ]
-            ]
-            [ Html.tr []
-                [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Kingdom: " ]
-                , Html.td [] [ selector loading filters "taxonKingdom" facets.taxonKingdom ]
-                ]
-            , Html.tr []
-                [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Phylum: " ]
-                , Html.td [] [ selector loading filters "taxonPhylum" facets.taxonPhylum ]
-                ]
-            , Html.tr []
-                [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Class: " ]
-                , Html.td [] [ selector loading filters "taxonClass" facets.taxonClass ]
-                ]
-            , Html.tr []
-                [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Order: " ]
-                , Html.td [] [ selector loading filters "taxonOrder" facets.taxonOrder ]
-                ]
-            , Html.tr []
-                [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Family: " ]
-                , Html.td [] [ selector loading filters "taxonFamily" facets.taxonFamily ]
-                ]
-            , Html.tr []
-                [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Genus: " ]
-                , Html.td [] [ selector loading filters "taxonGenus" facets.taxonGenus ]
+        [ Html.div []
+            [ Html.p [] [ Html.text "Filter available species" ]
+            , Html.table []
+                [ Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Kingdom: " ]
+                    , Html.td [] [ selector loading filters "taxonKingdom" facets.taxonKingdom ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Phylum: " ]
+                    , Html.td [] [ selector loading filters "taxonPhylum" facets.taxonPhylum ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Class: " ]
+                    , Html.td [] [ selector loading filters "taxonClass" facets.taxonClass ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Order: " ]
+                    , Html.td [] [ selector loading filters "taxonOrder" facets.taxonOrder ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Family: " ]
+                    , Html.td [] [ selector loading filters "taxonFamily" facets.taxonFamily ]
+                    ]
+                , Html.tr []
+                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Genus: " ]
+                    , Html.td [] [ selector loading filters "taxonGenus" facets.taxonGenus ]
+                    ]
                 ]
             ]
         , Html.div [ Html.Attributes.style [ ( "margin-left", "20px" ) ] ]

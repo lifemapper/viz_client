@@ -80,6 +80,8 @@ toApi model =
                         |> Just
                 , points_filename = Nothing
                 , point_count_min = Nothing
+                , taxon_ids = Nothing
+                , taxon_names = Nothing
                 }
 
         Upload upload ->
@@ -87,10 +89,18 @@ toApi model =
                 { occurrence_ids = Nothing
                 , points_filename = upload |> UploadFile.getUploadedFilename
                 , point_count_min = Nothing
+                , taxon_ids = Nothing
+                , taxon_names = Nothing
                 }
 
-        Taxonomy _ ->
-            Debug.crash "not implemented"
+        Taxonomy taxonomy ->
+            Decoder.BoomOccurrenceSet
+                { occurrence_ids = Nothing
+                , points_filename = Nothing
+                , point_count_min = Nothing
+                , taxon_ids = Just (taxonomy |> OccurrenceFromTaxonomy.getTaxonIds)
+                , taxon_names = Nothing
+                }
 
 
 type Msg
@@ -335,23 +345,23 @@ view index model =
 
 problems : Model -> Maybe String
 problems model =
-    let
-        uploadedFile =
-            case model.source of
-                Upload upload ->
-                    upload |> UploadFile.getUploadedFilename
+    case model.source of
+        Upload upload ->
+            if (upload |> UploadFile.getUploadedFilename) == Nothing then
+                Just "No species occurrences file uploaded."
+            else
+                Nothing
 
-                _ ->
-                    Nothing
-    in
-        case model.occurrenceSets of
-            [] ->
-                if uploadedFile == Nothing then
-                    Just "No occurrence sets chosen."
-                else
-                    Nothing
+        Choose ->
+            if model.occurrenceSets == [] then
+                Just "No occurrence sets chosen."
+            else
+                Nothing
 
-            _ ->
+        Taxonomy taxonomy ->
+            if taxonomy.speciesForOccurrences == [] then
+                Just "No species chosen for occurrence points."
+            else
                 Nothing
 
 

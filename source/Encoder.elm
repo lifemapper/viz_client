@@ -112,13 +112,25 @@ encodeBoomTree (BoomPOSTTree { tree_file_name }) =
 
 
 encodeBoomOccurrenceSet : BoomOccurrenceSet -> Value
-encodeBoomOccurrenceSet (BoomOccurrenceSet { point_count_min, points_filename, occurrence_ids }) =
+encodeBoomOccurrenceSet (BoomOccurrenceSet { point_count_min, points_filename, occurrence_ids, taxon_ids, taxon_names }) =
     [ point_count_min |> Maybe.map (int >> (,) "point_count_min")
     , points_filename |> Maybe.map (string >> (,) "points_filename")
     , occurrence_ids |> Maybe.map (encodeBoomOccurrenceSetOccurrence_ids >> (,) "occurrence_ids")
+    , taxon_ids |> Maybe.map (encodeBoomOccurrenceSetTaxon_ids >> (,) "taxon_ids")
+    , taxon_names |> Maybe.map (encodeBoomOccurrenceSetTaxon_names >> (,) "taxon_names")
     ]
         |> List.concatMap Maybe.toList
         |> object
+
+
+encodeBoomOccurrenceSetTaxon_ids : BoomOccurrenceSetTaxon_ids -> Value
+encodeBoomOccurrenceSetTaxon_ids (BoomOccurrenceSetTaxon_ids ids) =
+    ids |> List.map int |> list
+
+
+encodeBoomOccurrenceSetTaxon_names : BoomOccurrenceSetTaxon_names -> Value
+encodeBoomOccurrenceSetTaxon_names (BoomOccurrenceSetTaxon_names names) =
+    names |> List.map string |> list
 
 
 encodeBoomOccurrenceSetOccurrence_ids : BoomOccurrenceSetOccurrence_ids -> Value
