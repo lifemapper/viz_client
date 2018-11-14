@@ -111,7 +111,9 @@ type Msg
     | MapCardMsg MapCard.Msg
     | UploadMsg UploadFile.Msg
     | TaxonomyMsg OccurrenceFromTaxonomy.Msg
-    | ToggleWantToUpload
+    | UseUpload
+    | UseTaxonomy
+    | ChooseOccurrences
     | Mdl (Material.Msg Msg)
 
 
@@ -172,13 +174,29 @@ update index msg model =
                     _ ->
                         ( model, Cmd.none )
 
-            ToggleWantToUpload ->
+            ChooseOccurrences ->
                 case model.source of
                     Choose ->
-                        ( { model | source = Upload UploadFile.init }, Cmd.none )
+                        model ! []
 
                     _ ->
                         ( { model | source = Choose }, Cmd.none )
+
+            UseUpload ->
+                case model.source of
+                    Upload _ ->
+                        model ! []
+
+                    _ ->
+                        ( { model | source = Upload UploadFile.init }, Cmd.none )
+
+            UseTaxonomy ->
+                case model.source of
+                    Taxonomy _ ->
+                        model ! []
+
+                    _ ->
+                        ( { model | source = Taxonomy <| OccurrenceFromTaxonomy.init model.programFlags }, Cmd.none )
 
             ChooserMsg msg_ ->
                 chain (addSelected msg_) (liftedChooserUpdate msg_) model
@@ -265,7 +283,7 @@ init flags =
     , mappedSet = Nothing
     , chooser = OccurrenceSetChooser.init flags
     , mapCard = MapCard.init Nothing Nothing
-    , source = Taxonomy <| OccurrenceFromTaxonomy.init flags
+    , source = Choose
     , mdl = Material.model
     , programFlags = flags
     }
@@ -300,9 +318,16 @@ occurrenceSetList index model =
             List.append
                 (List.indexedMap (occurrenceSetLI model) model.occurrenceSets)
                 [ (OccurrenceSetChooser.view (0 :: index) model.chooser |> Html.map ChooserMsg) ]
-        , Options.styled Html.a
-            [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
-            [ Html.text "or upload data" ]
+        , Html.p []
+            [ Html.text "Alternatively, "
+            , Options.styled Html.a
+                [ Options.onClick UseTaxonomy, Options.css "cursor" "pointer" ]
+                [ Html.text "use iDigBio data" ]
+            , Html.text " or "
+            , Options.styled Html.a
+                [ Options.onClick UseUpload, Options.css "cursor" "pointer" ]
+                [ Html.text "upload your data." ]
+            ]
         ]
 
 
@@ -324,9 +349,16 @@ view index model =
                     [ Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
                             (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
-                        , Options.styled Html.a
-                            [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
-                            [ Html.text "or select existing data" ]
+                        , Html.p []
+                            [ Html.text "Alternatively, "
+                            , Options.styled Html.a
+                                [ Options.onClick UseTaxonomy, Options.css "cursor" "pointer" ]
+                                [ Html.text "use iDigBio data" ]
+                            , Html.text " or "
+                            , Options.styled Html.a
+                                [ Options.onClick ChooseOccurrences, Options.css "cursor" "pointer" ]
+                                [ Html.text "use Lifemapper data." ]
+                            ]
                         ]
                     ]
 
@@ -335,10 +367,16 @@ view index model =
                     [ Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
                             [ OccurrenceFromTaxonomy.view model_ |> Html.map TaxonomyMsg ]
-                          -- (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
-                        , Options.styled Html.a
-                            [ Options.onClick ToggleWantToUpload, Options.css "cursor" "pointer" ]
-                            [ Html.text "or select existing data" ]
+                        , Html.p []
+                            [ Html.text "Alternatively, "
+                            , Options.styled Html.a
+                                [ Options.onClick ChooseOccurrences, Options.css "cursor" "pointer" ]
+                                [ Html.text "use Lifemapper data" ]
+                            , Html.text " or "
+                            , Options.styled Html.a
+                                [ Options.onClick UseUpload, Options.css "cursor" "pointer" ]
+                                [ Html.text "upload your data." ]
+                            ]
                         ]
                     ]
 
