@@ -57,8 +57,8 @@ barGraph ( observedValue, pValue ) =
             []
 
 
-drawVariable : Bool -> (( Float, Float ) -> String) -> String -> ( Maybe Float, Maybe Float, Maybe Float ) -> Html.Html msg
-drawVariable showBarGraph formatter var ( observed, pValue, significant ) =
+drawVariable : Bool -> (( Float, Float ) -> String) -> Int -> String -> ( Maybe Float, Maybe Float, Maybe Float ) -> Html.Html msg
+drawVariable showBarGraph formatter i var ( observed, pValue, significant ) =
     let
         fontWeight =
             if significant |> Maybe.map ((<) 0.5) |> Maybe.withDefault False then
@@ -81,7 +81,7 @@ drawVariable showBarGraph formatter var ( observed, pValue, significant ) =
                 |> Maybe.withDefault ""
     in
         Html.td
-            [ Html.Attributes.style [ ( "position", "relative" ), fontWeight ]
+            [ Html.Attributes.style [ ( "position", "relative" ), fontWeight, ( "border-bottom", "2px solid" ) ]
             , Html.Attributes.title (var ++ "\n" ++ values)
             ]
             bar
@@ -108,7 +108,7 @@ viewGraph selectedNode showBarGraph variableFormatter vars dataForVar =
             case selectedNode of
                 Just _ ->
                     ( envVars
-                        |> List.map (\var -> dataForVar var |> drawVariable showBarGraph variableFormatter var)
+                        |> List.indexedMap (\i var -> dataForVar var |> drawVariable showBarGraph variableFormatter i var)
                         |> Html.tr
                             [ Html.Attributes.style
                                 [ ( "height", "400px" )
@@ -117,8 +117,8 @@ viewGraph selectedNode showBarGraph variableFormatter vars dataForVar =
                                 ]
                             ]
                     , bgVars
+                        |> List.indexedMap (\i var -> dataForVar var |> drawVariable showBarGraph variableFormatter i var)
                         |> List.reverse
-                        |> List.map (\var -> dataForVar var |> drawVariable showBarGraph variableFormatter var)
                         |> Html.tr
                             [ Html.Attributes.style
                                 [ ( "height", "400px" )
@@ -185,6 +185,7 @@ viewGraph selectedNode showBarGraph variableFormatter vars dataForVar =
                                     |> toString
                                     |> flip (++) "%"
                               )
+                            , ( "border-right", "1px solid" )
                             ]
                         ]
                         [ envVarTableRows
@@ -202,6 +203,7 @@ viewGraph selectedNode showBarGraph variableFormatter vars dataForVar =
                                     |> toString
                                     |> flip (++) "%"
                               )
+                            , ( "border-left", "1px solid" )
                             ]
                         ]
                         [ bgVarTableRows

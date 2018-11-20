@@ -51,7 +51,7 @@ view model =
                 [ ( "display", "flex" )
                   -- , ( "justify-content", "space-between" )
                 , ( "font-family", "sans-serif" )
-                , ( "height", "100vh" )
+                , ( "height", "1080px" )
                 ]
             ]
             [ viewTree model True selectData
