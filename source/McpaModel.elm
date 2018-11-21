@@ -77,7 +77,13 @@ init parseData flags =
     in
         ( { treeInfo = treeInfo
           , variables = variables
-          , selectedVariable = List.head variables |> Maybe.withDefault ""
+          , selectedVariable =
+                if List.member "Env - Adjusted R-squared" variables then
+                    "Env - Adjusted R-squared"
+                else if List.member "BG - Adjusted R-squared" variables then
+                    "BG - Adjusted R-squared"
+                else
+                    List.head variables |> Maybe.withDefault ""
           , flaggedNodes = ( [], [] )
           , selectedNode = Nothing
           , showBranchLengths = False

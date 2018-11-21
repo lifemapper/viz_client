@@ -35,8 +35,13 @@ import LinearTreeView exposing (computeColor, drawTree, gradientDefinitions)
 
 
 viewTree : Model data -> Bool -> (Int -> Maybe Float) -> Html.Html Msg
-viewTree { selectedVariable, showBranchLengths, treeInfo, flaggedNodes, selectedNode, variables } redBlue selectData =
+viewTree model redBlue selectData =
     let
+        variables =
+            model.variables
+                |> List.partition (\v -> v == "Env - Adjusted R-squared" || v == "BG - Adjusted R-squared")
+                |> (\( adjustedRSquareds, rest ) -> adjustedRSquareds ++ rest)
+
         computeColor_ opacity cladeId =
             selectData cladeId
                 |> Maybe.map (computeColor opacity)
@@ -45,16 +50,16 @@ viewTree { selectedVariable, showBranchLengths, treeInfo, flaggedNodes, selected
         ( treeHeight, grads, treeSvg ) =
             drawTree
                 { computeColor = computeColor_
-                , showBranchLengths = showBranchLengths
-                , treeDepth = treeInfo.depth
-                , totalLength = treeInfo.length
-                , flaggedNodes = flaggedNodes
-                , selectedNode = selectedNode
+                , showBranchLengths = model.showBranchLengths
+                , treeDepth = model.treeInfo.depth
+                , totalLength = model.treeInfo.length
+                , flaggedNodes = model.flaggedNodes
+                , selectedNode = model.selectedNode
                 , selectNode = SelectNode
                 , redBlue = redBlue
                 }
                 "#ccc"
-                treeInfo.root
+                model.treeInfo.root
 
         gradDefs =
             gradientDefinitions grads
@@ -74,7 +79,7 @@ viewTree { selectedVariable, showBranchLengths, treeInfo, flaggedNodes, selected
                         |> List.indexedMap
                             (\i v ->
                                 Html.option
-                                    [ Html.Attributes.selected (v == selectedVariable)
+                                    [ Html.Attributes.selected (v == model.selectedVariable)
                                     , Html.Attributes.value (toString i)
                                     ]
                                     [ Html.text v ]
@@ -87,7 +92,7 @@ viewTree { selectedVariable, showBranchLengths, treeInfo, flaggedNodes, selected
                 [ Html.label []
                     [ Html.input
                         [ Html.Attributes.type_ "checkbox"
-                        , Html.Attributes.checked showBranchLengths
+                        , Html.Attributes.checked model.showBranchLengths
                         , Html.Attributes.readonly True
                         , Html.Events.onClick ToggleShowLengths
                         ]
