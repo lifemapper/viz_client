@@ -43,6 +43,7 @@ import Material.Typography as Typo
 import Material.List as L
 import Material.Helpers as Helpers
 import Html exposing (Html)
+import Html.Attributes as Attributes
 import Http
 import List.Extra exposing (removeAt)
 import Helpers exposing (Index, chain)
@@ -55,6 +56,7 @@ type OccurrenceSource
     = Choose
     | Upload UploadFile.Model
     | Taxonomy OccurrenceFromTaxonomy.Model
+    | TaxonList (List String)
 
 
 type alias Model =
@@ -102,6 +104,15 @@ toApi model =
                 , taxon_names = Nothing
                 }
 
+        TaxonList names ->
+            Decoder.BoomOccurrenceSet
+                { occurrence_ids = Nothing
+                , points_filename = Nothing
+                , point_count_min = Nothing
+                , taxon_ids = Nothing
+                , taxon_names = Just (Decoder.BoomOccurrenceSetTaxon_names names)
+                }
+
 
 type Msg
     = ChooserMsg OccurrenceSetChooser.Msg
@@ -113,7 +124,9 @@ type Msg
     | TaxonomyMsg OccurrenceFromTaxonomy.Msg
     | UseUpload
     | UseTaxonomy
+    | UseTaxonList
     | ChooseOccurrences
+    | UpdateTaxonList String
     | Mdl (Material.Msg Msg)
 
 
@@ -197,6 +210,26 @@ update index msg model =
 
                     _ ->
                         ( { model | source = Taxonomy <| OccurrenceFromTaxonomy.init model.programFlags }, Cmd.none )
+
+            UseTaxonList ->
+                case model.source of
+                    TaxonList _ ->
+                        model ! []
+
+                    _ ->
+                        ( { model | source = TaxonList [] }, Cmd.none )
+
+            UpdateTaxonList text ->
+                case model.source of
+                    TaxonList _ ->
+                        let
+                            names =
+                                text |> String.split "\n" |> List.filter (not << String.isEmpty)
+                        in
+                            ( { model | source = TaxonList names }, Cmd.none )
+
+                    _ ->
+                        model ! []
 
             ChooserMsg msg_ ->
                 chain (addSelected msg_) (liftedChooserUpdate msg_) model
@@ -321,8 +354,12 @@ occurrenceSetList index model =
         , Html.p []
             [ Html.text "Alternatively, "
             , Options.styled Html.a
+                [ Options.onClick UseTaxonList, Options.css "cursor" "pointer" ]
+                [ Html.text "provide a list of taxa" ]
+            , Html.text " or "
+            , Options.styled Html.a
                 [ Options.onClick UseTaxonomy, Options.css "cursor" "pointer" ]
-                [ Html.text "use iDigBio data" ]
+                [ Html.text "select from our list of taxa" ]
             , Html.text " or "
             , Options.styled Html.a
                 [ Options.onClick UseUpload, Options.css "cursor" "pointer" ]
@@ -352,8 +389,12 @@ view index model =
                         , Html.p []
                             [ Html.text "Alternatively, "
                             , Options.styled Html.a
+                                [ Options.onClick UseTaxonList, Options.css "cursor" "pointer" ]
+                                [ Html.text "provide a list of taxa" ]
+                            , Html.text " or "
+                            , Options.styled Html.a
                                 [ Options.onClick UseTaxonomy, Options.css "cursor" "pointer" ]
-                                [ Html.text "use iDigBio data" ]
+                                [ Html.text "select from our list of taxa" ]
                             , Html.text " or "
                             , Options.styled Html.a
                                 [ Options.onClick ChooseOccurrences, Options.css "cursor" "pointer" ]
@@ -372,6 +413,47 @@ view index model =
                             , Options.styled Html.a
                                 [ Options.onClick ChooseOccurrences, Options.css "cursor" "pointer" ]
                                 [ Html.text "use Lifemapper data" ]
+                            , Html.text " or "
+                            , Options.styled Html.a
+                                [ Options.onClick UseTaxonList, Options.css "cursor" "pointer" ]
+                                [ Html.text "provide a list of taxa" ]
+                            , Html.text " or "
+                            , Options.styled Html.a
+                                [ Options.onClick UseUpload, Options.css "cursor" "pointer" ]
+                                [ Html.text "upload your data." ]
+                            ]
+                        ]
+                    ]
+
+            TaxonList names ->
+                Options.div [ Options.css "display" "flex" ]
+                    [ Options.div [ Options.css "margin" "20px" ]
+                        [ Options.div [ Options.css "margin-bottom" "10px" ]
+                            [ Options.styled Html.p [ Typo.title ] [ Html.text "Provide List of Taxon Names" ]
+                            , Options.styled Html.textarea
+                                [ Options.attribute <|
+                                    Attributes.placeholder
+                                        ("Paste taxon names here, one per line. \n\n"
+                                            ++ "The names will be matched against the GBIF tree and \n"
+                                            ++ "the corresponding iDigBio occurrence points downloaded."
+                                        )
+                                , Options.attribute <| Attributes.rows 20
+                                , Options.attribute <| Attributes.cols 80
+                                , Options.attribute <| Attributes.autocomplete False
+                                , Options.attribute <| Attributes.spellcheck False
+                                , Options.onInput UpdateTaxonList
+                                ]
+                                [ names |> String.join "\n" |> Html.text ]
+                            ]
+                        , Html.p []
+                            [ Html.text "Alternatively, "
+                            , Options.styled Html.a
+                                [ Options.onClick ChooseOccurrences, Options.css "cursor" "pointer" ]
+                                [ Html.text "use Lifemapper data" ]
+                            , Html.text " or "
+                            , Options.styled Html.a
+                                [ Options.onClick UseTaxonomy, Options.css "cursor" "pointer" ]
+                                [ Html.text "select from our list of taxa" ]
                             , Html.text " or "
                             , Options.styled Html.a
                                 [ Options.onClick UseUpload, Options.css "cursor" "pointer" ]
@@ -398,6 +480,12 @@ problems model =
 
         Taxonomy taxonomy ->
             if taxonomy.speciesForOccurrences == [] then
+                Just "No species chosen for occurrence points."
+            else
+                Nothing
+
+        TaxonList names ->
+            if names == [] then
                 Just "No species chosen for occurrence points."
             else
                 Nothing

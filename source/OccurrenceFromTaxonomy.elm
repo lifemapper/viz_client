@@ -31,6 +31,8 @@ import Json.Decode as Json
 import Html exposing (Html)
 import Html.Events as Events
 import Html.Attributes
+import Material.Options as Options
+import Material.Typography as Typo
 import Http
 import QueryString as Q
 import Decoder exposing (TaxonomyList(..), TaxonomyListItem(..), TaxonomyListItemRecord)
@@ -227,7 +229,7 @@ view : Model -> Html Msg
 view ({ facets, filters, loading } as model) =
     Html.div [ Html.Attributes.style [ ( "display", "flex" ) ] ]
         [ Html.div []
-            [ Html.p [] [ Html.text "Filter available species" ]
+            [ Options.styled Html.p [ Typo.subhead ] [ Html.text "Filter available species" ]
             , Html.table []
                 [ Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Kingdom: " ]
@@ -256,7 +258,7 @@ view ({ facets, filters, loading } as model) =
                 ]
             ]
         , Html.div [ Html.Attributes.style [ ( "margin-left", "20px" ) ] ]
-            [ Html.p [] [ Html.text "Matching species" ]
+            [ Options.styled Html.p [ Typo.subhead ] [ Html.text "Matching species" ]
             , Html.select
                 [ Html.Attributes.style [ ( "height", "400px" ), ( "width", "600px" ) ]
                 , Html.Attributes.multiple True
@@ -276,7 +278,10 @@ view ({ facets, filters, loading } as model) =
             , Html.button [ Events.onClick RemoveSelectedSpecies ] [ Html.text "<" ]
             ]
         , Html.div []
-            [ Html.p [] [ Html.text "Selected species" ]
+            [ Html.p []
+                [ Options.span [ Typo.subhead ] [ Html.text "Selected species" ]
+                , Html.text " (occurrence points for these species will be downloaded from iDigBio)"
+                ]
             , Html.select
                 [ Html.Attributes.style [ ( "height", "400px" ), ( "width", "600px" ) ]
                 , Html.Attributes.multiple True
