@@ -280,6 +280,36 @@
         }
       }
     },
+    "/gbifparser": {
+      "post": {
+        "summary": "Use GBIF services to find accepted names for provided names",
+        "tags": [
+          "gbif"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "A list of names to search for",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GbifPost"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A mapping of provided names to GBIF accepted names",
+            "schema": {
+              "$ref": "#/definitions/GbifResponse"
+            }
+          }
+        }
+      }
+    },
     "/globalpam": {
       "get": {
         "summary": "Lifemapper global PAM query service",
@@ -1417,6 +1447,37 @@
         }
       }
     },
+    "/opentree": {
+      "post": {
+        "summary": "Retrieve a tree from Open Tree matching the provided input",
+        "tags": [
+          "tree",
+          "opentree"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "A list of GBIF Taxon IDs to get a tree for",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/OpenTreePOST"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A summary of the tree request performed",
+            "schema": {
+              "$ref": "#/definitions/OpenTreePOSTresponse"
+            }
+          }
+        }
+      }
+    },
     "/sdmProject": {
       "get": {
         "summary": "Get a list of projections that match your criteria",
@@ -2398,6 +2459,31 @@
         }
       }
     },
+    "GbifPost": {
+      "description": "A list of names to be matched through GBIF",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "GbifResponse": {
+      "description": "The mapping from names to GBIF accepted names and taxon ids",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "search_name": {
+            "type": "string"
+          },
+          "accepted_name": {
+            "type": "string"
+          },
+          "taxon_id": {
+            "type": "integer"
+          }
+        }
+      }
+    },
     "GridSet": {
       "type": "object",
       "required": [
@@ -2625,6 +2711,39 @@
         },
         "squid": {
           "type": "string"
+        }
+      }
+    },
+    "OpenTreePOST": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    "OpenTreePOSTresponse": {
+      "type": "object",
+      "properties": {
+        "nontree_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "tree_data": {
+          "description": "The tree data in the format specified by tree_format",
+          "type": "string"
+        },
+        "tree_format": {
+          "type": "string"
+        },
+        "tree_name": {
+          "type": "string"
+        },
+        "unmatched_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
         }
       }
     },
