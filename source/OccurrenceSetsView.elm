@@ -43,13 +43,13 @@ import Material.Typography as Typo
 import Material.List as L
 import Material.Helpers as Helpers
 import Html exposing (Html)
-import Html.Attributes as Attributes
 import Http
 import List.Extra exposing (removeAt)
 import Helpers exposing (Index, chain)
 import MapCard
 import UploadFile
 import OccurrenceFromTaxonomy
+import OccurrenceSetTaxonList
 
 
 type OccurrenceSource
@@ -122,11 +122,11 @@ type Msg
     | MapCardMsg MapCard.Msg
     | UploadMsg UploadFile.Msg
     | TaxonomyMsg OccurrenceFromTaxonomy.Msg
+    | TaxonListMsg OccurrenceSetTaxonList.Msg
     | UseUpload
     | UseTaxonomy
     | UseTaxonList
     | ChooseOccurrences
-    | UpdateTaxonList String
     | Mdl (Material.Msg Msg)
 
 
@@ -187,6 +187,18 @@ update index msg model =
                     _ ->
                         ( model, Cmd.none )
 
+            TaxonListMsg msg_ ->
+                case model.source of
+                    TaxonList taxonList ->
+                        let
+                            ( taxonList_, cmd ) =
+                                OccurrenceSetTaxonList.update msg_ taxonList
+                        in
+                            ( { model | source = TaxonList taxonList_ }, Cmd.map TaxonListMsg cmd )
+
+                    _ ->
+                        model ! []
+
             ChooseOccurrences ->
                 case model.source of
                     Choose ->
@@ -218,18 +230,6 @@ update index msg model =
 
                     _ ->
                         ( { model | source = TaxonList [] }, Cmd.none )
-
-            UpdateTaxonList text ->
-                case model.source of
-                    TaxonList _ ->
-                        let
-                            names =
-                                text |> String.split "\n" |> List.filter (not << String.isEmpty)
-                        in
-                            ( { model | source = TaxonList names }, Cmd.none )
-
-                    _ ->
-                        model ! []
 
             ChooserMsg msg_ ->
                 chain (addSelected msg_) (liftedChooserUpdate msg_) model
@@ -429,22 +429,7 @@ view index model =
                 Options.div [ Options.css "display" "flex" ]
                     [ Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
-                            [ Options.styled Html.p [ Typo.title ] [ Html.text "Provide List of Species Names" ]
-                            , Options.styled Html.textarea
-                                [ Options.attribute <|
-                                    Attributes.placeholder
-                                        ("Paste species names here, one per line. \n\n"
-                                            ++ "The names will be matched against the GBIF tree and \n"
-                                            ++ "the corresponding iDigBio occurrence points downloaded."
-                                        )
-                                , Options.attribute <| Attributes.rows 20
-                                , Options.attribute <| Attributes.cols 80
-                                , Options.attribute <| Attributes.autocomplete False
-                                , Options.attribute <| Attributes.spellcheck False
-                                , Options.onInput UpdateTaxonList
-                                ]
-                                [ names |> String.join "\n" |> Html.text ]
-                            ]
+                            [ OccurrenceSetTaxonList.view names |> Html.map TaxonListMsg ]
                         , Html.p []
                             [ Html.text "Alternatively, "
                             , Options.styled Html.a
