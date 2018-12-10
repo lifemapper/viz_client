@@ -113,12 +113,8 @@ var observer = new MutationObserver(function(mutations) {
             Array.prototype.forEach.call(elements, function(element) {
                 var map = L.map(element, {minZoom: 2})
                     .setView([0, 0], 1);
-                // L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                //     attribution: "© OpenStreetMap",
-                //     minZoom: 1,
-                //     maxZoom: 12
-                // }).addTo(map);
-
+                var tandemMoveHandler = tandemMove(map);
+                map.on('moveend', tandemMoveHandler).on('zoomend', tandemMoveHandler);
                 maps[element._leaflet_id] = map;
                 console.log("added leaflet id", element._leaflet_id);
                 configureMap(element);
@@ -133,8 +129,8 @@ var observer = new MutationObserver(function(mutations) {
                 if (element._leaflet_id != null) {
                     console.log("removing map with leaflet id", element._leaflet_id);
                     maps[element._leaflet_id].remove();
-                    maps[element._leaflet_id] = null;
-                    mapLayers[element._leaflet_id] = null;
+                    delete maps[element._leaflet_id];
+                    delete mapLayers[element._leaflet_id];
                 }
             });
         });
@@ -144,6 +140,20 @@ var observer = new MutationObserver(function(mutations) {
         }
     });
 });
+
+var moving = false;
+function tandemMove(map) {
+    return function(event) {
+        if (moving) return;
+        moving = true;
+        for (var leafletId in maps) {
+            if (map !== maps[leafletId]) {
+                maps[leafletId].setView(map.getCenter(), map.getZoom());
+            }
+        }
+        moving = false;
+    };
+}
 
 observer.observe(document.body, {
     subtree: true,
