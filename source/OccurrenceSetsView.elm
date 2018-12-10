@@ -355,7 +355,7 @@ occurrenceSetList index model =
             [ Html.text "Alternatively, "
             , Options.styled Html.a
                 [ Options.onClick UseTaxonList, Options.css "cursor" "pointer" ]
-                [ Html.text "provide a list of taxa" ]
+                [ Html.text "provide a list of species" ]
             , Html.text " or "
             , Options.styled Html.a
                 [ Options.onClick UseTaxonomy, Options.css "cursor" "pointer" ]
@@ -390,7 +390,7 @@ view index model =
                             [ Html.text "Alternatively, "
                             , Options.styled Html.a
                                 [ Options.onClick UseTaxonList, Options.css "cursor" "pointer" ]
-                                [ Html.text "provide a list of taxa" ]
+                                [ Html.text "provide a list of species" ]
                             , Html.text " or "
                             , Options.styled Html.a
                                 [ Options.onClick UseTaxonomy, Options.css "cursor" "pointer" ]
@@ -416,7 +416,7 @@ view index model =
                             , Html.text " or "
                             , Options.styled Html.a
                                 [ Options.onClick UseTaxonList, Options.css "cursor" "pointer" ]
-                                [ Html.text "provide a list of taxa" ]
+                                [ Html.text "provide a list of species" ]
                             , Html.text " or "
                             , Options.styled Html.a
                                 [ Options.onClick UseUpload, Options.css "cursor" "pointer" ]
@@ -429,11 +429,11 @@ view index model =
                 Options.div [ Options.css "display" "flex" ]
                     [ Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
-                            [ Options.styled Html.p [ Typo.title ] [ Html.text "Provide List of Taxon Names" ]
+                            [ Options.styled Html.p [ Typo.title ] [ Html.text "Provide List of Species Names" ]
                             , Options.styled Html.textarea
                                 [ Options.attribute <|
                                     Attributes.placeholder
-                                        ("Paste taxon names here, one per line. \n\n"
+                                        ("Paste species names here, one per line. \n\n"
                                             ++ "The names will be matched against the GBIF tree and \n"
                                             ++ "the corresponding iDigBio occurrence points downloaded."
                                         )
