@@ -56,7 +56,7 @@ type OccurrenceSource
     = Choose
     | Upload UploadFile.Model
     | Taxonomy OccurrenceFromTaxonomy.Model
-    | TaxonList (List String)
+    | TaxonList OccurrenceSetTaxonList.Model
 
 
 type alias Model =
@@ -104,13 +104,13 @@ toApi model =
                 , taxon_names = Nothing
                 }
 
-        TaxonList names ->
+        TaxonList taxonList ->
             Decoder.BoomOccurrenceSet
                 { occurrence_ids = Nothing
                 , points_filename = Nothing
                 , point_count_min = Nothing
-                , taxon_ids = Nothing
-                , taxon_names = Just (Decoder.BoomOccurrenceSetTaxon_names names)
+                , taxon_ids = Just (taxonList |> OccurrenceSetTaxonList.getTaxonIds |> Decoder.BoomOccurrenceSetTaxon_ids)
+                , taxon_names = Nothing
                 }
 
 
@@ -229,7 +229,7 @@ update index msg model =
                         model ! []
 
                     _ ->
-                        ( { model | source = TaxonList [] }, Cmd.none )
+                        ( { model | source = TaxonList <| OccurrenceSetTaxonList.init model.programFlags }, Cmd.none )
 
             ChooserMsg msg_ ->
                 chain (addSelected msg_) (liftedChooserUpdate msg_) model
@@ -469,8 +469,8 @@ problems model =
             else
                 Nothing
 
-        TaxonList names ->
-            if names == [] then
+        TaxonList taxonList ->
+            if OccurrenceSetTaxonList.getTaxonIds taxonList == [] then
                 Just "No species chosen for occurrence points."
             else
                 Nothing

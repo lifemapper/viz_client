@@ -29,6 +29,11 @@ import Json.Encode exposing (..)
 import Maybe.Extra as Maybe
 
 
+encodeGbifPost : GbifPost -> Value
+encodeGbifPost (GbifPost names) =
+    names |> List.map string |> list
+
+
 encodeOccurrenceMetadata : OccurrenceMetadata -> Value
 encodeOccurrenceMetadata (OccurrenceMetadata { role, field }) =
     [ role |> Maybe.map (encodeOccurrenceMetadataRole >> (,) "role")
