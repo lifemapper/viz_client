@@ -40,6 +40,8 @@ import Material.Options as Options
 import Material.Typography as Typo
 import Material.Spinner as Loading
 import Material.Grid as Grid
+import Material.Button as Button
+import Material.Icon as Icon
 
 
 type alias ProjectionInfo =
@@ -61,9 +63,15 @@ type State
     | DisplayGrouped (List ( List ProjectionInfo, MapCard.Model ))
 
 
+type PackageStatus
+    = WaitingForPackage Int
+    | PackageReady Int
+
+
 type alias Model =
     { programFlags : Flags
     , state : State
+    , packageStatus : PackageStatus
     , mdl : Material.Model
     }
 
@@ -72,6 +80,7 @@ init : Flags -> Int -> Model
 init flags gridsetId =
     { programFlags = flags
     , state = WaitingForListToPopulate gridsetId
+    , packageStatus = WaitingForPackage gridsetId
     , mdl = Material.model
     }
 
@@ -82,6 +91,8 @@ type Msg
     | GotProjection Decoder.ProjectionRecord
     | NewProjectionInfo ProjectionInfo
     | SetDisplayGrouped Bool
+    | CheckForPackage Int
+    | GotPackageStatus Int Bool
     | MapCardMsg Int MapCard.Msg
     | Nop
     | Mdl (Material.Msg Msg)
@@ -127,6 +138,9 @@ update msg model =
 
             LoadProjections gridsetId ->
                 ( { model | state = WaitingForListToPopulate gridsetId }, loadProjections model.programFlags gridsetId )
+
+            CheckForPackage gridsetId ->
+                ( model, checkForPackage model.programFlags gridsetId )
 
             GotProjectionAtoms gridSetId atoms ->
                 if List.length atoms == 0 then
@@ -175,6 +189,12 @@ update msg model =
 
                     _ ->
                         ( model, Cmd.none )
+
+            GotPackageStatus id available ->
+                if available then
+                    { model | packageStatus = PackageReady id } ! []
+                else
+                    { model | packageStatus = WaitingForPackage id } ! []
 
             MapCardMsg i msg_ ->
                 liftedMapCardUpdate i msg_ model
@@ -312,6 +332,35 @@ gotOccurrenceSet record result =
             Debug.log "Error fetching occurrence set" (toString err) |> always Nop
 
 
+checkForPackage : Flags -> Int -> Cmd Msg
+checkForPackage flags id =
+    Http.request
+        { method = "HEAD"
+        , headers = []
+        , url = packageUrl flags id
+        , body = Http.emptyBody
+        , expect = Http.expectStringResponse (\{ status } -> Ok (status.code == 200))
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send (gotPackageStatus id)
+
+
+packageUrl : Flags -> Int -> String
+packageUrl { apiRoot } id =
+    apiRoot ++ "gridset/" ++ (toString id) ++ "/package"
+
+
+gotPackageStatus : Int -> Result Http.Error Bool -> Msg
+gotPackageStatus id result =
+    case result of
+        Ok available ->
+            GotPackageStatus id available
+
+        _ ->
+            GotPackageStatus id False
+
+
 loadProjections : Flags -> Int -> Cmd Msg
 loadProjections { apiRoot } id =
     Http.request
@@ -361,12 +410,30 @@ gotMetadata loadingInfo result =
 
 
 view : Model -> Html Msg
-view { state } =
+view { state, packageStatus, mdl, programFlags } =
     let
         loading message =
             Options.div
                 [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
                 [ Html.text message, Html.p [] [ Loading.spinner [ Loading.active True ] ] ]
+
+        header =
+            Options.div
+                [ Options.css "display" "flex"
+                , Options.css "margin" "20px 0 0 20px"
+                ]
+                [ Options.div [ Typo.title, Options.css "margin-top" "6px" ] [ Html.text "Projection results " ]
+                , case packageStatus of
+                    WaitingForPackage id ->
+                        Button.render Mdl [ 666 ] mdl [ Button.icon, Button.disabled ] [ Icon.i "cloud_download" ]
+
+                    PackageReady id ->
+                        Button.render Mdl
+                            [ 666 ]
+                            mdl
+                            [ Button.icon, Button.link <| packageUrl programFlags id ]
+                            [ Icon.i "cloud_download" ]
+                ]
     in
         case state of
             WaitingForListToPopulate _ ->
@@ -376,14 +443,20 @@ view { state } =
                 loading "Loading projections..."
 
             DisplaySeparate display ->
-                display
-                    |> List.indexedMap viewSeparate
-                    |> Grid.grid []
+                Options.div []
+                    [ header
+                    , display
+                        |> List.indexedMap viewSeparate
+                        |> Grid.grid []
+                    ]
 
             DisplayGrouped display ->
-                display
-                    |> List.indexedMap viewGrouped
-                    |> Grid.grid []
+                Options.div []
+                    [ header
+                    , display
+                        |> List.indexedMap viewGrouped
+                        |> Grid.grid []
+                    ]
 
 
 viewSeparate : Int -> ( ProjectionInfo, MapCard.Model ) -> Grid.Cell Msg
@@ -457,9 +530,17 @@ page =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.state of
-        WaitingForListToPopulate gridsetId ->
-            Time.every (5 * Time.second) (always <| LoadProjections gridsetId)
+    Sub.batch
+        [ case model.state of
+            WaitingForListToPopulate gridsetId ->
+                Time.every (5 * Time.second) (always <| LoadProjections gridsetId)
 
-        _ ->
-            Sub.none
+            _ ->
+                Sub.none
+        , case model.packageStatus of
+            WaitingForPackage gridsetId ->
+                Time.every (30 * Time.second) (always <| CheckForPackage gridsetId)
+
+            _ ->
+                Sub.none
+        ]
