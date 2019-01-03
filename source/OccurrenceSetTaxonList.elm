@@ -27,11 +27,16 @@ module OccurrenceSetTaxonList exposing (Model, getTaxonIds, init, Msg, view, upd
 import Http
 import List.Extra as List
 import Maybe.Extra exposing ((?))
+import Material
 import Material.Options as Options
 import Material.Typography as Typo
+import Material.Button as Button
+import Material.Toggles as Toggles
+import Material.Spinner as Loading
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import ProgramFlags exposing (Flags)
+import Helpers exposing (Index, chain)
 import Decoder
 import Encoder
 
@@ -231,8 +236,8 @@ gotGbifResponse dontUse response =
             MatchingFailedMsg
 
 
-view : Model -> Html Msg
-view model =
+view : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model -> Model -> Html msg
+view mdlMsg mapMsg index mdl model =
     case model.state of
         GetList names ->
             Options.div []
@@ -248,25 +253,31 @@ view model =
                     , Options.attribute <| Attributes.cols 80
                     , Options.attribute <| Attributes.autocomplete False
                     , Options.attribute <| Attributes.spellcheck False
-                    , Options.onInput UpdateTaxonList
+                    , Options.onInput (mapMsg << UpdateTaxonList)
                     ]
                     [ names |> String.join "\n" |> Html.text ]
                 , Html.p []
-                    [ Options.styled Html.button
-                        [ Options.onClick CheckTaxa ]
+                    [ Button.render mdlMsg
+                        (1 :: index)
+                        mdl
+                        [ Button.raised
+                        , Options.onClick <| mapMsg CheckTaxa
+                        ]
                         [ Html.text "Match" ]
                     ]
                 ]
 
         RequestingMatches ->
             Options.div []
-                [ Options.styled Html.p [ Typo.title ] [ Html.text "Matching species names against GBIF..." ] ]
+                [ Options.styled Html.p [ Typo.title ] [ Html.text "Matching species names against GBIF..." ]
+                , Loading.spinner [ Loading.active True ]
+                ]
 
         GotMatches matches ->
             Options.div []
                 [ Options.styled Html.p [ Typo.title ] [ Html.text "GBIF species names match results:" ]
                 , matches
-                    |> List.indexedMap viewMatch
+                    |> List.indexedMap (viewMatch mdlMsg mapMsg (3 :: index) mdl)
                     |> (++)
                         [ Html.tr []
                             [ Html.th [] [ Html.text "Searched" ]
@@ -275,14 +286,24 @@ view model =
                             ]
                         ]
                     |> Html.table []
-                , Options.styled Html.button
-                    [ Options.onClick MatchAgain
-                    , Options.attribute <|
-                        Attributes.disabled
-                            (matches |> List.all (\match -> Just match.searchName == match.response.search_name))
+                , Button.render mdlMsg
+                    (1 :: index)
+                    mdl
+                    [ Button.raised
+                    , Options.css "margin" "5px"
+                    , Options.when (matches |> List.all (\match -> Just match.searchName == match.response.search_name))
+                        Button.disabled
+                    , Options.onClick <| mapMsg MatchAgain
                     ]
                     [ Html.text "Match again" ]
-                , Options.styled Html.button [ Options.onClick StartOver ] [ Html.text "Start over" ]
+                , Button.render mdlMsg
+                    (2 :: index)
+                    mdl
+                    [ Button.raised
+                    , Options.css "margin" "5px"
+                    , Options.onClick <| mapMsg StartOver
+                    ]
+                    [ Html.text "Start over" ]
                 ]
 
         MatchingFailed ->
@@ -293,21 +314,22 @@ view model =
                 ]
 
 
-viewMatch : Int -> Match -> Html Msg
-viewMatch i item =
+viewMatch : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model -> Int -> Match -> Html msg
+viewMatch mdlMsg mapMsg index mdl i item =
     let
         checkbox =
-            Options.styled Html.input
-                [ Options.attribute <| Attributes.type_ "checkbox"
-                , Options.attribute <| Attributes.checked item.use
-                , Options.onClick (ToggleUseName i)
+            Toggles.checkbox mdlMsg
+                (i :: index)
+                mdl
+                [ Options.onToggle <| mapMsg <| ToggleUseName i
+                , Toggles.value item.use
                 ]
                 []
 
         nameUpdater =
             Options.styled Html.input
                 [ Options.attribute <| Attributes.value <| item.searchName
-                , Options.onInput (UpdateSearchName i)
+                , Options.onInput (mapMsg << UpdateSearchName i)
                 ]
                 []
     in
@@ -329,5 +351,5 @@ viewMatch i item =
             Nothing ->
                 Html.tr []
                     [ Html.td [] [ nameUpdater ]
-                    , Html.td [] [ Html.text "No match" ]
+                    , Html.td [] [ Html.text "⚠️ No match" ]
                     ]

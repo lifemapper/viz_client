@@ -429,7 +429,7 @@ view index model =
                 Options.div [ Options.css "display" "flex" ]
                     [ Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
-                            [ OccurrenceSetTaxonList.view names |> Html.map TaxonListMsg ]
+                            [ OccurrenceSetTaxonList.view Mdl TaxonListMsg (2 :: index) model.mdl names ]
                         , Html.p []
                             [ Html.text "Alternatively, "
                             , Options.styled Html.a
