@@ -96,8 +96,8 @@ getTaxonIds : Model -> Decoder.BoomOccurrenceSetTaxon_ids
 getTaxonIds model =
     model.speciesForOccurrences
         |> List.filterMap
-            (\(TaxonomyListItem { id }) ->
-                id
+            (\(TaxonomyListItem { taxon_key }) ->
+                taxon_key
                     |> Maybe.andThen (String.toInt >> Result.toMaybe)
             )
         |> Decoder.BoomOccurrenceSetTaxon_ids
