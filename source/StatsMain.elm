@@ -33,6 +33,7 @@ import Html.Attributes
 import Html.Events
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
+import Round
 
 
 type alias StatsForSite =
@@ -350,10 +351,36 @@ drawScatter model =
                         fill "black"
                     ]
                     []
+
+        xLabel =
+            Dict.get model.xCol model.statNames |> Maybe.map .name |> Maybe.withDefault model.xCol
+
+        yLabel =
+            Dict.get model.yCol model.statNames |> Maybe.map .name |> Maybe.withDefault model.yCol
     in
-        drawXAxis model.xCol model.scale.minX model.scale.maxX
-            ++ drawYAxis model.yCol model.scale.minY model.scale.maxY
+        drawXAxis xLabel model.scale.minX model.scale.maxX
+            ++ drawYAxis yLabel model.scale.minY model.scale.maxY
             ++ List.map plot model.displayedRecords
+
+
+formatNumber : Float -> String
+formatNumber v =
+    if v == 0 then
+        "0"
+    else
+        let
+            exponent =
+                logBase 10 (abs v) |> floor
+
+            mantissa =
+                v / toFloat (10 ^ exponent) |> Round.round 2
+        in
+            if abs exponent > 3 then
+                mantissa ++ "e" ++ (toString exponent)
+            else if exponent < 0 then
+                v |> Round.round (2 - exponent)
+            else
+                v |> Round.round 2
 
 
 drawXAxis : String -> Float -> Float -> List (Svg msg)
@@ -363,8 +390,37 @@ drawXAxis label min max =
             List.range 1 10
                 |> List.map (toFloat >> ((*) 100) >> toString)
                 |> List.map (\x -> line [ x1 x, x2 x, y1 "1000", y2 "1020", strokeWidth "1", stroke "black" ] [])
+
+        maxValue =
+            text_
+                [ x "990"
+                , y "1030"
+                , textAnchor "end"
+                , Html.Attributes.style [ ( "font-size", "20px" ) ]
+                ]
+                [ max |> formatNumber |> text ]
+
+        minValue =
+            text_
+                [ x "0"
+                , y "1030"
+                , Html.Attributes.style [ ( "font-size", "20px" ) ]
+                ]
+                [ min |> formatNumber |> text ]
+
+        labelText =
+            text_
+                [ x "500"
+                , y "1050"
+                , textAnchor "middle"
+                , Html.Attributes.style [ ( "font-size", "30px" ) ]
+                ]
+                [ text label ]
     in
         (line [ x1 "0", x2 "1000", y1 "1000", y2 "1000", strokeWidth "1", stroke "black" ] []
+            :: minValue
+            :: maxValue
+            :: labelText
             :: ticks
         )
 
@@ -376,26 +432,40 @@ drawYAxis label min max =
             List.range 1 10
                 |> List.map (toFloat >> ((*) 100) >> ((-) 1000) >> toString)
                 |> List.map (\y -> line [ y1 y, y2 y, x1 "0", x2 "-20", strokeWidth "1", stroke "black" ] [])
+
+        maxValue =
+            text_
+                [ x "-10"
+                , y "30"
+                , textAnchor "end"
+                , Html.Attributes.style [ ( "font-size", "20px" ) ]
+                ]
+                [ max |> formatNumber |> text ]
+
+        minValue =
+            text_
+                [ x "-10"
+                , y "1000"
+                , textAnchor "end"
+                , Html.Attributes.style [ ( "font-size", "20px" ) ]
+                ]
+                [ min |> formatNumber |> text ]
+
+        labelText =
+            text_
+                [ x "500"
+                , y "50"
+                , textAnchor "middle"
+                , transform "rotate(90)"
+                , Html.Attributes.style [ ( "font-size", "30px" ) ]
+                ]
+                [ text label ]
     in
         (line [ y1 "0", y2 "1000", x1 "0", x2 "0", strokeWidth "1", stroke "black" ] []
-            -- :: (text_
-            --         [ x "-10"
-            --         , y "1000"
-            --         , textAnchor "end"
-            --         , Html.Attributes.style [ ( "font-size", "20px" ) ]
-            --         ]
-            --         [ min |> toString |> text ]
-            --    )
-            -- :: (text_
-            --         [ x "-10"
-            --         , y "30"
-            --         , textAnchor "end"
-            --         , Html.Attributes.style [ ( "font-size", "20px" ) ]
-            --         ]
-            --         [ max |> toString |> text ]
-            --    )
-            ::
-                ticks
+            :: minValue
+            :: maxValue
+            :: labelText
+            :: ticks
         )
 
 
@@ -447,7 +517,7 @@ viewPlot model =
                         )
                 )
     in
-        Html.div []
+        Html.div [ Html.Attributes.style [ ( "margin-left", "auto" ), ( "margin-right", "auto" ) ] ]
             [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
                 [ Html.text "Site Based Stat Relationships" ]
             , svg

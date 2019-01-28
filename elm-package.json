@@ -27,6 +27,7 @@
         "evancz/url-parser": "2.0.1 <= v < 3.0.0",
         "krisajenkins/formatting": "4.2.0 <= v < 5.0.0",
         "mgold/elm-animation": "1.0.5 <= v < 2.0.0",
+        "myrho/elm-round": "1.0.3 <= v < 2.0.0",
         "periodic/elm-csv": "1.0.3 <= v < 2.0.0",
         "rogeriochaves/elm-ternary": "1.0.1 <= v < 2.0.0"
     },
