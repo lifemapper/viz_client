@@ -34,6 +34,11 @@ encodeGbifPost (GbifPost names) =
     names |> List.map string |> list
 
 
+encodeBiotaphyPointsPost : BiotaphyPointsPost -> Value
+encodeBiotaphyPointsPost (BiotaphyPointsPost taxonIds) =
+    taxonIds |> List.map int |> list
+
+
 encodeOccurrenceMetadata : OccurrenceMetadata -> Value
 encodeOccurrenceMetadata (OccurrenceMetadata { role, field }) =
     [ role |> Maybe.map (encodeOccurrenceMetadataRole >> (,) "role")

@@ -310,6 +310,36 @@
         }
       }
     },
+    "/biotaphypoints": {
+      "post": {
+        "summary": "Return the number of points obtained for each of the provided taxon ids",
+        "tags": [
+          "biotaphy"
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "A list of taxon ids to search for",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BiotaphyPointsPost"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "The number of points",
+            "schema": {
+              "$ref": "#/definitions/BiotaphyPointsResponse"
+            }
+          }
+        }
+      }
+    },
     "/globalpam": {
       "get": {
         "summary": "Lifemapper global PAM query service",
@@ -2479,6 +2509,32 @@
             "type": "string"
           },
           "taxon_id": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "BiotaphyPointsPost": {
+      "description": "A list of taxon ids to obtain",
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    "BiotaphyPointsResponse": {
+      "description": "Point counts for the given taxon ids",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "taxon_id",
+          "count"
+        ],
+        "properties": {
+          "taxon_id": {
+            "type": "integer"
+          },
+          "count": {
             "type": "integer"
           }
         }

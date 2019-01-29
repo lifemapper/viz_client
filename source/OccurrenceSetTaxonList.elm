@@ -51,6 +51,8 @@ type State
     = GetList (List String)
     | RequestingMatches
     | MatchingFailed
+    | RequestingPoints
+    | PointsRequestFailed
     | GotMatches (List Match)
 
 
@@ -58,6 +60,7 @@ type alias Match =
     { response : Decoder.GbifResponseItemRecord
     , searchName : String
     , use : Bool
+    , count : Int
     }
 
 
@@ -84,7 +87,9 @@ type Msg
     = UpdateTaxonList String
     | CheckTaxa
     | GotMatchesMsg (List Match)
+    | GotPointsMsg (List Match)
     | MatchingFailedMsg
+    | GettingPointsFailedMsg
     | UpdateSearchName Int String
     | ToggleUseName Int
     | MatchAgain
@@ -117,6 +122,14 @@ update msg model =
         GotMatchesMsg matches ->
             case model.state of
                 RequestingMatches ->
+                    { model | state = RequestingPoints } ! [ requestPoints model.programFlags matches ]
+
+                _ ->
+                    model ! []
+
+        GotPointsMsg matches ->
+            case model.state of
+                RequestingPoints ->
                     { model | state = GotMatches matches } ! []
 
                 _ ->
@@ -126,6 +139,14 @@ update msg model =
             case model.state of
                 RequestingMatches ->
                     { model | state = MatchingFailed } ! []
+
+                _ ->
+                    model ! []
+
+        GettingPointsFailedMsg ->
+            case model.state of
+                RequestingPoints ->
+                    { model | state = PointsRequestFailed } ! []
 
                 _ ->
                     model ! []
@@ -227,13 +248,52 @@ gotGbifResponse dontUse response =
 
                                 Nothing ->
                                     False
+                        , count = 0
                         }
                     )
-                |> List.sortBy .searchName
                 |> GotMatchesMsg
 
         Err err ->
             MatchingFailedMsg
+
+
+requestPoints : Flags -> List Match -> Cmd Msg
+requestPoints flags matches =
+    Http.request
+        { method = "POST"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = flags.apiRoot ++ "biotaphypoints"
+        , body =
+            matches
+                |> List.filterMap (.response >> .taxon_id)
+                |> Decoder.BiotaphyPointsPost
+                |> Encoder.encodeBiotaphyPointsPost
+                |> Http.jsonBody
+        , expect = Http.expectJson Decoder.decodeBiotaphyPointsResponse
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send (gotBiotaphyPointsResponse matches)
+
+
+gotBiotaphyPointsResponse : List Match -> Result Http.Error Decoder.BiotaphyPointsResponse -> Msg
+gotBiotaphyPointsResponse matches response =
+    case response of
+        Ok (Decoder.BiotaphyPointsResponse items) ->
+            matches
+                |> List.map
+                    (\match ->
+                        items
+                            |> List.map (\(Decoder.BiotaphyPointsResponseItem item) -> item)
+                            |> List.filter (\{ taxon_id } -> match.response.taxon_id == Just taxon_id)
+                            |> List.head
+                            |> Maybe.map (\{ count } -> { match | count = count, use = count > 30 })
+                            |> Maybe.withDefault match
+                    )
+                |> GotPointsMsg
+
+        Err err ->
+            GettingPointsFailedMsg
 
 
 view : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model -> Model -> Html msg
@@ -273,6 +333,12 @@ view mdlMsg mapMsg index mdl model =
                 , Loading.spinner [ Loading.active True ]
                 ]
 
+        RequestingPoints ->
+            Options.div []
+                [ Options.styled Html.p [ Typo.title ] [ Html.text "Requesting occurence points from iDigBio..." ]
+                , Loading.spinner [ Loading.active True ]
+                ]
+
         GotMatches matches ->
             Options.div []
                 [ Options.styled Html.p [ Typo.title ] [ Html.text "GBIF species names match results:" ]
@@ -282,7 +348,8 @@ view mdlMsg mapMsg index mdl model =
                         [ Html.tr []
                             [ Html.th [] [ Html.text "Searched" ]
                             , Html.th [] [ Html.text "Matched" ]
-                            , Html.th [] [ Html.text "Use" ]
+                            , Html.th [] [ Html.text "Points" ]
+                            , Html.th [ Attributes.style [ ( "padding-left", "5px" ) ] ] [ Html.text "Use" ]
                             ]
                         ]
                     |> Html.table []
@@ -313,6 +380,13 @@ view mdlMsg mapMsg index mdl model =
                     [ Html.text "There was a problem accessing the GBIF name matching API!" ]
                 ]
 
+        PointsRequestFailed ->
+            Options.div []
+                [ Options.styled Html.p
+                    [ Typo.title ]
+                    [ Html.text "There was a problem accessing the iDigBio points API!" ]
+                ]
+
 
 viewMatch : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model -> Int -> Match -> Html msg
 viewMatch mdlMsg mapMsg index mdl i item =
@@ -339,13 +413,15 @@ viewMatch mdlMsg mapMsg index mdl i item =
                     Html.tr []
                         [ Html.td [] [ Html.text <| item.response.search_name ? "" ]
                         , Html.td [] [ Html.text name ]
-                        , Html.td [] [ checkbox ]
+                        , Html.td [ Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text <| toString item.count ]
+                        , Html.td [ Attributes.style [ ( "padding-left", "5px" ) ] ] [ checkbox ]
                         ]
                 else
                     Html.tr []
                         [ Html.td [] [ nameUpdater ]
                         , Html.td [] [ Html.text name ]
-                        , Html.td [] [ checkbox ]
+                        , Html.td [ Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text <| toString item.count ]
+                        , Html.td [ Attributes.style [ ( "padding-left", "5px" ) ] ] [ checkbox ]
                         ]
 
             Nothing ->
