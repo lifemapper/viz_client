@@ -24,7 +24,6 @@
 
 port module StatsHeatMap exposing (..)
 
-import Formatting as F exposing ((<>))
 import List.Extra as List
 import Maybe.Extra as Maybe
 import Set exposing (Set)
@@ -32,6 +31,7 @@ import Dict exposing (Dict)
 import Html
 import Html.Attributes
 import Html.Events
+import Helpers exposing (formatNumber)
 
 
 type alias StatsForSite =
@@ -122,11 +122,6 @@ recordsFromStats xCol yCol stats =
     List.map (extractRecord xCol yCol) stats |> Maybe.values
 
 
-rangeFormat : Float -> String
-rangeFormat value =
-    F.print (F.roundTo 1) value
-
-
 view : Model -> Html.Html Msg
 view model =
     let
@@ -190,13 +185,13 @@ view model =
                         ]
                         [ Html.p [ Html.Attributes.style [ ( "text-align", "right" ), ( "margin", "0 5px" ) ] ]
                             [ Dict.get model.selectedVariable model.statRanges
-                                |> Maybe.map (.min >> rangeFormat)
+                                |> Maybe.map (.min >> formatNumber)
                                 |> Maybe.withDefault ""
                                 |> Html.text
                             ]
                         , Html.p [ Html.Attributes.style [ ( "text-align", "right" ), ( "margin", "0 5px" ) ] ]
                             [ Dict.get model.selectedVariable model.statRanges
-                                |> Maybe.map (.max >> rangeFormat)
+                                |> Maybe.map (.max >> formatNumber)
                                 |> Maybe.withDefault ""
                                 |> Html.text
                             ]

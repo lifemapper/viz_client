@@ -33,7 +33,7 @@ import Html.Attributes
 import Html.Events
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
-import Round
+import Helpers exposing (formatNumber)
 
 
 type alias StatsForSite =
@@ -361,26 +361,6 @@ drawScatter model =
         drawXAxis xLabel model.scale.minX model.scale.maxX
             ++ drawYAxis yLabel model.scale.minY model.scale.maxY
             ++ List.map plot model.displayedRecords
-
-
-formatNumber : Float -> String
-formatNumber v =
-    if v == 0 then
-        "0"
-    else
-        let
-            exponent =
-                logBase 10 (abs v) |> floor
-
-            mantissa =
-                v / toFloat (10 ^ exponent) |> Round.round 2
-        in
-            if abs exponent > 3 then
-                mantissa ++ "e" ++ (toString exponent)
-            else if exponent < 0 then
-                v |> Round.round (2 - exponent)
-            else
-                v |> Round.round 2
 
 
 drawXAxis : String -> Float -> Float -> List (Svg msg)
