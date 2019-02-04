@@ -53,6 +53,8 @@ type State
     | MatchingFailed
     | RequestingPoints
     | PointsRequestFailed
+    | RequestingTree
+    | TreeRequestFailed
     | GotMatches (List Match)
 
 
@@ -61,6 +63,7 @@ type alias Match =
     , searchName : String
     , use : Bool
     , count : Int
+    , inTree : Bool
     }
 
 
@@ -88,8 +91,10 @@ type Msg
     | CheckTaxa
     | GotMatchesMsg (List Match)
     | GotPointsMsg (List Match)
+    | GotTreeMsg (List Match)
     | MatchingFailedMsg
     | GettingPointsFailedMsg
+    | TreeRequestFailedMsg
     | UpdateSearchName Int String
     | ToggleUseName Int
     | MatchAgain
@@ -130,6 +135,14 @@ update msg model =
         GotPointsMsg matches ->
             case model.state of
                 RequestingPoints ->
+                    { model | state = RequestingTree } ! [ requestTree model.programFlags matches ]
+
+                _ ->
+                    model ! []
+
+        GotTreeMsg matches ->
+            case model.state of
+                RequestingTree ->
                     { model | state = GotMatches matches } ! []
 
                 _ ->
@@ -147,6 +160,14 @@ update msg model =
             case model.state of
                 RequestingPoints ->
                     { model | state = PointsRequestFailed } ! []
+
+                _ ->
+                    model ! []
+
+        TreeRequestFailedMsg ->
+            case model.state of
+                RequestingTree ->
+                    { model | state = TreeRequestFailed } ! []
 
                 _ ->
                     model ! []
@@ -249,6 +270,7 @@ gotGbifResponse dontUse response =
                                 Nothing ->
                                     False
                         , count = 0
+                        , inTree = False
                         }
                     )
                 |> GotMatchesMsg
@@ -287,13 +309,56 @@ gotBiotaphyPointsResponse matches response =
                             |> List.map (\(Decoder.BiotaphyPointsResponseItem item) -> item)
                             |> List.filter (\{ taxon_id } -> match.response.taxon_id == Just taxon_id)
                             |> List.head
-                            |> Maybe.map (\{ count } -> { match | count = count, use = count > 30 })
+                            |> Maybe.map (\{ count } -> { match | count = count, use = count >= 30 })
                             |> Maybe.withDefault match
                     )
                 |> GotPointsMsg
 
         Err err ->
             GettingPointsFailedMsg
+
+
+requestTree : Flags -> List Match -> Cmd Msg
+requestTree flags matches =
+    Http.request
+        { method = "POST"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = flags.apiRoot ++ "opentree"
+        , body =
+            matches
+                |> List.filterMap (.response >> .taxon_id)
+                |> Decoder.OpenTreePOST
+                |> Encoder.encodeOpenTreePOST
+                |> Http.jsonBody
+        , expect = Http.expectJson Decoder.decodeOpenTreePOSTresponse
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send (gotOpenTreeResponse matches)
+
+
+gotOpenTreeResponse : List Match -> Result Http.Error Decoder.OpenTreePOSTresponse -> Msg
+gotOpenTreeResponse matches response =
+    case response of
+        Ok (Decoder.OpenTreePOSTresponse { unmatched_ids }) ->
+            let
+                (Decoder.OpenTreePOSTresponseUnmatched_ids unmatchedIds) =
+                    unmatched_ids
+
+                inTree match =
+                    case match.response.taxon_id of
+                        Just id ->
+                            not <| List.member id unmatchedIds
+
+                        Nothing ->
+                            False
+            in
+                matches
+                    |> List.map (\match -> { match | inTree = inTree match, use = match.use && inTree match })
+                    |> GotTreeMsg
+
+        Err err ->
+            TreeRequestFailedMsg
 
 
 view : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model -> Model -> Html msg
@@ -339,6 +404,12 @@ view mdlMsg mapMsg index mdl model =
                 , Loading.spinner [ Loading.active True ]
                 ]
 
+        RequestingTree ->
+            Options.div []
+                [ Options.styled Html.p [ Typo.title ] [ Html.text "Requesting tree from Open Tree..." ]
+                , Loading.spinner [ Loading.active True ]
+                ]
+
         GotMatches matches ->
             Options.div []
                 [ Options.styled Html.p [ Typo.title ] [ Html.text "GBIF species names match results:" ]
@@ -348,6 +419,7 @@ view mdlMsg mapMsg index mdl model =
                         [ Html.tr []
                             [ Html.th [] [ Html.text "Searched" ]
                             , Html.th [] [ Html.text "Matched" ]
+                            , Html.th [] []
                             , Html.th [] [ Html.text "Points" ]
                             , Html.th [ Attributes.style [ ( "padding-left", "5px" ) ] ] [ Html.text "Use" ]
                             ]
@@ -387,6 +459,13 @@ view mdlMsg mapMsg index mdl model =
                     [ Html.text "There was a problem accessing the iDigBio points API!" ]
                 ]
 
+        TreeRequestFailed ->
+            Options.div []
+                [ Options.styled Html.p
+                    [ Typo.title ]
+                    [ Html.text "There was a problem accessing the Open Tree API!" ]
+                ]
+
 
 viewMatch : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model -> Int -> Match -> Html msg
 viewMatch mdlMsg mapMsg index mdl i item =
@@ -400,32 +479,34 @@ viewMatch mdlMsg mapMsg index mdl i item =
                 ]
                 []
 
-        nameUpdater =
-            Options.styled Html.input
-                [ Options.attribute <| Attributes.value <| item.searchName
-                , Options.onInput (mapMsg << UpdateSearchName i)
-                ]
-                []
+        nameUpdater name =
+            if item.response.search_name == Just name then
+                Html.text <| item.response.search_name ? ""
+            else
+                Options.styled Html.input
+                    [ Options.attribute <| Attributes.value <| item.searchName
+                    , Options.onInput (mapMsg << UpdateSearchName i)
+                    ]
+                    []
+
+        inTree =
+            if item.inTree then
+                Html.text ""
+            else
+                Html.text "⚠️ Not in Open Tree"
     in
         case item.response.accepted_name of
             Just name ->
-                if item.response.search_name == Just name then
-                    Html.tr []
-                        [ Html.td [] [ Html.text <| item.response.search_name ? "" ]
-                        , Html.td [] [ Html.text name ]
-                        , Html.td [ Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text <| toString item.count ]
-                        , Html.td [ Attributes.style [ ( "padding-left", "5px" ) ] ] [ checkbox ]
-                        ]
-                else
-                    Html.tr []
-                        [ Html.td [] [ nameUpdater ]
-                        , Html.td [] [ Html.text name ]
-                        , Html.td [ Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text <| toString item.count ]
-                        , Html.td [ Attributes.style [ ( "padding-left", "5px" ) ] ] [ checkbox ]
-                        ]
+                Html.tr []
+                    [ Html.td [] [ nameUpdater name ]
+                    , Html.td [] [ Html.text name ]
+                    , Html.td [] [ inTree ]
+                    , Html.td [ Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text <| toString item.count ]
+                    , Html.td [ Attributes.style [ ( "padding-left", "5px" ) ] ] [ checkbox ]
+                    ]
 
             Nothing ->
                 Html.tr []
-                    [ Html.td [] [ nameUpdater ]
+                    [ Html.td [] [ nameUpdater "" ]
                     , Html.td [] [ Html.text "⚠️ No match" ]
                     ]

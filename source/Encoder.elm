@@ -39,6 +39,11 @@ encodeBiotaphyPointsPost (BiotaphyPointsPost taxonIds) =
     taxonIds |> List.map int |> list
 
 
+encodeOpenTreePOST : OpenTreePOST -> Value
+encodeOpenTreePOST (OpenTreePOST taxonIds) =
+    taxonIds |> List.map int |> list
+
+
 encodeOccurrenceMetadata : OccurrenceMetadata -> Value
 encodeOccurrenceMetadata (OccurrenceMetadata { role, field }) =
     [ role |> Maybe.map (encodeOccurrenceMetadataRole >> (,) "role")
