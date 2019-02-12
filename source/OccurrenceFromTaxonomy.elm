@@ -336,7 +336,8 @@ view ({ options, filters, loading } as model) =
                     |> List.map
                         (\rank ->
                             Html.tr []
-                                [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text <| toString rank ++ ": " ]
+                                [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ]
+                                    [ toString rank ++ ": " |> String.dropLeft 5 |> Html.text ]
                                 , Html.td [] [ selector loading filters rank <| Dict.get (rankString rank) options ? [] ]
                                 ]
                         )
