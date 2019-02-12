@@ -103,6 +103,7 @@ type alias Model =
     , speciesForOccurrences : List TaxonomyListItem
     , selectedSpeciesForOccurrences : List String
     , taxa : List TaxonomyListItem
+    , speciesFound : Int
     , loading : Bool
     , flags : Flags
     }
@@ -117,6 +118,7 @@ init flags =
     , speciesForOccurrences = []
     , selectedSpeciesForOccurrences = []
     , taxa = []
+    , speciesFound = 0
     , loading = False
     , flags = flags
     }
@@ -163,7 +165,7 @@ update msg model =
                                 TaxonomyListItem { taxon_key = taxon_key, scientific_name = scientific_name }
                             )
             in
-                ( { model | rank = rank, options = options, taxa = taxa, loading = False }, Cmd.none )
+                ( { model | rank = rank, options = options, taxa = taxa, speciesFound = speciesFound, loading = False }, Cmd.none )
 
         SetFilter rank value ->
             let
@@ -341,7 +343,13 @@ view ({ options, filters, loading } as model) =
                 )
             ]
         , Html.div [ Html.Attributes.style [ ( "margin-left", "20px" ) ] ]
-            [ Options.styled Html.p [ Typo.subhead ] [ Html.text "Matching species" ]
+            [ Html.p []
+                [ Options.span [ Typo.subhead ] [ Html.text "Matching species" ]
+                , if model.speciesFound /= List.length model.taxa then
+                    Html.text <| " (showing " ++ (toString <| List.length model.taxa) ++ " of " ++ (toString model.speciesFound) ++ ")"
+                  else
+                    Html.text <| " (found " ++ (toString model.speciesFound) ++ ")"
+                ]
             , Html.select
                 [ Html.Attributes.style [ ( "height", "400px" ), ( "width", "600px" ) ]
                 , Html.Attributes.multiple True
