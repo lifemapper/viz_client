@@ -221,7 +221,11 @@ update index msg model =
                         model ! []
 
                     _ ->
-                        ( { model | source = Taxonomy <| OccurrenceFromTaxonomy.init model.programFlags }, Cmd.none )
+                        let
+                            ( taxonomy, cmd ) =
+                                OccurrenceFromTaxonomy.init model.programFlags
+                        in
+                            ( { model | source = Taxonomy taxonomy }, Cmd.map TaxonomyMsg cmd )
 
             UseTaxonList ->
                 case model.source of

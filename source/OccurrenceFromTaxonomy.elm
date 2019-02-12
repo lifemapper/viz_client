@@ -25,9 +25,10 @@
 module OccurrenceFromTaxonomy exposing (Model, Msg, init, getTaxonIds, update, view)
 
 import Maybe.Extra exposing ((?))
-import Set exposing (Set)
+import List.Extra as List
 import Dict exposing (Dict)
 import Json.Decode as Json
+import Json.Encode as Encode
 import Html exposing (Html)
 import Html.Events as Events
 import Html.Attributes
@@ -35,41 +36,69 @@ import Material.Options as Options
 import Material.Typography as Typo
 import Http
 import QueryString as Q
-import Decoder exposing (TaxonomyList(..), TaxonomyListItem(..), TaxonomyListItemRecord)
 import ProgramFlags exposing (Flags)
+import Decoder
 
 
-type alias Facets =
-    { taxonClass : Set String
-    , taxonFamily : Set String
-    , taxonGenus : Set String
-    , taxonKingdom : Set String
-    , taxonOrder : Set String
-    , taxonPhylum : Set String
-    }
+type TaxonomyList
+    = TaxonomyList (List TaxonomyListItem)
 
 
-initFacets : Facets
-initFacets =
-    { taxonClass = Set.empty
-    , taxonFamily = Set.empty
-    , taxonGenus = Set.empty
-    , taxonOrder = Set.empty
-    , taxonPhylum = Set.empty
-    , taxonKingdom =
-        Set.fromList
-            [ "Animalia"
-            , "Chromista"
-            , "Fungi"
-            , "Plantae"
-            , "Protozoa"
-            ]
-    }
+type TaxonomyListItem
+    = TaxonomyListItem { taxon_key : String, scientific_name : String }
+
+
+type TaxonRank
+    = TaxonKingdom
+    | TaxonPhylum
+    | TaxonClass
+    | TaxonOrder
+    | TaxonFamily
+    | TaxonGenus
+    | TaxonSpecies
+
+
+ranks : List TaxonRank
+ranks =
+    [ TaxonKingdom
+    , TaxonPhylum
+    , TaxonClass
+    , TaxonOrder
+    , TaxonFamily
+    , TaxonGenus
+    , TaxonSpecies
+    ]
+
+
+rankString : TaxonRank -> String
+rankString rank =
+    case rank of
+        TaxonKingdom ->
+            "taxon_kingdom"
+
+        TaxonPhylum ->
+            "taxon_phylum"
+
+        TaxonClass ->
+            "taxon_class"
+
+        TaxonOrder ->
+            "taxon_order"
+
+        TaxonFamily ->
+            "taxon_family"
+
+        TaxonGenus ->
+            "taxon_genus"
+
+        TaxonSpecies ->
+            "taxon_species"
 
 
 type alias Model =
-    { facets : Facets
-    , filters : Dict String String
+    { filters : Dict String String
+    , options : Dict String (List String)
+    , rank : Maybe TaxonRank
     , selectedSpecies : List String
     , speciesForOccurrences : List TaxonomyListItem
     , selectedSpeciesForOccurrences : List String
@@ -79,10 +108,11 @@ type alias Model =
     }
 
 
-init : Flags -> Model
+init : Flags -> ( Model, Cmd Msg )
 init flags =
-    { facets = initFacets
-    , filters = Dict.empty
+    { filters = Dict.empty
+    , options = Dict.empty
+    , rank = Just TaxonKingdom
     , selectedSpecies = []
     , speciesForOccurrences = []
     , selectedSpeciesForOccurrences = []
@@ -90,37 +120,71 @@ init flags =
     , loading = False
     , flags = flags
     }
+        ! [ getFacets flags Dict.empty TaxonKingdom ]
 
 
 getTaxonIds : Model -> Decoder.BoomOccurrenceSetTaxon_ids
 getTaxonIds model =
     model.speciesForOccurrences
-        |> List.filterMap
-            (\(TaxonomyListItem { taxon_key }) ->
-                taxon_key
-                    |> Maybe.andThen (String.toInt >> Result.toMaybe)
-            )
+        |> List.filterMap (\(TaxonomyListItem { taxon_key }) -> taxon_key |> String.toInt |> Result.toMaybe)
         |> Decoder.BoomOccurrenceSetTaxon_ids
 
 
 type Msg
-    = SetFilter String String
-    | ClearFilter String
+    = SetFilter TaxonRank String
+    | ClearFilter TaxonRank
     | SpeciesSelected (List String)
     | SpeciesForOccurrencesSelected (List String)
-    | GotSpecies TaxonomyList
     | TransferSelectedSpecies
     | RemoveSelectedSpecies
+    | GotFacets TaxonRank Int (List ( String, String )) (List ( String, Int ))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        SetFilter key value ->
-            updateFilters (Dict.insert key value model.filters) model
+        GotFacets facetField speciesFound species facets ->
+            let
+                ( higher, lower ) =
+                    List.splitWhen ((==) facetField) ranks ? ( [], [] )
 
-        ClearFilter key ->
-            updateFilters (Dict.remove key model.filters) model
+                rank =
+                    lower |> List.getAt 1
+
+                options =
+                    List.foldl (\rank -> Dict.remove (rankString rank)) model.options lower
+                        |> Dict.insert (rankString facetField) (List.map Tuple.first facets)
+
+                taxa =
+                    species
+                        |> List.sortBy Tuple.second
+                        |> List.map
+                            (\( taxon_key, scientific_name ) ->
+                                TaxonomyListItem { taxon_key = taxon_key, scientific_name = scientific_name }
+                            )
+            in
+                ( { model | rank = rank, options = options, taxa = taxa, loading = False }, Cmd.none )
+
+        SetFilter rank value ->
+            let
+                ( higher, lower ) =
+                    List.splitWhen ((==) rank) ranks ? ( [], [] )
+
+                filters =
+                    List.foldl (\rank -> Dict.remove (rankString rank)) model.filters lower
+                        |> Dict.insert (rankString rank) value
+            in
+                updateFilters filters model
+
+        ClearFilter rank ->
+            let
+                ( higher, lower ) =
+                    List.splitWhen ((==) rank) ranks ? ( [], [] )
+
+                filters =
+                    List.foldl (\rank -> Dict.remove (rankString rank)) model.filters lower
+            in
+                updateFilters filters { model | rank = Just rank }
 
         SpeciesSelected keys ->
             ( { model | selectedSpecies = keys }, Cmd.none )
@@ -133,17 +197,13 @@ update msg model =
                 speciesToAdd =
                     model.taxa
                         |> List.filter
-                            (\(TaxonomyListItem { taxon_key }) ->
-                                taxon_key
-                                    |> Maybe.map (flip List.member model.selectedSpecies)
-                                    |> Maybe.withDefault False
-                            )
+                            (\(TaxonomyListItem { taxon_key }) -> List.member taxon_key model.selectedSpecies)
                         |> List.filter (not << flip List.member model.speciesForOccurrences)
 
                 speciesForOccurrences =
                     model.speciesForOccurrences
                         ++ speciesToAdd
-                        |> List.sortBy (\(TaxonomyListItem { scientific_name }) -> scientific_name ? "")
+                        |> List.sortBy (\(TaxonomyListItem { scientific_name }) -> scientific_name)
             in
                 ( { model
                     | speciesForOccurrences = speciesForOccurrences
@@ -158,104 +218,127 @@ update msg model =
                 speciesForOccurrences =
                     model.speciesForOccurrences
                         |> List.filter
-                            (\(TaxonomyListItem { taxon_key }) ->
-                                taxon_key
-                                    |> Maybe.map (not << flip List.member model.selectedSpeciesForOccurrences)
-                                    |> Maybe.withDefault True
-                            )
+                            (\(TaxonomyListItem { taxon_key }) -> not <| List.member taxon_key model.selectedSpeciesForOccurrences)
             in
                 ( { model | speciesForOccurrences = speciesForOccurrences }, Cmd.none )
-
-        GotSpecies (TaxonomyList list) ->
-            let
-                facets =
-                    List.foldr addAttrs initFacets list
-
-                taxa =
-                    list |> List.sortBy (\(TaxonomyListItem { scientific_name }) -> scientific_name ? "")
-            in
-                ( { model | facets = facets, taxa = taxa, loading = False }, Cmd.none )
-
-
-addAttrs : TaxonomyListItem -> Facets -> Facets
-addAttrs (TaxonomyListItem item) facets =
-    let
-        maybeInsert attr facet =
-            attr |> Maybe.map (\a -> Set.insert a facet) |> Maybe.withDefault facet
-    in
-        { taxonClass = maybeInsert item.taxon_class facets.taxonClass
-        , taxonFamily = maybeInsert item.taxon_family facets.taxonFamily
-        , taxonGenus = maybeInsert item.taxon_genus facets.taxonGenus
-        , taxonKingdom = maybeInsert item.taxon_kingdom facets.taxonKingdom
-        , taxonOrder = maybeInsert item.taxon_order facets.taxonOrder
-        , taxonPhylum = maybeInsert item.taxon_phylum facets.taxonPhylum
-        }
 
 
 updateFilters : Dict String String -> Model -> ( Model, Cmd Msg )
 updateFilters filters model =
-    ( { model | filters = filters, loading = True, selectedSpecies = [] }, getSpecies model.flags filters )
+    ( { model | filters = filters, loading = True, selectedSpecies = [] }
+    , Maybe.map (getFacets model.flags filters) model.rank ? Cmd.none
+    )
 
 
-getSpecies : Flags -> Dict String String -> Cmd Msg
-getSpecies flags filters =
+type FacetCount
+    = FacetField String
+    | FacetCount Int
+
+
+type alias SolrResponse =
+    { facetCounts : List ( String, List FacetCount )
+    , numFound : Int
+    , species : List ( String, String )
+    }
+
+
+getFacets : Flags -> Dict String String -> TaxonRank -> Cmd Msg
+getFacets flags filters facetField =
     let
+        q =
+            if filters |> Dict.isEmpty then
+                "*:*"
+            else
+                filters |> Dict.toList |> List.map (\( k, v ) -> k ++ ":" ++ v) |> String.join " AND "
+
         query =
-            filters |> Dict.foldr Q.add Q.empty |> Q.render
+            Q.empty
+                |> Q.add "q" q
+                |> Q.add "facet" "on"
+                |> Q.add "facet.field" (rankString facetField)
+                |> Q.add "facet.sort" "index"
+                |> Q.add "facet.mincount" "1"
+                |> Q.add "facet.limit" "-1"
+                |> Q.add "wt" "json"
+                |> Q.add "rows" "1000"
+                |> Q.render
+                |> String.dropLeft 1
+                -- remove the leading ?
+                |>
+                    Encode.string
     in
         Http.request
-            { method = "GET"
+            { method = "POST"
             , headers = [ Http.header "Accept" "application/json" ]
-            , url = flags.apiRoot ++ "taxonomy" ++ query
-            , body = Http.emptyBody
-            , expect = Http.expectJson Decoder.decodeTaxonomyList
+            , url = flags.apiRoot ++ "rawsolr"
+            , body = Http.jsonBody <| Encode.object [ ( "collection", Encode.string "taxonomy" ), ( "query_string", query ) ]
+            , expect =
+                Http.expectJson <|
+                    Json.map3 SolrResponse
+                        (Json.at [ "facet_counts", "facet_fields" ] <|
+                            Json.keyValuePairs <|
+                                Json.list <|
+                                    Json.oneOf [ Json.map FacetField Json.string, Json.map FacetCount Json.int ]
+                        )
+                        (Json.at [ "response", "numFound" ] Json.int)
+                        (Json.at [ "response", "docs" ] <|
+                            Json.list <|
+                                Json.map2 (,)
+                                    (Json.field "taxon_key" Json.string)
+                                    (Json.field "scientific_name" Json.string)
+                        )
             , timeout = Nothing
             , withCredentials = False
             }
-            |> Http.send gotSpecies
+            |> Http.send (gotFacets facetField)
 
 
-gotSpecies : Result Http.Error TaxonomyList -> Msg
-gotSpecies result =
+gotFacets : TaxonRank -> Result Http.Error SolrResponse -> Msg
+gotFacets facetField result =
     case result of
-        Ok list ->
-            GotSpecies list
+        Ok { facetCounts, numFound, species } ->
+            case facetCounts of
+                [ ( rank, facetCounts ) ] ->
+                    facetCounts
+                        |> List.groupsOf 2
+                        |> List.filterMap
+                            (\group ->
+                                case group of
+                                    [ FacetField s, FacetCount c ] ->
+                                        if c > 0 then
+                                            Just ( s, c )
+                                        else
+                                            Nothing
 
-        Err err ->
-            Debug.crash (toString err)
+                                    _ ->
+                                        Debug.log "Unexpected facet counts structure" group
+                                            |> always Nothing
+                            )
+                        |> GotFacets facetField numFound species
+
+                _ ->
+                    Debug.crash "bad solr response" facetCounts
+
+        _ ->
+            Debug.crash "problem getting taxonomy facets" result
 
 
 view : Model -> Html Msg
-view ({ facets, filters, loading } as model) =
+view ({ options, filters, loading } as model) =
     Html.div [ Html.Attributes.style [ ( "display", "flex" ) ] ]
         [ Html.div []
             [ Options.styled Html.p [ Typo.subhead ] [ Html.text "Filter available species" ]
             , Html.table []
-                [ Html.tr []
-                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Kingdom: " ]
-                    , Html.td [] [ selector loading filters "taxonKingdom" facets.taxonKingdom ]
-                    ]
-                , Html.tr []
-                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Phylum: " ]
-                    , Html.td [] [ selector loading filters "taxonPhylum" facets.taxonPhylum ]
-                    ]
-                , Html.tr []
-                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Class: " ]
-                    , Html.td [] [ selector loading filters "taxonClass" facets.taxonClass ]
-                    ]
-                , Html.tr []
-                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Order: " ]
-                    , Html.td [] [ selector loading filters "taxonOrder" facets.taxonOrder ]
-                    ]
-                , Html.tr []
-                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Family: " ]
-                    , Html.td [] [ selector loading filters "taxonFamily" facets.taxonFamily ]
-                    ]
-                , Html.tr []
-                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Genus: " ]
-                    , Html.td [] [ selector loading filters "taxonGenus" facets.taxonGenus ]
-                    ]
-                ]
+                (ranks
+                    |> List.remove TaxonSpecies
+                    |> List.map
+                        (\rank ->
+                            Html.tr []
+                                [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text <| toString rank ++ ": " ]
+                                , Html.td [] [ selector loading filters rank <| Dict.get (rankString rank) options ? [] ]
+                                ]
+                        )
+                )
             ]
         , Html.div [ Html.Attributes.style [ ( "margin-left", "20px" ) ] ]
             [ Options.styled Html.p [ Typo.subhead ] [ Html.text "Matching species" ]
@@ -302,27 +385,24 @@ itemsSelected msg =
 displayName : List String -> TaxonomyListItem -> Html Msg
 displayName selectedSpecies (TaxonomyListItem { scientific_name, taxon_key }) =
     let
-        key =
-            taxon_key |> Maybe.withDefault ""
-
         selected =
-            List.member key selectedSpecies
+            List.member taxon_key selectedSpecies
     in
-        Html.option [ Html.Attributes.value key, Html.Attributes.selected selected ]
-            [ Html.text <| Maybe.withDefault "" scientific_name ]
+        Html.option [ Html.Attributes.value taxon_key, Html.Attributes.selected selected ]
+            [ Html.text scientific_name ]
 
 
-selector : Bool -> Dict String String -> String -> Set String -> Html Msg
-selector loading filters key values =
-    case Dict.get key filters of
+selector : Bool -> Dict String String -> TaxonRank -> List String -> Html Msg
+selector loading filters rank values =
+    case Dict.get (rankString rank) filters of
         Just value ->
             Html.span []
-                [ Html.button [ Events.onClick <| ClearFilter key, Html.Attributes.disabled loading ] [ Html.text "X" ]
+                [ Html.button [ Events.onClick <| ClearFilter rank, Html.Attributes.disabled loading ] [ Html.text "X" ]
                 , Html.text (" " ++ value)
                 ]
 
         Nothing ->
-            case Set.toList values of
+            case values of
                 [] ->
                     Html.select [] []
 
@@ -332,4 +412,4 @@ selector loading filters key values =
                 values ->
                     ("--" :: values)
                         |> List.map (\v -> Html.option [] [ Html.text v ])
-                        |> Html.select [ Events.onInput <| SetFilter key, Html.Attributes.disabled loading ]
+                        |> Html.select [ Events.onInput <| SetFilter rank, Html.Attributes.disabled loading ]
