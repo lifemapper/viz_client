@@ -112,7 +112,7 @@ type Msg
     | BBoxSelected (List Float)
     | RunMCPA
     | GotPostResponse (Result Http.Error Decoder.AtomObject)
-    | StatusUpdate Decoder.GridSet
+    | StatusUpdate Decoder.Gridset
 
 
 selector : Bool -> Dict String String -> String -> Set String -> Html Msg
@@ -378,9 +378,9 @@ update msg model =
                     Debug.log "Post failed" err
                         |> always ( { model | postStatus = PostFailed }, Cmd.none )
 
-        StatusUpdate (Decoder.GridSet { id, matrices }) ->
+        StatusUpdate (Decoder.Gridset { id, matrices }) ->
             let
-                (Decoder.GridSetMatrices ms) =
+                (Decoder.GridsetMatrices ms) =
                     matrices
 
                 total =
@@ -500,14 +500,14 @@ checkStatus flags id =
         , headers = [ Http.header "Accept" "application/json" ]
         , url = flags.apiRoot ++ "gridset/" ++ (toString id)
         , body = Http.emptyBody
-        , expect = Http.expectJson Decoder.decodeGridSet
+        , expect = Http.expectJson Decoder.decodeGridset
         , timeout = Nothing
         , withCredentials = False
         }
         |> Http.send gotGridSet
 
 
-gotGridSet : Result Http.Error Decoder.GridSet -> Msg
+gotGridSet : Result Http.Error Decoder.Gridset -> Msg
 gotGridSet result =
     case result of
         Ok gridSet ->

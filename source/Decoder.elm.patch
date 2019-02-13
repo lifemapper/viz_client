@@ -1,5 +1,5 @@
---- Decoder.elm.generated	2017-07-12 13:59:59.267704904 -0500
-+++ Decoder.elm	2017-07-12 14:01:31.637350766 -0500
+--- Decoder.elm.generated	2019-02-13 11:47:45.341672729 -0600
++++ Decoder.elm	2019-02-13 11:41:48.699109348 -0600
 @@ -42,18 +42,14 @@
          |> map Algorithm
  
@@ -23,3 +23,27 @@
  
  
  type AtomList
+@@ -225,8 +221,8 @@
+ 
+ 
+ type BoomHypothesesHypothesis_package_referenceReference_type
+-    = Gridset
+-    | Upload
++    = HypothesesFromGridset
++    | HypothesesFromUpload
+ 
+ 
+ decodeBoomHypothesesHypothesis_package_referenceReference_type : Decoder BoomHypothesesHypothesis_package_referenceReference_type
+@@ -235,10 +231,10 @@
+         decodeToType string =
+             case string of
+                 "gridset" ->
+-                    Result.Ok Gridset
++                    Result.Ok HypothesesFromGridset
+ 
+                 "upload" ->
+-                    Result.Ok Upload
++                    Result.Ok HypothesesFromUpload
+ 
+                 _ ->
+                     Result.Err ("Invalid value for BoomHypothesesHypothesis_package_referenceReference_type. Value: " ++ string)

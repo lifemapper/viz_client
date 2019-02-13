@@ -84,6 +84,7 @@ toApi model =
                 , point_count_min = Nothing
                 , taxon_ids = Nothing
                 , taxon_names = Nothing
+                , delimiter = Nothing
                 }
 
         Upload upload ->
@@ -93,6 +94,7 @@ toApi model =
                 , point_count_min = Nothing
                 , taxon_ids = Nothing
                 , taxon_names = Nothing
+                , delimiter = Nothing
                 }
 
         Taxonomy taxonomy ->
@@ -102,6 +104,7 @@ toApi model =
                 , point_count_min = Nothing
                 , taxon_ids = Just (taxonomy |> OccurrenceFromTaxonomy.getTaxonIds)
                 , taxon_names = Nothing
+                , delimiter = Nothing
                 }
 
         TaxonList taxonList ->
@@ -111,6 +114,7 @@ toApi model =
                 , point_count_min = Nothing
                 , taxon_ids = Just (taxonList |> OccurrenceSetTaxonList.getTaxonIds |> Decoder.BoomOccurrenceSetTaxon_ids)
                 , taxon_names = Nothing
+                , delimiter = Nothing
                 }
 
 

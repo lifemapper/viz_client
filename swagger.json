@@ -284,7 +284,7 @@
       "post": {
         "summary": "Use GBIF services to find accepted names for provided names",
         "tags": [
-          "gbif"
+          "Gbif"
         ],
         "parameters": [
           {
@@ -314,7 +314,7 @@
       "post": {
         "summary": "Return the number of points obtained for each of the provided taxon ids",
         "tags": [
-          "biotaphy"
+          "BiotaPhy"
         ],
         "parameters": [
           {
@@ -352,7 +352,7 @@
             "$ref": "#/parameters/BBox"
           },
           {
-            "$ref": "#/parameters/GridSetId"
+            "$ref": "#/parameters/GridsetId"
           },
           {
             "$ref": "#/parameters/ModelScenarioCode"
@@ -414,7 +414,7 @@
             "$ref": "#/parameters/ArchiveNameReq"
           },
           {
-            "$ref": "#/parameters/GridSetIdReq"
+            "$ref": "#/parameters/GridsetIdReq"
           },
           {
             "$ref": "#/parameters/AlgorithmCode"
@@ -548,7 +548,7 @@
           }
         ],
         "tags": [
-          "Grid Set"
+          "Gridset"
         ],
         "responses": {
           "200": {
@@ -585,7 +585,7 @@
           }
         ],
         "tags": [
-          "Grid Set"
+          "Gridset"
         ],
         "responses": {
           "200": {
@@ -607,13 +607,13 @@
           }
         ],
         "tags": [
-          "Grid Set"
+          "Gridset"
         ],
         "responses": {
           "200": {
             "description": "Returns a grid set object",
             "schema": {
-              "$ref": "#/definitions/GridSet"
+              "$ref": "#/definitions/Gridset"
             }
           }
         }
@@ -665,7 +665,7 @@
           }
         ],
         "tags": [
-          "Grid Set",
+          "Gridset",
           "Matrix"
         ],
         "responses": {
@@ -719,7 +719,7 @@
         ],
         "tags": [
           "Matrix",
-          "Grid Set"
+          "Gridset"
         ],
         "responses": {
           "200": {
@@ -744,7 +744,7 @@
           }
         ],
         "tags": [
-          "Grid Set",
+          "Gridset",
           "Matrix"
         ],
         "responses": {
@@ -776,7 +776,7 @@
           }
         ],
         "tags": [
-          "Grid Set",
+          "Gridset",
           "Matrix",
           "Matrix Column"
         ],
@@ -821,7 +821,7 @@
           "202": {
             "description": "Returns the gridset object that the analyses were submitted for",
             "schema": {
-              "$ref": "#/definitions/GridSet"
+              "$ref": "#/definitions/Gridset"
             }
           },
           "400": {
@@ -935,6 +935,28 @@
         }
       }
     },
+    "/gridset/{gridsetId}/progress": {
+      "get": {
+        "summary": "Lifemapper gridset progress service",
+        "parameters": [
+          {
+            "$ref": "#/parameters/PathGridsetId"
+          }
+        ],
+        "description": "The gridset progress endpoint returns information about the status of\nthe gridset's matrix and projection sub-objects\n",
+        "tags": [
+          "Gridset"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the progress of the gridset",
+            "schema": {
+              "$ref": "#/definitions/GridsetProgress"
+            }
+          }
+        }
+      }
+    },
     "/gridset/{gridsetId}/tree": {
       "get": {
         "summary": "Get the tree associated with this gridset",
@@ -945,7 +967,7 @@
         ],
         "tags": [
           "Tree",
-          "Grid Set"
+          "Gridset"
         ],
         "responses": {
           "200": {
@@ -980,7 +1002,7 @@
         ],
         "tags": [
           "Tree",
-          "Grid Set"
+          "Gridset"
         ],
         "responses": {
           "201": {
@@ -1003,7 +1025,7 @@
         ],
         "tags": [
           "Tree",
-          "Grid Set"
+          "Gridset"
         ],
         "responses": {
           "204": {
@@ -1327,7 +1349,7 @@
             "$ref": "#/parameters/BeforeStatus"
           },
           {
-            "$ref": "#/parameters/GridSetId"
+            "$ref": "#/parameters/GridsetId"
           }
         ],
         "tags": [
@@ -1406,7 +1428,7 @@
             "$ref": "#/parameters/BeforeStatus"
           },
           {
-            "$ref": "#/parameters/GridSetId"
+            "$ref": "#/parameters/GridsetId"
           }
         ],
         "tags": [
@@ -1481,8 +1503,8 @@
       "post": {
         "summary": "Retrieve a tree from Open Tree matching the provided input",
         "tags": [
-          "tree",
-          "opentree"
+          "OpenTree",
+          "Tree"
         ],
         "parameters": [
           {
@@ -1564,7 +1586,7 @@
             "$ref": "#/parameters/Squid"
           },
           {
-            "$ref": "#/parameters/GridSetId"
+            "$ref": "#/parameters/GridsetId"
           }
         ],
         "tags": [
@@ -1658,7 +1680,7 @@
             "$ref": "#/parameters/Squid"
           },
           {
-            "$ref": "#/parameters/GridSetId"
+            "$ref": "#/parameters/GridsetId"
           }
         ],
         "tags": [
@@ -2441,6 +2463,310 @@
         }
       }
     },
+    "BiotaphyPointsPost": {
+      "description": "A list of taxon ids to obtain",
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    "BiotaphyPointsResponse": {
+      "description": "Point counts for the given taxon ids",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "taxon_id",
+          "count"
+        ],
+        "properties": {
+          "taxon_id": {
+            "type": "integer"
+          },
+          "count": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "BoomGlobalPAM": {
+      "type": "object",
+      "description": "A global PAM post object",
+      "required": [
+        "shapegrid",
+        "intersect_parameters"
+      ],
+      "properties": {
+        "shapegrid": {
+          "type": "object",
+          "properties": {
+            "ref": {
+              "type": "string"
+            },
+            "id": {
+              "type": "integer"
+            },
+            "post": {
+              "$ref": "#/definitions/ShapegridPOST"
+            }
+          }
+        },
+        "intersect_parameters": {
+          "type": "object",
+          "required": [
+            "min_presence",
+            "max_presence",
+            "value_name",
+            "min_percent"
+          ],
+          "properties": {
+            "min_presence": {
+              "description": "The minimum value that should be considered \"present\"",
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_presence": {
+              "description": "The maximum value that should be considered \"present\"",
+              "type": "integer",
+              "minimum": 1
+            },
+            "value_name": {
+              "description": "Use pixel for rasters",
+              "type": "string"
+            },
+            "min_percent": {
+              "description": "The minimum percentage of the grid cell classified as present to \nconsider the grid cell present\n",
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "BoomHypotheses": {
+      "type": "object",
+      "description": "Biogeographic hypotheses specification for use with MCPA",
+      "required": [
+        "hypothesis_package_reference"
+      ],
+      "properties": {
+        "hypothesis_package_reference": {
+          "description": "Reference hypothesis package previously uploaded",
+          "type": "object",
+          "required": [
+            "identifier",
+            "reference_type"
+          ],
+          "properties": {
+            "identifier": {
+              "type": "string"
+            },
+            "reference_type": {
+              "type": "string",
+              "enum": [
+                "gridset",
+                "upload"
+              ]
+            }
+          }
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "file_name"
+            ],
+            "properties": {
+              "event_field": {
+                "type": "string"
+              },
+              "file_name": {
+                "type": "string"
+              },
+              "hypothesis_name": {
+                "type": "string"
+              },
+              "keywords": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "BoomMCPA": {
+      "type": "object",
+      "required": [
+        "compute_pam_stats",
+        "hypotheses_package_name"
+      ],
+      "properties": {
+        "compute_mcpa": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "hypotheses_package_name": {
+          "description": "The name of the previously uploaded hypothesis package",
+          "type": "string"
+        }
+      }
+    },
+    "BoomOccurrenceSet": {
+      "type": "object",
+      "description": "Multiple occurrence set specification either via occurrence set ids or\ngenerated by processing a CSV file\n",
+      "properties": {
+        "delimiter": {
+          "description": "The delimiter for the user occurrence data.  Only provide if using\n\"points_filename\".  Defaults to tab \"\\t\".\n",
+          "type": "string"
+        },
+        "occurrence_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "taxon_ids": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "taxon_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "points_filename": {
+          "description": "This is the name of a previously uploaded file in the user space\n",
+          "type": "string"
+        },
+        "point_count_min": {
+          "type": "integer"
+        }
+      }
+    },
+    "BoomPAMStats": {
+      "type": "object",
+      "description": "Including this option will generate PAM stats for each of the PAMs \nproduced in the BOOM workflow.  \n",
+      "required": [
+        "compute_pam_stats"
+      ],
+      "properties": {
+        "compute_pam_stats": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    "BoomPOST": {
+      "type": "object",
+      "description": "The projection POST object is flexible in that you can specify one or\nmore projections with a single request.  An SDM model is created, but not\nreturned, for every algorithm / occurrence set / model scenario\ncombination.  An SDM projection object is created for every algorithm /\noccurrence set / model scenario / projection scenario combination\n",
+      "properties": {
+        "archive_name": {
+          "type": "string"
+        },
+        "global_pam": {
+          "$ref": "#/definitions/BoomGlobalPAM"
+        },
+        "mcpa": {
+          "$ref": "#/definitions/BoomMCPA"
+        },
+        "occurrence": {
+          "$ref": "#/definitions/BoomOccurrenceSet"
+        },
+        "pam_stats": {
+          "$ref": "#/definitions/BoomPAMStats"
+        },
+        "scenario_package": {
+          "$ref": "#/definitions/BoomScenarioPackage"
+        },
+        "sdm": {
+          "$ref": "#/definitions/BoomSDMs"
+        },
+        "tree": {
+          "type": "object",
+          "description": "Specify the tree to use for this request by id",
+          "properties": {
+            "tree_file_name": {
+              "description": "The file name of the tree that was uploaded",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "BoomScenarioPackage": {
+      "type": "object",
+      "properties": {
+        "scenario_package_filename": {
+          "type": "string"
+        },
+        "scenario_package_name": {
+          "type": "string",
+          "description": "The name of a scenario package to use"
+        },
+        "model_scenario": {
+          "type": "object",
+          "description": "Pick one of the options. Only scenario id is enabled now",
+          "properties": {
+            "scenario_code": {
+              "type": "string"
+            }
+          }
+        },
+        "projection_scenario": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "Use one or the other",
+            "properties": {
+              "scenario_code": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "BoomSDMs": {
+      "type": "object",
+      "description": "This section will specify how to post multiple SDMs in one fell swoop\n",
+      "required": [
+        "algorithm"
+      ],
+      "properties": {
+        "algorithm": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Algorithm"
+          }
+        },
+        "hull_region_intersect_mask": {
+          "type": "object",
+          "description": "This is the only intersect method currently available.  If specified,\nit will intersect a convex hull around the occurrence points with an\necoregions layer to create a mask\n",
+          "properties": {
+            "buffer": {
+              "type": "number",
+              "description": "The buffer, in map units, to use around the points"
+            },
+            "region": {
+              "type": "string",
+              "description": "Layer name in the scenario package to use for ecoregion"
+            }
+          }
+        }
+      }
+    },
     "EnvLayer": {
       "type": "object",
       "properties": {
@@ -2514,33 +2840,7 @@
         }
       }
     },
-    "BiotaphyPointsPost": {
-      "description": "A list of taxon ids to obtain",
-      "type": "array",
-      "items": {
-        "type": "integer"
-      }
-    },
-    "BiotaphyPointsResponse": {
-      "description": "Point counts for the given taxon ids",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "taxon_id",
-          "count"
-        ],
-        "properties": {
-          "taxon_id": {
-            "type": "integer"
-          },
-          "count": {
-            "type": "integer"
-          }
-        }
-      }
-    },
-    "GridSet": {
+    "Gridset": {
       "type": "object",
       "required": [
         "id",
@@ -2557,6 +2857,57 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/Matrix"
+          }
+        }
+      }
+    },
+    "GridsetProgress": {
+      "type": "object",
+      "properties": {
+        "progress": {
+          "type": "number",
+          "description": "The overall progress of the gridset"
+        },
+        "matrices": {
+          "type": "object",
+          "properties": {
+            "waiting": {
+              "type": "integer",
+              "description": "The number of matrices waiting to run"
+            },
+            "running": {
+              "type": "integer",
+              "description": "The number of matrices currently running"
+            },
+            "complete": {
+              "type": "integer",
+              "description": "The number of completed matrices"
+            },
+            "error": {
+              "type": "integer",
+              "description": "The number of matrices that have failed"
+            }
+          }
+        },
+        "projections": {
+          "type": "object",
+          "properties": {
+            "waiting": {
+              "type": "integer",
+              "description": "The number of projections waiting to run"
+            },
+            "running": {
+              "type": "integer",
+              "description": "The number of projections currently running"
+            },
+            "complete": {
+              "type": "integer",
+              "description": "The number of completed projections"
+            },
+            "error": {
+              "type": "integer",
+              "description": "The number of projections that have failed"
+            }
           }
         }
       }
@@ -2864,173 +3215,6 @@
         }
       }
     },
-    "BoomGlobalPAM": {
-      "type": "object",
-      "description": "A global PAM post object",
-      "required": [
-        "shapegrid",
-        "intersect_parameters"
-      ],
-      "properties": {
-        "shapegrid": {
-          "type": "object",
-          "properties": {
-            "ref": {
-              "type": "string"
-            },
-            "id": {
-              "type": "integer"
-            },
-            "post": {
-              "$ref": "#/definitions/ShapegridPOST"
-            }
-          }
-        },
-        "intersect_parameters": {
-          "type": "object",
-          "required": [
-            "min_presence",
-            "max_presence",
-            "value_name",
-            "min_percent"
-          ],
-          "properties": {
-            "min_presence": {
-              "description": "The minimum value that should be considered \"present\"",
-              "type": "integer",
-              "minimum": 1
-            },
-            "max_presence": {
-              "description": "The maximum value that should be considered \"present\"",
-              "type": "integer",
-              "minimum": 1
-            },
-            "value_name": {
-              "description": "Use pixel for rasters",
-              "type": "string"
-            },
-            "min_percent": {
-              "description": "The minimum percentage of the grid cell classified as present to \nconsider the grid cell present\n",
-              "type": "integer"
-            }
-          }
-        }
-      }
-    },
-    "BoomHypotheses": {
-      "type": "object",
-      "description": "Biogeographic hypotheses specification for use with MCPA",
-      "required": [
-        "hypothesis_package_reference"
-      ],
-      "properties": {
-        "hypothesis_package_reference": {
-          "description": "Reference hypothesis package previously uploaded",
-          "type": "object",
-          "required": [
-            "identifier",
-            "reference_type"
-          ],
-          "properties": {
-            "identifier": {
-              "type": "string"
-            },
-            "reference_type": {
-              "type": "string",
-              "enum": [
-                "gridset",
-                "upload"
-              ]
-            }
-          }
-        },
-        "layers": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": [
-              "file_name"
-            ],
-            "properties": {
-              "event_field": {
-                "type": "string"
-              },
-              "file_name": {
-                "type": "string"
-              },
-              "hypothesis_name": {
-                "type": "string"
-              },
-              "keywords": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "BoomMCPA": {
-      "type": "object",
-      "required": [
-        "hypotheses_package_name"
-      ],
-      "properties": {
-        "hypotheses_package_name": {
-          "description": "The name of the previously uploaded hypothesis package",
-          "type": "string"
-        }
-      }
-    },
-    "BoomOccurrenceSet": {
-      "type": "object",
-      "description": "Multiple occurrence set specification either via occurrence set ids or\ngenerated by processing a CSV file\n",
-      "properties": {
-        "occurrence_ids": {
-          "type": "array",
-          "items": {
-            "type": "integer"
-          }
-        },
-        "taxon_ids": {
-          "type": "array",
-          "items": {
-            "type": "integer"
-          }
-        },
-        "taxon_names": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "points_filename": {
-          "description": "This is the name of a previously uploaded file in the user space\n",
-          "type": "string"
-        },
-        "point_count_min": {
-          "type": "integer"
-        }
-      }
-    },
-    "BoomPAMStats": {
-      "type": "object",
-      "description": "Including this option will generate PAM stats for each of the PAMs \nproduced in the BOOM workflow.  \n",
-      "required": [
-        "compute_pam_stats"
-      ],
-      "properties": {
-        "compute_pam_stats": {
-          "type": "integer",
-          "enum": [
-            0,
-            1
-          ]
-        }
-      }
-    },
     "ProjectionMetadata": {
       "type": "object",
       "properties": {
@@ -3047,105 +3231,6 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
-        }
-      }
-    },
-    "BoomPOST": {
-      "type": "object",
-      "description": "The projection POST object is flexible in that you can specify one or\nmore projections with a single request.  An SDM model is created, but not\nreturned, for every algorithm / occurrence set / model scenario\ncombination.  An SDM projection object is created for every algorithm /\noccurrence set / model scenario / projection scenario combination\n",
-      "properties": {
-        "archive_name": {
-          "type": "string"
-        },
-        "global_pam": {
-          "$ref": "#/definitions/BoomGlobalPAM"
-        },
-        "mcpa": {
-          "$ref": "#/definitions/BoomMCPA"
-        },
-        "occurrence": {
-          "$ref": "#/definitions/BoomOccurrenceSet"
-        },
-        "pam_stats": {
-          "$ref": "#/definitions/BoomPAMStats"
-        },
-        "scenario_package": {
-          "$ref": "#/definitions/BoomScenarioPackage"
-        },
-        "sdm": {
-          "$ref": "#/definitions/BoomSDMs"
-        },
-        "tree": {
-          "type": "object",
-          "description": "Specify the tree to use for this request by id",
-          "properties": {
-            "tree_file_name": {
-              "description": "The file name of the tree that was uploaded",
-              "type": "string"
-            }
-          }
-        }
-      }
-    },
-    "BoomScenarioPackage": {
-      "type": "object",
-      "properties": {
-        "scenario_package_filename": {
-          "type": "string"
-        },
-        "scenario_package_name": {
-          "type": "string",
-          "description": "The name of a scenario package to use"
-        },
-        "model_scenario": {
-          "type": "object",
-          "description": "Pick one of the options. Only scenario id is enabled now",
-          "properties": {
-            "scenario_code": {
-              "type": "string"
-            }
-          }
-        },
-        "projection_scenario": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "description": "Use one or the other",
-            "properties": {
-              "scenario_code": {
-                "type": "string"
-              }
-            }
-          }
-        }
-      }
-    },
-    "BoomSDMs": {
-      "type": "object",
-      "description": "This section will specify how to post multiple SDMs in one fell swoop\n",
-      "required": [
-        "algorithm"
-      ],
-      "properties": {
-        "algorithm": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Algorithm"
-          }
-        },
-        "hull_region_intersect_mask": {
-          "type": "object",
-          "description": "This is the only intersect method currently available.  If specified,\nit will intersect a convex hull around the occurrence points with an\necoregions layer to create a mask\n",
-          "properties": {
-            "buffer": {
-              "type": "number",
-              "description": "The buffer, in map units, to use around the points"
-            },
-            "region": {
-              "type": "string",
-              "description": "Layer name in the scenario package to use for ecoregion"
-            }
           }
         }
       }
@@ -3297,26 +3382,6 @@
         },
         "metadataUrl": {
           "type": "string"
-        }
-      }
-    },
-    "Spatial": {
-      "type": "object",
-      "properties": {
-        "epsg": {
-          "type": "integer"
-        },
-        "bbox": {
-          "type": "array",
-          "items": {
-            "type": "number"
-          }
-        },
-        "mapUnits": {
-          "type": "string"
-        },
-        "resolution": {
-          "type": "number"
         }
       }
     },
@@ -3542,6 +3607,26 @@
         },
         "userId": {
           "type": "string"
+        }
+      }
+    },
+    "Spatial": {
+      "type": "object",
+      "properties": {
+        "epsg": {
+          "type": "integer"
+        },
+        "bbox": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "mapUnits": {
+          "type": "string"
+        },
+        "resolution": {
+          "type": "number"
         }
       }
     },
@@ -3905,14 +3990,14 @@
       "type": "string",
       "format": "string"
     },
-    "GridSetId": {
+    "GridsetId": {
       "name": "gridSetId",
       "in": "query",
       "description": "Only return items in this grid set",
       "required": false,
       "type": "string"
     },
-    "GridSetIdReq": {
+    "GridsetIdReq": {
       "name": "gridSetId",
       "in": "query",
       "description": "Subset items from this grid set",

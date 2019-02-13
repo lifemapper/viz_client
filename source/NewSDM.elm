@@ -103,7 +103,7 @@ toApi { algorithmsModel, occurrenceSets, scenarios, treeUpload, hypoUpload, comp
                         Nothing
                     , mcpa =
                         UploadFile.getUploadedFilename hypoUpload
-                            |> Maybe.map (\filename -> Decoder.BoomMCPA { hypotheses_package_name = filename })
+                            |> Maybe.map (\filename -> Decoder.BoomMCPA { hypotheses_package_name = filename, compute_mcpa = Nothing })
                     , pam_stats =
                         if computeStats then
                             Just (Decoder.BoomPAMStats { compute_pam_stats = 1 })
