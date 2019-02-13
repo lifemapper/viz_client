@@ -2863,6 +2863,11 @@
     },
     "GridsetProgress": {
       "type": "object",
+      "required": [
+        "progress",
+        "matrices",
+        "projections"
+      ],
       "properties": {
         "progress": {
           "type": "number",
@@ -2870,6 +2875,12 @@
         },
         "matrices": {
           "type": "object",
+          "required": [
+            "waiting",
+            "running",
+            "complete",
+            "error"
+          ],
           "properties": {
             "waiting": {
               "type": "integer",
@@ -2891,6 +2902,12 @@
         },
         "projections": {
           "type": "object",
+          "required": [
+            "waiting",
+            "running",
+            "complete",
+            "error"
+          ],
           "properties": {
             "waiting": {
               "type": "integer",

@@ -38,7 +38,8 @@ import Leaflet exposing (BoundingBox)
 import Material
 import Material.Options as Options
 import Material.Typography as Typo
-import Material.Spinner as Loading
+import Material.Spinner as Spinner
+import Material.Progress as Loading
 import Material.Grid as Grid
 import Material.Button as Button
 import Material.Icon as Icon
@@ -57,7 +58,9 @@ type alias LoadingInfo =
 
 
 type State
-    = WaitingForListToPopulate Int
+    = RequestingStatus Int
+    | MonitoringProgress Int Decoder.GridsetProgress
+    | GetProjectionsList Int
     | LoadingProjections LoadingInfo
     | DisplaySeparate (List ( ProjectionInfo, MapCard.Model ))
     | DisplayGrouped (List ( List ProjectionInfo, MapCard.Model ))
@@ -76,17 +79,20 @@ type alias Model =
     }
 
 
-init : Flags -> Int -> Model
+init : Flags -> Int -> ( Model, Cmd Msg )
 init flags gridsetId =
     { programFlags = flags
-    , state = WaitingForListToPopulate gridsetId
+    , state = RequestingStatus gridsetId
     , packageStatus = WaitingForPackage gridsetId
     , mdl = Material.model
     }
+        ! [ loadProgress flags gridsetId, checkForPackage flags gridsetId ]
 
 
 type Msg
-    = LoadProjections Int
+    = LoadProgress Int
+    | GotProgress Int Decoder.GridsetProgress
+    | LoadProjections Int
     | GotProjectionAtoms Int (List Decoder.AtomObjectRecord)
     | GotProjection Decoder.ProjectionRecord
     | NewProjectionInfo ProjectionInfo
@@ -136,23 +142,42 @@ update msg model =
             Nop ->
                 ( model, Cmd.none )
 
+            LoadProgress gridsetId ->
+                ( model, loadProgress model.programFlags gridsetId )
+
+            GotProgress gridsetId gridsetProgress ->
+                let
+                    (Decoder.GridsetProgress progress) =
+                        gridsetProgress
+
+                    (Decoder.GridsetProgressMatrices matrices) =
+                        progress.matrices
+
+                    (Decoder.GridsetProgressProjections projections) =
+                        progress.projections
+                in
+                    if matrices.waiting + matrices.running + projections.waiting + projections.running < 1 then
+                        { model | state = GetProjectionsList gridsetId }
+                            ! [ loadProjections model.programFlags gridsetId
+                              , checkForPackage model.programFlags gridsetId
+                              ]
+                    else
+                        ( { model | state = MonitoringProgress gridsetId gridsetProgress }, Cmd.none )
+
             LoadProjections gridsetId ->
-                ( { model | state = WaitingForListToPopulate gridsetId }, loadProjections model.programFlags gridsetId )
+                ( model, loadProjections model.programFlags gridsetId )
 
             CheckForPackage gridsetId ->
                 ( model, checkForPackage model.programFlags gridsetId )
 
             GotProjectionAtoms gridSetId atoms ->
-                if List.length atoms == 0 then
-                    ( { model | state = WaitingForListToPopulate gridSetId }, Cmd.none )
-                else
-                    let
-                        loadingInfo =
-                            { toLoad = atoms, currentlyLoaded = Dict.empty }
-                    in
-                        ( { model | state = LoadingProjections loadingInfo }
-                        , atoms |> List.map (loadMetadata model.programFlags loadingInfo) |> Cmd.batch
-                        )
+                let
+                    loadingInfo =
+                        { toLoad = atoms, currentlyLoaded = Dict.empty }
+                in
+                    ( { model | state = LoadingProjections loadingInfo }
+                    , atoms |> List.map (loadMetadata model.programFlags loadingInfo) |> Cmd.batch
+                    )
 
             GotProjection record ->
                 ( model, loadOccurrenceSet record )
@@ -361,6 +386,30 @@ gotPackageStatus id result =
             GotPackageStatus id False
 
 
+loadProgress : Flags -> Int -> Cmd Msg
+loadProgress { apiRoot } id =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = apiRoot ++ "gridset/" ++ (toString id) ++ "/progress"
+        , body = Http.emptyBody
+        , expect = Http.expectJson Decoder.decodeGridsetProgress
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send (gotProgress id)
+
+
+gotProgress : Int -> Result Http.Error Decoder.GridsetProgress -> Msg
+gotProgress id result =
+    case result of
+        Ok progress ->
+            GotProgress id progress
+
+        Err err ->
+            Debug.log "Error retrieving gridset progress" err |> always Nop
+
+
 loadProjections : Flags -> Int -> Cmd Msg
 loadProjections { apiRoot } id =
     Http.request
@@ -412,11 +461,6 @@ gotMetadata loadingInfo result =
 view : Model -> Html Msg
 view { state, packageStatus, mdl, programFlags } =
     let
-        loading message =
-            Options.div
-                [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text message, Html.p [] [ Loading.spinner [ Loading.active True ] ] ]
-
         header =
             Options.div
                 [ Options.css "display" "flex"
@@ -436,11 +480,56 @@ view { state, packageStatus, mdl, programFlags } =
                 ]
     in
         case state of
-            WaitingForListToPopulate _ ->
-                loading "Waiting for projections..."
+            RequestingStatus _ ->
+                Options.div
+                    [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                    [ Html.text "Requesting status...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
+
+            MonitoringProgress _ (Decoder.GridsetProgress progress) ->
+                let
+                    (Decoder.GridsetProgressProjections projections) =
+                        progress.projections
+
+                    (Decoder.GridsetProgressMatrices matrices) =
+                        progress.matrices
+                in
+                    Options.div
+                        [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
+                        [ Html.text "Waiting for results..."
+                        , Html.p [] [ Loading.progress (100 * progress.progress) ]
+                        , Html.p []
+                            [ Html.text "Projections: "
+                            , Html.text <| toString projections.waiting
+                            , Html.text " waiting. "
+                            , Html.text <| toString projections.running
+                            , Html.text " running. "
+                            , Html.text <| toString projections.complete
+                            , Html.text " complete. "
+                            , Html.text <| toString projections.error
+                            , Html.text " failed. "
+                            ]
+                        , Html.p []
+                            [ Html.text "Matrices: "
+                            , Html.text <| toString matrices.waiting
+                            , Html.text " waiting. "
+                            , Html.text <| toString matrices.running
+                            , Html.text " running. "
+                            , Html.text <| toString matrices.complete
+                            , Html.text " complete. "
+                            , Html.text <| toString matrices.error
+                            , Html.text " failed. "
+                            ]
+                        ]
+
+            GetProjectionsList _ ->
+                Options.div
+                    [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                    [ Html.text "Loading projections...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
 
             LoadingProjections _ ->
-                loading "Loading projections..."
+                Options.div
+                    [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                    [ Html.text "Loading projections...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
 
             DisplaySeparate display ->
                 Options.div []
@@ -532,8 +621,8 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ case model.state of
-            WaitingForListToPopulate gridsetId ->
-                Time.every (5 * Time.second) (always <| LoadProjections gridsetId)
+            MonitoringProgress gridsetId _ ->
+                Time.every (30 * Time.second) (always <| LoadProgress gridsetId)
 
             _ ->
                 Sub.none

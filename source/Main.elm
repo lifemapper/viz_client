@@ -63,7 +63,11 @@ type SDMPage
 
 initResultsPage : Flags -> Int -> ( SDMPage, Cmd Msg )
 initResultsPage flags gridsetId =
-    ( SDMResults.init flags gridsetId |> SDMResults gridsetId, Cmd.none )
+    let
+        ( model_, msg_ ) =
+            SDMResults.init flags gridsetId
+    in
+        ( SDMResults gridsetId model_, Cmd.map SDMResultsMsg msg_ )
 
 
 initNewSDMPage : Flags -> ( SDMPage, Cmd Msg )
