@@ -30,24 +30,24 @@ make clean && make
 ## Development
 
 The build can be accessed locally on the development machine by
-loading the `sdm/index.html` file in a browser. By default, the app
+loading the `boom/index.html` file in a browser. By default, the app
 expects to find Lifemapper webservices on the same host. This can be
-overridden by add the file `sdm/sdmFlagsOverride.js` with the
+overridden by add the file `boom/boomFlagsOverride.js` with the
 appropriate values. For example:
 
 ```
-var sdmFlags = {
+var boomFlags = {
     apiRoot: "http://yeti.lifemapper.org/api/v2/",
     minimumOccurrencePoints: 30,
     completedPollingSeconds: 5
 };
 ```
 
-Note: The `sdmFlagsOverride.js` is excluded from the generated
+Note: The `boomFlagsOverride.js` is excluded from the generated
 tarball.
 
 
 ## Deployment
 
-Unpack the generated `sdm.tar.gz` in the public html directory of the
+Unpack the generated `boom.tar.gz` in the public html directory of the
 LM web server.
