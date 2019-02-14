@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 
 "use strict";
 
-var app = Elm.Main.fullscreen(sdmFlags);
+var app = Elm.Main.fullscreen(boomFlags);
 
 var files = {};
 

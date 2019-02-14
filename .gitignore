@@ -3,7 +3,7 @@
 /source/Decoder.elm
 /boom.tar.gz
 /boom/elm/*.js
-/boom/sdmFlagsOverride.js
+/boom/boomFlagsOverride.js
 /mcpa.tar.gz
 /mcpa/elm/*.js
 /mcpa/package

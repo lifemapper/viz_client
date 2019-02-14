@@ -22,7 +22,7 @@
 -}
 
 
-module SDMResults exposing (Model, init, update, page, Msg)
+module BoomResults exposing (Model, init, update, page, Msg)
 
 import List.Extra as List
 import Maybe.Extra as Maybe

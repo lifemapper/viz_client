@@ -38,8 +38,8 @@ import Navigation as Nav exposing (Location)
 import UrlParser as Url exposing ((</>))
 import Http
 import Page
-import NewSDM
-import SDMResults
+import NewBoom
+import BoomResults
 import BrowseProjectionsPage
 import SignUp
 import ProgramFlags exposing (Flags)
@@ -53,33 +53,33 @@ import Decoder
         )
 
 
-type SDMPage
-    = NewSDM NewSDM.Model
-    | SDMResults Int SDMResults.Model
+type AppPage
+    = NewBoom NewBoom.Model
+    | BoomResults Int BoomResults.Model
     | SignUp SignUp.Model
     | BrowseProjections BrowseProjectionsPage.Model
     | PageNotFound
 
 
-initResultsPage : Flags -> Int -> ( SDMPage, Cmd Msg )
+initResultsPage : Flags -> Int -> ( AppPage, Cmd Msg )
 initResultsPage flags gridsetId =
     let
         ( model_, msg_ ) =
-            SDMResults.init flags gridsetId
+            BoomResults.init flags gridsetId
     in
-        ( SDMResults gridsetId model_, Cmd.map SDMResultsMsg msg_ )
+        ( BoomResults gridsetId model_, Cmd.map BoomResultsMsg msg_ )
 
 
-initNewSDMPage : Flags -> ( SDMPage, Cmd Msg )
-initNewSDMPage flags =
+initNewBoomPage : Flags -> ( AppPage, Cmd Msg )
+initNewBoomPage flags =
     let
         ( model_, msg_ ) =
-            NewSDM.init flags
+            NewBoom.init flags
     in
-        ( NewSDM model_, Cmd.map NewSDMMsg msg_ )
+        ( NewBoom model_, Cmd.map NewBoomMsg msg_ )
 
 
-initSignUpPage : Flags -> ( SDMPage, Cmd Msg )
+initSignUpPage : Flags -> ( AppPage, Cmd Msg )
 initSignUpPage flags =
     let
         ( model_, msg_ ) =
@@ -88,7 +88,7 @@ initSignUpPage flags =
         ( SignUp model_, Cmd.map SignUpMsg msg_ )
 
 
-initBrowsePage : Flags -> ( SDMPage, Cmd Msg )
+initBrowsePage : Flags -> ( AppPage, Cmd Msg )
 initBrowsePage flags =
     let
         ( model_, msg_ ) =
@@ -97,12 +97,12 @@ initBrowsePage flags =
         ( BrowseProjections model_, Cmd.map BrowseProjectionsMsg msg_ )
 
 
-location2Page : Flags -> Location -> Maybe ( SDMPage, Cmd Msg )
+location2Page : Flags -> Location -> Maybe ( AppPage, Cmd Msg )
 location2Page flags location =
     let
         route =
             Url.oneOf
-                [ Url.map (initNewSDMPage flags) Url.top
+                [ Url.map (initNewBoomPage flags) Url.top
                 , Url.map (initResultsPage flags) (Url.s "results" </> Url.int)
                 , Url.map (initBrowsePage flags) (Url.s "browse-projections")
                 , Url.map (initSignUpPage flags) (Url.s "sign-up")
@@ -118,7 +118,7 @@ type GridSets
 
 type alias Model =
     { mdl : Material.Model
-    , page : SDMPage
+    , page : AppPage
     , gridsets : GridSets
     , flags : Flags
     , login : Auth.Model
@@ -127,8 +127,8 @@ type alias Model =
 
 type Msg
     = Mdl (Material.Msg Msg)
-    | NewSDMMsg NewSDM.Msg
-    | SDMResultsMsg SDMResults.Msg
+    | NewBoomMsg NewBoom.Msg
+    | BoomResultsMsg BoomResults.Msg
     | BrowseProjectionsMsg BrowseProjectionsPage.Msg
     | SignUpMsg SignUp.Msg
     | GotGridSets (List AtomObjectRecord)
@@ -144,26 +144,26 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        liftedNewSDMUpdate =
+        liftedNewBoomUpdate =
             case model.page of
-                NewSDM model_ ->
+                NewBoom model_ ->
                     lift
                         (always model_)
-                        (\m x -> { m | page = NewSDM x })
-                        NewSDMMsg
-                        NewSDM.update
+                        (\m x -> { m | page = NewBoom x })
+                        NewBoomMsg
+                        NewBoom.update
 
                 _ ->
                     \msg_ model -> ( model, Cmd.none )
 
-        liftedSDMResultsUpdate =
+        liftedBoomResultsUpdate =
             case model.page of
-                SDMResults id results ->
+                BoomResults id results ->
                     lift
                         (always results)
-                        (\m x -> { m | page = SDMResults id x })
-                        SDMResultsMsg
-                        SDMResults.update
+                        (\m x -> { m | page = BoomResults id x })
+                        BoomResultsMsg
+                        BoomResults.update
 
                 _ ->
                     \msg_ model -> ( model, Cmd.none )
@@ -196,11 +196,11 @@ update msg model =
             Mdl msg_ ->
                 Material.update Mdl msg_ model
 
-            NewSDMMsg msg_ ->
-                liftedNewSDMUpdate msg_ model
+            NewBoomMsg msg_ ->
+                liftedNewBoomUpdate msg_ model
 
-            SDMResultsMsg msg_ ->
-                liftedSDMResultsUpdate msg_ model
+            BoomResultsMsg msg_ ->
+                liftedBoomResultsUpdate msg_ model
 
             BrowseProjectionsMsg msg_ ->
                 liftedBrowseProjectionsUpdate msg_ model
@@ -292,7 +292,7 @@ newLink model =
     let
         selected =
             case model.page of
-                NewSDM _ ->
+                NewBoom _ ->
                     Color.background (Color.color Color.Grey Color.S300)
 
                 _ ->
@@ -307,7 +307,7 @@ resultsLink model { name, id } =
     let
         selected =
             case model.page of
-                SDMResults gridsetId _ ->
+                BoomResults gridsetId _ ->
                     if gridsetId == id then
                         Color.background (Color.color Color.Grey Color.S300)
                     else
@@ -356,14 +356,14 @@ drawer model =
     ]
 
 
-pageImplementation : SDMPage -> Page.Page Model Msg
+pageImplementation : AppPage -> Page.Page Model Msg
 pageImplementation p =
     case p of
-        NewSDM model_ ->
-            Page.lift NewSDM.page (always model_) NewSDMMsg
+        NewBoom model_ ->
+            Page.lift NewBoom.page (always model_) NewBoomMsg
 
-        SDMResults _ model_ ->
-            Page.lift SDMResults.page (always model_) SDMResultsMsg
+        BoomResults _ model_ ->
+            Page.lift BoomResults.page (always model_) BoomResultsMsg
 
         SignUp model_ ->
             Page.lift SignUp.page (always model_) SignUpMsg

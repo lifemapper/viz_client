@@ -22,7 +22,7 @@
 -}
 
 
-module NewSDM exposing (Model, page, init, update, Msg)
+module NewBoom exposing (Model, page, init, update, Msg)
 
 import List.Extra exposing (elemIndex, getAt)
 import Html exposing (Html)
