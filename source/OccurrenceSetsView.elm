@@ -27,8 +27,7 @@ module OccurrenceSetsView exposing (Model, toApi, Msg, update, view, init, probl
 import ProgramFlags exposing (Flags)
 import Decoder
     exposing
-        ( AtomObjectRecord
-        , decodeOccurrenceSet
+        ( decodeOccurrenceSet
         , OccurrenceSetRecord
         , OccurrenceSet(..)
         , SingleLayerMap(..)
@@ -60,7 +59,7 @@ type OccurrenceSource
 
 
 type alias Model =
-    { occurrenceSets : List AtomObjectRecord
+    { occurrenceSets : List Decoder.OccWebListItemRecord
     , chooser : OccurrenceSetChooser.Model
     , mappedSet : Maybe OccurrenceSetRecord
     , mapCard : MapCard.Model
@@ -330,7 +329,7 @@ init flags =
     }
 
 
-occurrenceSetLI : Model -> Int -> AtomObjectRecord -> Html Msg
+occurrenceSetLI : Model -> Int -> Decoder.OccWebListItemRecord -> Html Msg
 occurrenceSetLI model i o =
     let
         iconName =

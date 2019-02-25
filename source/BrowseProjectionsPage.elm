@@ -60,7 +60,7 @@ type State
     | LoadingProjections LoadingInfo
     | DisplaySeparate (List ( ProjectionInfo, MapCard.Model ))
     | DisplayGrouped (List ( List ProjectionInfo, MapCard.Model ))
-    | WaitingForListToPopulate Decoder.AtomObjectRecord
+    | WaitingForListToPopulate Decoder.OccWebListItemRecord
 
 
 type alias Model =

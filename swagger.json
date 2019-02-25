@@ -1444,6 +1444,63 @@
         }
       }
     },
+    "/occurrence/web": {
+      "get": {
+        "summary": "Get a list of occurrence layers that match your criteria",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Offset"
+          },
+          {
+            "$ref": "#/parameters/Limit"
+          },
+          {
+            "$ref": "#/parameters/UrlUser"
+          },
+          {
+            "$ref": "#/parameters/MinimumNumberOfPoints"
+          },
+          {
+            "$ref": "#/parameters/DisplayName"
+          },
+          {
+            "$ref": "#/parameters/AfterTime"
+          },
+          {
+            "$ref": "#/parameters/BeforeTime"
+          },
+          {
+            "$ref": "#/parameters/EPSG"
+          },
+          {
+            "$ref": "#/parameters/Squid"
+          },
+          {
+            "$ref": "#/parameters/Status"
+          },
+          {
+            "$ref": "#/parameters/AfterStatus"
+          },
+          {
+            "$ref": "#/parameters/BeforeStatus"
+          },
+          {
+            "$ref": "#/parameters/GridsetId"
+          }
+        ],
+        "tags": [
+          "Occurrence Layer"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of occurrence sets that match your criteria",
+            "schema": {
+              "$ref": "#/definitions/OccWebList"
+            }
+          }
+        }
+      }
+    },
     "/occurrence/{occurrenceSetId}": {
       "get": {
         "summary": "Get an occurrence set in the specified format",
@@ -3135,6 +3192,44 @@
         },
         "squid": {
           "type": "string"
+        }
+      }
+    },
+    "OccWebList": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "metadata_url",
+          "name",
+          "modification_time",
+          "epsg",
+          "status",
+          "count"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "metadata_url": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "modification_time": {
+            "type": "number"
+          },
+          "epsg": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "count": {
+            "type": "integer"
+          }
         }
       }
     },

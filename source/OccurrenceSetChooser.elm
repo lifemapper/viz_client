@@ -27,7 +27,7 @@ module OccurrenceSetChooser exposing (Model, Msg(Select), update, view, init, is
 import String.Extra as String
 import List.Extra as List
 import Ternary exposing ((?))
-import Decoder exposing (AtomObjectRecord, AtomList(..), decodeAtomList, AtomObject(..))
+import Decoder
 import ProgramFlags exposing (Flags)
 import Json.Decode as Decode
 import Helpers exposing (Index)
@@ -48,7 +48,7 @@ import Task
 type SearchState
     = WaitingForInput
     | Searching
-    | GotResults (List AtomObjectRecord)
+    | GotResults (List Decoder.OccWebListItemRecord)
 
 
 type alias Model =
@@ -70,8 +70,8 @@ type Msg
     = Mdl (Material.Msg Msg)
     | UpdateSearchText String
     | SearchPublicData
-    | GotOccurrenceSets (Result Http.Error AtomList)
-    | Select AtomObjectRecord
+    | GotOccurrenceSets (Result Http.Error Decoder.OccWebList)
+    | Select Decoder.OccWebListItemRecord
     | HighlightUp
     | HighlightDown
     | Nop
@@ -107,10 +107,10 @@ update msg model =
         UpdateSearchText text ->
             updateSearchParameters { model | searchText = String.toSentenceCase text }
 
-        GotOccurrenceSets (Ok (AtomList atoms)) ->
+        GotOccurrenceSets (Ok (Decoder.OccWebList occs)) ->
             let
                 results =
-                    List.map (\(AtomObject o) -> o) atoms
+                    List.map (\(Decoder.OccWebListItem o) -> o) occs
             in
                 ( { model | searchState = GotResults results }, Cmd.none )
 
@@ -167,7 +167,7 @@ getOccurrenceSets flags publicData searchText =
         , headers = [ Http.header "Accept" "application/json" ]
         , url = searchUrl flags publicData searchText
         , body = Http.emptyBody
-        , expect = Http.expectJson decodeAtomList
+        , expect = Http.expectJson Decoder.decodeOccWebList
         , timeout = Nothing
         , withCredentials = False
         }
@@ -175,13 +175,11 @@ getOccurrenceSets flags publicData searchText =
 
 
 searchUrl : Flags -> Bool -> String -> String
-searchUrl { apiRoot, minimumOccurrencePoints } publicData searchText =
+searchUrl { apiRoot } publicData searchText =
     let
         query_ =
             Q.empty
                 |> Q.add "limit" "10"
-                |> Q.add "status" "300"
-                |> Q.add "minimumNumberOfPoints" (toString minimumOccurrencePoints)
                 |> Q.add "displayName" searchText
 
         query =
@@ -190,10 +188,10 @@ searchUrl { apiRoot, minimumOccurrencePoints } publicData searchText =
             else
                 query_
     in
-        apiRoot ++ "occurrence" ++ (Q.render query)
+        apiRoot ++ "occurrence/web" ++ (Q.render query)
 
 
-viewSearchResultItem : Maybe Int -> Int -> AtomObjectRecord -> Html Msg
+viewSearchResultItem : Maybe Int -> Int -> Decoder.OccWebListItemRecord -> Html Msg
 viewSearchResultItem highlighted i object =
     L.li []
         [ L.content
@@ -222,7 +220,7 @@ onKeyUp msg =
     Options.on "keyup" <| Decode.map msg (Decode.at [ "key" ] Decode.string)
 
 
-getHighlightedResult : Model -> Maybe AtomObjectRecord
+getHighlightedResult : Model -> Maybe Decoder.OccWebListItemRecord
 getHighlightedResult model =
     case model.searchState of
         GotResults results ->
