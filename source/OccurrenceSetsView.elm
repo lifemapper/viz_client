@@ -342,7 +342,7 @@ occurrenceSetLI model i o =
             L.icon iconName [ Options.onClick (MapOccurrences o.id) ]
     in
         L.li []
-            [ L.content [] [ Html.text o.name ]
+            [ L.content [] [ Html.text <| o.name ++ " - " ++ (toString o.count) ]
             , L.content2 [ Options.css "flex-flow" "row" ]
                 [ L.icon "delete" [ Options.onClick (Remove i) ]
                 , icon

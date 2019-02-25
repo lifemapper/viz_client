@@ -198,7 +198,7 @@ viewSearchResultItem highlighted i object =
             [ Options.onClick <| Select object
             , Color.text Color.accent |> Options.when (Just i == highlighted)
             ]
-            [ Html.text object.name ]
+            [ Html.text <| object.name ++ " - " ++ (toString object.count) ]
         ]
 
 
