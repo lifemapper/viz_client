@@ -357,7 +357,7 @@ occurrenceSetList index model =
         , L.ul [] <|
             List.append
                 (List.indexedMap (occurrenceSetLI model) model.occurrenceSets)
-                [ (OccurrenceSetChooser.view (0 :: index) model.chooser |> Html.map ChooserMsg) ]
+                [ (OccurrenceSetChooser.view True (0 :: index) model.chooser |> Html.map ChooserMsg) ]
         , Html.p []
             [ Html.text "Alternatively, "
             , Options.styled Html.a

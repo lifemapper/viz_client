@@ -191,25 +191,30 @@ searchUrl { apiRoot } publicData searchText =
         apiRoot ++ "occurrence/web" ++ (Q.render query)
 
 
-viewSearchResultItem : Maybe Int -> Int -> Decoder.OccWebListItemRecord -> Html Msg
-viewSearchResultItem highlighted i object =
+viewSearchResultItem : Bool -> Maybe Int -> Int -> Decoder.OccWebListItemRecord -> Html Msg
+viewSearchResultItem includeCount highlighted i object =
     L.li []
         [ L.content
             [ Options.onClick <| Select object
             , Color.text Color.accent |> Options.when (Just i == highlighted)
             ]
-            [ Html.text <| object.name ++ " - " ++ (toString object.count) ]
+            [ Html.text <|
+                if includeCount then
+                    object.name ++ " - " ++ (toString object.count)
+                else
+                    object.name
+            ]
         ]
 
 
-viewSearchResults : Model -> Html Msg
-viewSearchResults model =
+viewSearchResults : Bool -> Model -> Html Msg
+viewSearchResults includeCount model =
     case model.searchState of
         GotResults [] ->
             Options.styled Html.p [] [ Html.text "No matches" ]
 
         GotResults results ->
-            L.ul [] <| List.indexedMap (viewSearchResultItem model.highlight) results
+            L.ul [] <| List.indexedMap (viewSearchResultItem includeCount model.highlight) results
 
         _ ->
             L.ul [] []
@@ -246,8 +251,8 @@ keyUp model s =
             Nop
 
 
-view : Index -> Model -> Html Msg
-view index model =
+view : Bool -> Index -> Model -> Html Msg
+view includeCount index model =
     Options.div []
         [ Textfield.render Mdl
             (0 :: index)
@@ -267,7 +272,7 @@ view index model =
             , Options.onToggle SearchPublicData
             ]
             [ Html.text "Search public data" ]
-        , viewSearchResults model
+        , viewSearchResults includeCount model
         ]
 
 

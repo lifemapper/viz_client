@@ -407,7 +407,7 @@ view { state } =
                     , Options.css "padding-top" "50px"
                     ]
                     [ Options.styled Html.p [ Typo.headline ] [ Html.text "Show SDM projections for:" ]
-                    , OccurrenceSetChooser.view [ 0 ] model_ |> Html.map ChooserMsg
+                    , OccurrenceSetChooser.view False [ 0 ] model_ |> Html.map ChooserMsg
                     ]
 
             WaitingForListToPopulate _ ->
