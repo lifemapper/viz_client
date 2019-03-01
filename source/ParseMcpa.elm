@@ -82,6 +82,9 @@ parseRecord variables record result =
 
                 valueToFloat s =
                     case s of
+                        "" ->
+                            Ok nan
+
                         "nan" ->
                             Ok nan
 
