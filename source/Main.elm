@@ -320,11 +320,6 @@ resultsLink model { name, id } =
             [ Html.text name ]
 
 
-browseProjectionsLink : Model -> Html Msg
-browseProjectionsLink model =
-    Layout.link [ Options.onClick OpenBrowse, Options.css "cursor" "pointer" ] [ Html.text "Browse Projections" ]
-
-
 title : Auth.Model -> Html msg
 title login =
     Auth.getUserName login
@@ -346,7 +341,8 @@ drawer model =
     , Layout.navigation [] [ newLink model ]
       -- , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
-    , Layout.navigation [] [ browseProjectionsLink model ]
+    , Layout.navigation []
+        [ Layout.link [ Options.onClick OpenBrowse, Options.css "cursor" "pointer" ] [ Html.text "Browse Projections" ]]
     , case model.gridsets of
         GridSetsLoading ->
             Layout.row [] [ Loading.spinner [ Loading.active True ] ]

@@ -28,6 +28,9 @@ import List.Extra as List
 import Maybe.Extra as Maybe
 import Dict exposing (Dict)
 import Html exposing (Html)
+import Html.Attributes
+import Html.Events as Events
+import QueryString as Q
 import Http
 import Decoder
 import ProgramFlags exposing (Flags)
@@ -40,7 +43,9 @@ import Material.Options as Options
 import Material.Typography as Typo
 import Material.Spinner as Loading
 import Material.Grid as Grid
+import Material.List as L
 import Material.Helpers as Helpers
+import Helpers exposing (Index, chain)
 
 
 type alias ProjectionInfo =
@@ -52,19 +57,25 @@ type alias ProjectionInfo =
 type alias LoadingInfo =
     { toLoad : List Decoder.AtomObjectRecord
     , currentlyLoaded : Dict Int ProjectionInfo
+    , occSetsToLoad : List Int
     }
 
 
 type State
-    = ChoosingOccurrenceSet OccurrenceSetChooser.Model
+    = Init
     | LoadingProjections LoadingInfo
     | DisplaySeparate (List ( ProjectionInfo, MapCard.Model ))
     | DisplayGrouped (List ( List ProjectionInfo, MapCard.Model ))
-    | WaitingForListToPopulate Decoder.OccWebListItemRecord
+    | NothingToShow
 
 
 type alias Model =
     { programFlags : Flags
+    , occurrenceSetChooser : OccurrenceSetChooser.Model
+    , occurrenceSets : List Decoder.OccWebListItemRecord
+    , scenarios : List Decoder.AtomObjectRecord
+    , modelScenarioFilter : Maybe String
+    , projScenarioFilter : Maybe String
     , state : State
     , mdl : Material.Model
     }
@@ -73,18 +84,29 @@ type alias Model =
 init : Flags -> ( Model, Cmd Msg )
 init flags =
     { programFlags = flags
-    , state = OccurrenceSetChooser.init flags |> ChoosingOccurrenceSet
+    , occurrenceSetChooser = OccurrenceSetChooser.init flags
+    , occurrenceSets = []
+    , scenarios = []
+    , modelScenarioFilter = Nothing
+    , projScenarioFilter = Nothing
+    , state = Init
     , mdl = Material.model
     }
-        ! []
+        ! [ loadScenarios flags ]
 
 
 type Msg
     = GotProjectionAtoms Int (List Decoder.AtomObjectRecord)
     | GotProjection Decoder.ProjectionRecord
+    | GotScenarioAtoms (List Decoder.AtomObjectRecord)
+    | SetModelScenarioFilter (Maybe Int)
+    | SetProjScenarioFilter (Maybe Int)
+    | GotModelScenarioFilterCode (Maybe String)
+    | GotProjScenarioFilterCode (Maybe String)
     | NewProjectionInfo ProjectionInfo
     | SetDisplayGrouped Bool
     | ChooserMsg OccurrenceSetChooser.Msg
+    | Remove Int
     | MapCardMsg Int MapCard.Msg
     | Nop
     | Mdl (Material.Msg Msg)
@@ -110,6 +132,16 @@ updateMapCard i msg_ display update model =
         |> Maybe.withDefault ( model, Cmd.none )
 
 
+addSelected : OccurrenceSetChooser.Msg -> Model -> ( Model, Cmd Msg )
+addSelected msg model =
+    case msg of
+        OccurrenceSetChooser.Select object ->
+            loadProjections { model | occurrenceSets = model.occurrenceSets ++ [ object ] }
+
+        msg ->
+            ( model, Cmd.none )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
@@ -125,41 +157,68 @@ update msg model =
                     ( model, Cmd.none )
 
         liftedChooserUpdate msg_ model =
-            case model.state of
-                ChoosingOccurrenceSet model_ ->
-                    case msg_ of
-                        OccurrenceSetChooser.Select record ->
-                            ( { model | state = WaitingForListToPopulate record }
-                            , loadProjections model.programFlags (OccurrenceSetChooser.isPublicData model_) record.id
-                            )
-
-                        _ ->
-                            Helpers.lift
-                                (always model_)
-                                (\m x -> { m | state = ChoosingOccurrenceSet x })
-                                ChooserMsg
-                                OccurrenceSetChooser.update
-                                msg_
-                                model
-
-                _ ->
-                    ( model, Cmd.none )
+            Helpers.lift
+                .occurrenceSetChooser
+                (\m x -> { m | occurrenceSetChooser = x })
+                ChooserMsg
+                OccurrenceSetChooser.update
+                msg_
+                model
     in
         case msg of
             Nop ->
                 ( model, Cmd.none )
 
             GotProjectionAtoms occurrenceSetId atoms ->
-                let
-                    loadingInfo =
-                        { toLoad = atoms, currentlyLoaded = Dict.empty }
-                in
-                    ( { model | state = LoadingProjections loadingInfo }
-                    , atoms |> List.map (loadMetadata model.programFlags loadingInfo) |> Cmd.batch
-                    )
+                case model.state of
+                    LoadingProjections loadingInfo ->
+                        let
+                            loadingInfo_ =
+                                { loadingInfo
+                                    | toLoad = loadingInfo.toLoad ++ atoms
+                                    , occSetsToLoad = loadingInfo.occSetsToLoad |> List.filter ((/=) occurrenceSetId)
+                                }
+                        in
+                            if loadingInfo_.occSetsToLoad == [] && loadingInfo_.toLoad == [] then
+                                ( { model | state = NothingToShow }, Cmd.none )
+                            else
+                                ( { model | state = LoadingProjections loadingInfo_ }
+                                , atoms |> List.map (loadMetadata model.programFlags loadingInfo) |> Cmd.batch
+                                )
+
+                    _ ->
+                        ( model, Cmd.none )
 
             GotProjection record ->
                 ( model, loadOccurrenceSet record )
+
+            GotScenarioAtoms atoms ->
+                ( { model | scenarios = atoms }, Cmd.none )
+
+            Remove occSetId ->
+                loadProjections { model | occurrenceSets = model.occurrenceSets |> List.filter (.id >> (/=) occSetId) }
+
+            SetModelScenarioFilter id ->
+                case id of
+                    Just id ->
+                        ( model, getScenarioCode model.programFlags GotModelScenarioFilterCode id )
+
+                    Nothing ->
+                        loadProjections { model | modelScenarioFilter = Nothing }
+
+            SetProjScenarioFilter id ->
+                case id of
+                    Just id ->
+                        ( model, getScenarioCode model.programFlags GotProjScenarioFilterCode id )
+
+                    Nothing ->
+                        loadProjections { model | projScenarioFilter = Nothing }
+
+            GotModelScenarioFilterCode code ->
+                loadProjections { model | modelScenarioFilter = code }
+
+            GotProjScenarioFilterCode code ->
+                loadProjections { model | projScenarioFilter = code }
 
             NewProjectionInfo newInfo ->
                 case model.state of
@@ -168,7 +227,7 @@ update msg model =
                             currentlyLoaded =
                                 Dict.insert newInfo.record.id newInfo loadingInfo.currentlyLoaded
                         in
-                            if Dict.size currentlyLoaded == List.length loadingInfo.toLoad then
+                            if loadingInfo.occSetsToLoad == [] && Dict.size currentlyLoaded == List.length loadingInfo.toLoad then
                                 ( { model | state = Dict.values currentlyLoaded |> displaySeparate }, Cmd.none )
                             else
                                 ( { model | state = LoadingProjections { loadingInfo | currentlyLoaded = currentlyLoaded } }
@@ -198,7 +257,7 @@ update msg model =
                 liftedMapCardUpdate i msg_ model
 
             ChooserMsg msg_ ->
-                liftedChooserUpdate msg_ model
+                chain (addSelected msg_) (liftedChooserUpdate msg_) model
 
             Mdl msg_ ->
                 Material.update Mdl msg_ model
@@ -270,8 +329,10 @@ makeBackgroundMap { occurrenceRecord } =
 
 
 projectionTitle : Decoder.ProjectionRecord -> String
-projectionTitle { algorithm, modelScenario, projectionScenario } =
-    (algorithm |> Maybe.map (\(Decoder.Algorithm { code }) -> code) |> Maybe.withDefault "")
+projectionTitle { speciesName, algorithm, modelScenario, projectionScenario } =
+    (speciesName |> Maybe.withDefault "")
+        ++ " "
+        ++ (algorithm |> Maybe.map (\(Decoder.Algorithm { code }) -> code) |> Maybe.withDefault "")
         ++ " "
         ++ (modelScenario |> Maybe.map (\(Decoder.ScenarioRef { code }) -> code) |> Maybe.join |> Maybe.withDefault "")
         ++ " to "
@@ -335,32 +396,98 @@ gotOccurrenceSet record result =
             Debug.log "Error fetching occurrence set" (toString err) |> always Nop
 
 
-loadProjections : Flags -> Bool -> Int -> Cmd Msg
-loadProjections { apiRoot } usePublicData id =
+getScenarioCode : Flags -> (Maybe String -> Msg) -> Int -> Cmd Msg
+getScenarioCode { apiRoot } msg id =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = apiRoot ++ "scenario/" ++ (toString id)
+        , body = Http.emptyBody
+        , expect = Http.expectJson Decoder.decodeScenario
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send (gotScenario msg)
+
+
+gotScenario : (Maybe String -> Msg) -> Result Http.Error Decoder.Scenario -> Msg
+gotScenario msg result =
+    case result of
+        Ok (Decoder.Scenario s) ->
+            msg s.code
+
+        Err err ->
+            Debug.log "Error fetching scenario" (toString err) |> always (msg Nothing)
+
+
+loadScenarios : Flags -> Cmd Msg
+loadScenarios { apiRoot } =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = apiRoot ++ "scenario"
+        , body = Http.emptyBody
+        , expect = Http.expectJson Decoder.decodeAtomList
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send gotScenarioAtoms
+
+
+gotScenarioAtoms : Result Http.Error Decoder.AtomList -> Msg
+gotScenarioAtoms result =
+    case result of
+        Ok (Decoder.AtomList atoms) ->
+            atoms |> List.map (\(Decoder.AtomObject o) -> o) |> GotScenarioAtoms
+
+        Err err ->
+            Debug.log "Error fetching scenarios" (toString err) |> always Nop
+
+
+loadProjections : Model -> ( Model, Cmd Msg )
+loadProjections model =
     let
-        userParam =
-            if usePublicData then
-                "&user=public"
-            else
-                ""
+        query occurrenceSet =
+            Q.empty
+                |> Q.add "occurrenceSetId" (occurrenceSet.id |> toString)
+                |> (model.modelScenarioFilter |> Maybe.map (Q.add "modelScenarioCode") |> Maybe.withDefault identity)
+                |> (model.projScenarioFilter |> Maybe.map (Q.add "projectionScenarioCode") |> Maybe.withDefault identity)
+                |> if OccurrenceSetChooser.isPublicData model.occurrenceSetChooser then
+                    Q.add "user" "public"
+                   else
+                    identity
+
+        request occurrenceSet =
+            Http.request
+                { method = "GET"
+                , headers = [ Http.header "Accept" "application/json" ]
+                , url = model.programFlags.apiRoot ++ "sdmProject" ++ (Q.render <| query occurrenceSet)
+                , body = Http.emptyBody
+                , expect = Http.expectJson Decoder.decodeAtomList
+                , timeout = Nothing
+                , withCredentials = False
+                }
+                |> Http.send (gotProjectionAtoms occurrenceSet.id)
     in
-        Http.request
-            { method = "GET"
-            , headers = [ Http.header "Accept" "application/json" ]
-            , url = apiRoot ++ "sdmProject?occurrenceSetId=" ++ (toString id) ++ userParam
-            , body = Http.emptyBody
-            , expect = Http.expectJson Decoder.decodeAtomList
-            , timeout = Nothing
-            , withCredentials = False
+        if model.occurrenceSets == [] then
+            { model | state = NothingToShow } ! []
+        else
+            { model
+                | state =
+                    LoadingProjections
+                        { toLoad = []
+                        , currentlyLoaded = Dict.empty
+                        , occSetsToLoad = List.map .id model.occurrenceSets
+                        }
             }
-            |> Http.send (gotProjectionAtoms id)
+                ! (model.occurrenceSets |> List.map request)
 
 
 gotProjectionAtoms : Int -> Result Http.Error Decoder.AtomList -> Msg
-gotProjectionAtoms id result =
+gotProjectionAtoms occurrenceSetId result =
     case result of
         Ok (Decoder.AtomList atoms) ->
-            atoms |> List.map (\(Decoder.AtomObject o) -> o) |> GotProjectionAtoms id
+            atoms |> List.map (\(Decoder.AtomObject o) -> o) |> (GotProjectionAtoms occurrenceSetId)
 
         Err err ->
             Debug.log "Error fetching projections" (toString err) |> always Nop
@@ -390,53 +517,61 @@ gotMetadata loadingInfo result =
             Debug.log "Failed to load projection" err |> always Nop
 
 
+occurrenceSetLI : Model -> Int -> Decoder.OccWebListItemRecord -> Html Msg
+occurrenceSetLI model i o =
+    L.li []
+        [ L.content [] [ Html.text <| o.name ]
+        , L.content2 [ Options.css "flex-flow" "row" ]
+            [ L.icon "delete" [ Options.onClick (Remove o.id) ] ]
+        ]
+
+
+occurrenceSetList : Model -> Html Msg
+occurrenceSetList model =
+    L.ul [] <|
+        List.append
+            (List.indexedMap (occurrenceSetLI model) model.occurrenceSets)
+            [ (OccurrenceSetChooser.view False [ 777 ] model.occurrenceSetChooser |> Html.map ChooserMsg) ]
+
+
 view : Model -> Html Msg
-view { state } =
+view model =
     let
-        loading message =
-            Options.div
-                [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text message, Html.p [] [ Loading.spinner [ Loading.active True ] ] ]
+        inner =
+            case model.state of
+                Init ->
+                    Options.div [] []
+
+                LoadingProjections _ ->
+                    Options.div
+                        [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                        [ Html.text "Loading projections...", Html.p [] [ Loading.spinner [ Loading.active True ] ] ]
+
+                DisplaySeparate display ->
+                    display |> List.indexedMap viewSeparate |> Grid.grid []
+
+                DisplayGrouped display ->
+                    display |> List.indexedMap viewGrouped |> Grid.grid []
+
+                NothingToShow ->
+                    Options.div
+                        [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                        [ Html.text "No projections matched." ]
+
+        scenarioOptions =
+            (Html.option [] [ Html.text "Any" ])
+                :: (model.scenarios |> List.map (\s -> Html.option [ Html.Attributes.value (toString s.id) ] [ Html.text s.name ]))
     in
-        case state of
-            ChoosingOccurrenceSet model_ ->
-                Options.div
-                    [ Options.css "width" "600px"
-                    , Options.css "margin-left" "auto"
-                    , Options.css "margin-right" "auto"
-                    , Options.css "padding-top" "50px"
-                    ]
-                    [ Options.styled Html.p [ Typo.headline ] [ Html.text "Show SDM projections for:" ]
-                    , OccurrenceSetChooser.view False [ 0 ] model_ |> Html.map ChooserMsg
-                    ]
-
-            WaitingForListToPopulate _ ->
-                loading "Waiting for projections..."
-
-            LoadingProjections _ ->
-                loading "Loading projections..."
-
-            DisplaySeparate display ->
-                Options.div []
-                    [ Options.styled Html.p
-                        [ Typo.headline
-                        , Options.css "text-align" "center"
-                        , Options.css "margin-top" "20px"
-                        ]
-                        [ display
-                            |> List.getAt 0
-                            |> Maybe.map (\( { record }, _ ) -> record.speciesName)
-                            |> Maybe.join
-                            |> Maybe.withDefault ""
-                            |> Html.text
-                        ]
-                    , display |> List.indexedMap viewSeparate |> Grid.grid []
-                    ]
-
-            DisplayGrouped display ->
-                display
-                    |> List.indexedMap viewGrouped
-                    |> Grid.grid []
+        Options.div []
+            [ Html.p []
+                [ Html.label [] [ Html.text "Model" ]
+                , Html.select [ Events.onInput <| String.toInt >> Result.toMaybe >> SetModelScenarioFilter ] scenarioOptions
+                , Html.label [] [ Html.text "Projection" ]
+                , Html.select [ Events.onInput <| String.toInt >> Result.toMaybe >> SetProjScenarioFilter ] scenarioOptions
+                , occurrenceSetList model
+                ]
+            , inner
+            ]
 
 
 viewSeparate : Int -> ( ProjectionInfo, MapCard.Model ) -> Grid.Cell Msg
