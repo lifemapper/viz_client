@@ -62,6 +62,7 @@ type State
     | MonitoringProgress Int Decoder.GridsetProgress
     | GetProjectionsList Int
     | LoadingProjections LoadingInfo
+    | NoProjections
     | DisplaySeparate (List ( ProjectionInfo, MapCard.Model ))
     | DisplayGrouped (List ( List ProjectionInfo, MapCard.Model ))
 
@@ -149,14 +150,8 @@ update msg model =
                 let
                     (Decoder.GridsetProgress progress) =
                         gridsetProgress
-
-                    (Decoder.GridsetProgressMatrices matrices) =
-                        progress.matrices
-
-                    (Decoder.GridsetProgressProjections projections) =
-                        progress.projections
                 in
-                    if matrices.waiting + matrices.running + projections.waiting + projections.running < 1 then
+                    if progress.progress == 1 then
                         { model | state = GetProjectionsList gridsetId }
                             ! [ loadProjections model.programFlags gridsetId
                               , checkForPackage model.programFlags gridsetId
@@ -175,9 +170,12 @@ update msg model =
                     loadingInfo =
                         { toLoad = atoms, currentlyLoaded = Dict.empty }
                 in
-                    ( { model | state = LoadingProjections loadingInfo }
-                    , atoms |> List.map (loadMetadata model.programFlags loadingInfo) |> Cmd.batch
-                    )
+                    if List.length atoms > 0 then
+                        ( { model | state = LoadingProjections loadingInfo }
+                        , atoms |> List.map (loadMetadata model.programFlags loadingInfo) |> Cmd.batch
+                        )
+                    else
+                        ( { model | state = NoProjections }, Cmd.none )
 
             GotProjection record ->
                 ( model, loadOccurrenceSet record )
@@ -486,40 +484,11 @@ view { state, packageStatus, mdl, programFlags } =
                     [ Html.text "Requesting status...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
 
             MonitoringProgress _ (Decoder.GridsetProgress progress) ->
-                let
-                    (Decoder.GridsetProgressProjections projections) =
-                        progress.projections
-
-                    (Decoder.GridsetProgressMatrices matrices) =
-                        progress.matrices
-                in
-                    Options.div
-                        [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
-                        [ Html.text "Waiting for results..."
-                        , Html.p [] [ Loading.progress (100 * progress.progress) ]
-                        , Html.p []
-                            [ Html.text "Projections: "
-                            , Html.text <| toString projections.waiting
-                            , Html.text " waiting. "
-                            , Html.text <| toString projections.running
-                            , Html.text " running. "
-                            , Html.text <| toString projections.complete
-                            , Html.text " complete. "
-                            , Html.text <| toString projections.error
-                            , Html.text " failed. "
-                            ]
-                        , Html.p []
-                            [ Html.text "Matrices: "
-                            , Html.text <| toString matrices.waiting
-                            , Html.text " waiting. "
-                            , Html.text <| toString matrices.running
-                            , Html.text " running. "
-                            , Html.text <| toString matrices.complete
-                            , Html.text " complete. "
-                            , Html.text <| toString matrices.error
-                            , Html.text " failed. "
-                            ]
-                        ]
+                Options.div
+                    [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
+                    [ Html.text "Waiting for results..."
+                    , Html.p [] [ Loading.progress (100 * progress.progress) ]
+                    ]
 
             GetProjectionsList _ ->
                 Options.div
@@ -530,6 +499,11 @@ view { state, packageStatus, mdl, programFlags } =
                 Options.div
                     [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
                     [ Html.text "Loading projections...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
+
+            NoProjections ->
+                Options.div
+                    [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                    [ Html.text "No projections were returned." ]
 
             DisplaySeparate display ->
                 Options.div []

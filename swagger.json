@@ -1631,13 +1631,7 @@
             "$ref": "#/parameters/ModelScenarioCode"
           },
           {
-            "$ref": "#/parameters/ModelScenarioId"
-          },
-          {
             "$ref": "#/parameters/ProjectScenarioCode"
-          },
-          {
-            "$ref": "#/parameters/ProjectScenarioId"
           },
           {
             "$ref": "#/parameters/Squid"
@@ -1725,13 +1719,7 @@
             "$ref": "#/parameters/ModelScenarioCode"
           },
           {
-            "$ref": "#/parameters/ModelScenarioId"
-          },
-          {
             "$ref": "#/parameters/ProjectScenarioCode"
-          },
-          {
-            "$ref": "#/parameters/ProjectScenarioId"
           },
           {
             "$ref": "#/parameters/Squid"
@@ -2921,9 +2909,7 @@
     "GridsetProgress": {
       "type": "object",
       "required": [
-        "progress",
-        "matrices",
-        "projections"
+        "progress"
       ],
       "properties": {
         "progress": {
@@ -4208,18 +4194,11 @@
       "type": "string"
     },
     "ModelScenarioCode": {
-      "name": "mdlScenCode",
+      "name": "modelScenarioCode",
       "in": "query",
       "description": "Only return items built with this modeling scenario",
       "required": false,
       "type": "string"
-    },
-    "ModelScenarioId": {
-      "name": "mdlScenId",
-      "in": "query",
-      "description": "Only return items built with this modeling scenario",
-      "required": false,
-      "type": "integer"
     },
     "MinimumNumberOfPoints": {
       "name": "minimumNumberOfPoints",
@@ -4271,18 +4250,11 @@
       "type": "integer"
     },
     "ProjectScenarioCode": {
-      "name": "prjScenCode",
+      "name": "projectionScenarioCode",
       "in": "query",
       "description": "Only return items built with this SDM projection scenario",
       "required": false,
       "type": "string"
-    },
-    "ProjectScenarioId": {
-      "name": "prjScenId",
-      "in": "query",
-      "description": "Only return items built with this SDM projection scenario",
-      "required": false,
-      "type": "integer"
     },
     "ScenarioCode": {
       "name": "scenarioCode",
