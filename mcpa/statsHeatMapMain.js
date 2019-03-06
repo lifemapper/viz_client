@@ -127,8 +127,9 @@ var observer = new MutationObserver(function(mutations) {
                 ]);
                 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: "© OpenStreetMap",
-                    minZoom: 1,
-                    maxZoom: 12
+                    minZoom: 2,
+                    maxZoom: 12,
+                    worldCopyJump: true
                 }).addTo(map);
 
                 var editableLayers = new L.FeatureGroup();

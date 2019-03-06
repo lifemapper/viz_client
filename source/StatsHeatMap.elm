@@ -29,7 +29,7 @@ import Maybe.Extra as Maybe
 import Set exposing (Set)
 import Dict exposing (Dict)
 import Html
-import Html.Attributes
+import Html.Attributes as A
 import Html.Events
 import Helpers exposing (formatNumber)
 
@@ -131,8 +131,8 @@ view model =
                     |> List.map
                         (\v ->
                             Html.option
-                                [ Html.Attributes.selected (v == selected)
-                                , Html.Attributes.value v
+                                [ A.selected (v == selected)
+                                , A.value v
                                 ]
                                 [ Dict.get v
                                     model.statNames
@@ -142,72 +142,58 @@ view model =
                                 ]
                         )
                 )
-    in
-        Html.div
-            -- [ Html.Events.on "keyup" (Decode.map KeyUp <| Decode.field "key" Decode.string)
-            [ Html.Attributes.style
-                [ ( "display", "flex" )
-                , ( "flex-direction", "flex-row" )
-                , ( "font-family", "sans-serif" )
-                ]
-            , Html.Attributes.tabindex 0
-            ]
-            [ Html.div [ Html.Attributes.style [ ( "margin-left", "20px" ), ( "width", "800px" ) ] ]
-                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
-                    [ Html.text "Site Based Statistics" ]
-                , Html.p []
-                    [ Html.text "Currently mapping: "
-                    , variableSelector model.selectedVariable VariableSelectedMsg
+
+        legend =
+            Html.div
+                [ A.style
+                    [ ( "height", "400px" )
+                      -- , ( "width", "50px" )
+                    , ( "background", "linear-gradient(white, red)" )
+                    , ( "display", "flex" )
+                    , ( "flex-direction", "column" )
+                    , ( "justify-content", "space-between" )
+                    , ( "margin", "50px 10px" )
+                    , ( "border", "solid 2px" )
                     ]
-                , Html.p []
-                    [ Dict.get model.selectedVariable model.statNames
-                        |> Maybe.map (.description >> flip (++) ".")
+                ]
+                [ Html.p [ A.style [ ( "text-align", "right" ), ( "margin", "0 5px" ) ] ]
+                    [ Dict.get model.selectedVariable model.statRanges
+                        |> Maybe.map (.min >> formatNumber)
+                        |> Maybe.withDefault ""
+                        |> Html.text
+                    ]
+                , Html.p [ A.style [ ( "text-align", "right" ), ( "margin", "0 5px" ) ] ]
+                    [ Dict.get model.selectedVariable model.statRanges
+                        |> Maybe.map (.max >> formatNumber)
                         |> Maybe.withDefault ""
                         |> Html.text
                     ]
                 ]
-            , Html.div
-                [ Html.Attributes.style [ ( "flex-grow", "1" ) ] ]
-                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
-                    [ Html.text "Heat Map" ]
-                , Html.div [ Html.Attributes.style [ ( "display", "flex" ) ] ]
-                    [ Html.div
-                        [ Html.Attributes.style
-                            [ ( "height", "400px" )
-                              -- , ( "width", "50px" )
-                            , ( "background", "linear-gradient(white, red)" )
-                            , ( "display", "flex" )
-                            , ( "flex-direction", "column" )
-                            , ( "justify-content", "space-between" )
-                            , ( "margin", "50px 10px" )
-                            , ( "border", "solid 2px" )
-                            ]
-                        ]
-                        [ Html.p [ Html.Attributes.style [ ( "text-align", "right" ), ( "margin", "0 5px" ) ] ]
-                            [ Dict.get model.selectedVariable model.statRanges
-                                |> Maybe.map (.min >> formatNumber)
-                                |> Maybe.withDefault ""
-                                |> Html.text
-                            ]
-                        , Html.p [ Html.Attributes.style [ ( "text-align", "right" ), ( "margin", "0 5px" ) ] ]
-                            [ Dict.get model.selectedVariable model.statRanges
-                                |> Maybe.map (.max >> formatNumber)
-                                |> Maybe.withDefault ""
-                                |> Html.text
-                            ]
-                        ]
-                    , Html.div
-                        [ Html.Attributes.class "leaflet-map"
-                        , Html.Attributes.attribute "data-map-selected-var" model.selectedVariable
-                        , Html.Attributes.style
-                            [ ( "max-width", "900px" )
-                            , ( "height", "500px" )
-                            , ( "flex-grow", "1" )
-                            ]
-                        ]
-                        []
-                    ]
+
+        text =
+            Html.p [ A.style [ ( "width", "900px" ) ] ]
+                [ Dict.get model.selectedVariable model.statNames
+                    |> Maybe.map (.description >> flip (++) ".")
+                    |> Maybe.withDefault ""
+                    |> Html.text
                 ]
+
+        map =
+            Html.div [ A.style [ ( "display", "flex" ), ( "margin-top", "10px" ) ] ]
+                [ Html.div
+                    [ A.class "leaflet-map"
+                    , A.attribute "data-map-selected-var" model.selectedVariable
+                    , A.style [ ( "width", "900px" ), ( "height", "500px" ) ]
+                    ]
+                    []
+                , legend
+                ]
+    in
+        Html.div [ A.style [ ( "font-family", "sans-serif" ) ] ]
+            [ Html.h2 [] [ Html.text "Site Based Statistics" ]
+            , variableSelector model.selectedVariable VariableSelectedMsg
+            , map
+            , text
             ]
 
 
