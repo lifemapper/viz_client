@@ -33,6 +33,7 @@ import Material.Typography as Typo
 import Material.Button as Button
 import Material.Toggles as Toggles
 import Material.Spinner as Loading
+import Material.Icon as Icon
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import ProgramFlags exposing (Flags)
@@ -412,19 +413,19 @@ view mdlMsg mapMsg index mdl model =
 
         GotMatches matches ->
             Options.div []
-                [ Options.styled Html.p [ Typo.title ] [ Html.text "GBIF species names match results:" ]
+                [ Options.styled Html.p [ Typo.title ] [ Html.text "Data provider results:" ]
                 , matches
                     |> List.indexedMap (viewMatch mdlMsg mapMsg (3 :: index) mdl)
                     |> (++)
                         [ Html.tr []
                             [ Html.th [] [ Html.text "Searched" ]
-                            , Html.th [] [ Html.text "Matched" ]
-                            , Html.th [] []
-                            , Html.th [] [ Html.text "Points" ]
+                            , Html.th [] [ Html.text "GBIF Name" ]
+                            , Html.th [] [ Html.text "iDigBio" ]
+                            , Html.th [] [ Html.text "Open Tree" ]
                             , Html.th [ Attributes.style [ ( "padding-left", "5px" ) ] ] [ Html.text "Use" ]
                             ]
                         ]
-                    |> Html.table []
+                    |> Html.table [ Attributes.style [ ( "width", "500px" ) ] ]
                 , Button.render mdlMsg
                     (1 :: index)
                     mdl
@@ -491,22 +492,22 @@ viewMatch mdlMsg mapMsg index mdl i item =
 
         inTree =
             if item.inTree then
-                Html.text ""
+                Icon.i "check_circle"
             else
-                Html.text "⚠️ Not in Open Tree"
+                Html.text ""
     in
         case item.response.accepted_name of
             Just name ->
                 Html.tr []
                     [ Html.td [] [ nameUpdater name ]
                     , Html.td [] [ Html.text name ]
-                    , Html.td [] [ inTree ]
                     , Html.td [ Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text <| toString item.count ]
-                    , Html.td [ Attributes.style [ ( "padding-left", "5px" ) ] ] [ checkbox ]
+                    , Html.td [ Attributes.style [ ( "text-align", "center" ) ] ] [ inTree ]
+                    , Html.td [ Attributes.style [ ( "text-align", "center" ) ] ] [ checkbox ]
                     ]
 
             Nothing ->
                 Html.tr []
                     [ Html.td [] [ nameUpdater "" ]
-                    , Html.td [] [ Html.text "⚠️ No match" ]
+                    , Html.td [] []
                     ]
