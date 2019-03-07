@@ -334,9 +334,11 @@ projectionTitle { speciesName, algorithm, modelScenario, projectionScenario } =
         ++ " "
         ++ (algorithm |> Maybe.map (\(Decoder.Algorithm { code }) -> code) |> Maybe.withDefault "")
         ++ " "
-        ++ (modelScenario |> Maybe.map (\(Decoder.ScenarioRef { code }) -> code) |> Maybe.join |> Maybe.withDefault "")
-        ++ " to "
-        ++ (projectionScenario |> Maybe.map (\(Decoder.ScenarioRef { code }) -> code) |> Maybe.join |> Maybe.withDefault "")
+        -- take out model scenario
+        -- ++ (modelScenario |> Maybe.map (\(Decoder.ScenarioRef { code }) -> code) |> Maybe.join |> Maybe.withDefault "")
+        -- ++ " to "
+        ++
+            (projectionScenario |> Maybe.map (\(Decoder.ScenarioRef { code }) -> code) |> Maybe.join |> Maybe.withDefault "")
 
 
 boundingBoxForProjection : ProjectionInfo -> Maybe BoundingBox
