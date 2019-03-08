@@ -530,10 +530,12 @@ occurrenceSetLI model i o =
 
 occurrenceSetList : Model -> Html Msg
 occurrenceSetList model =
-    L.ul [] <|
-        List.append
-            (List.indexedMap (occurrenceSetLI model) model.occurrenceSets)
-            [ (OccurrenceSetChooser.view False [ 777 ] model.occurrenceSetChooser |> Html.map ChooserMsg) ]
+    L.ul [ Options.css "margin-left" "20px" ] <|
+        List.concat
+            [ [ Options.styled Html.p [ Typo.headline ] [ Html.text "Select species" ] ]
+            , List.indexedMap (occurrenceSetLI model) model.occurrenceSets
+            , [ (OccurrenceSetChooser.view False [ 777 ] model.occurrenceSetChooser |> Html.map ChooserMsg) ]
+            ]
 
 
 view : Model -> Html Msg
@@ -560,17 +562,30 @@ view model =
                         [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
                         [ Html.text "No projections matched." ]
 
-        scenarioOptions =
-            (Html.option [] [ Html.text "Any" ])
-                :: (model.scenarios |> List.map (\s -> Html.option [ Html.Attributes.value (toString s.id) ] [ Html.text s.name ]))
+        scenarioOptions onSelect =
+            Html.select [ Events.onInput <| String.toInt >> Result.toMaybe >> onSelect ] <|
+                (Html.option [] [ Html.text "Any" ])
+                    :: (model.scenarios |> List.map (\s -> Html.option [ Html.Attributes.value (toString s.id) ] [ Html.text s.name ]))
+
+        scenarioFilters =
+            Options.div [ Options.css "margin-left" "20px", Options.css "margin-top" "20px" ]
+                [ Options.styled Html.p [ Typo.headline ] [ Html.text "Filter by scenario" ]
+                , Options.styled Html.p
+                    [ Options.css "text-align" "right" ]
+                    [ Html.label [] [ Html.text "Model " ]
+                    , scenarioOptions SetModelScenarioFilter
+                    ]
+                , Options.styled Html.p
+                    [ Options.css "text-align" "right" ]
+                    [ Html.label [] [ Html.text "Projection " ]
+                    , scenarioOptions SetProjScenarioFilter
+                    ]
+                ]
     in
         Options.div []
-            [ Html.p []
-                [ Html.label [] [ Html.text "Model" ]
-                , Html.select [ Events.onInput <| String.toInt >> Result.toMaybe >> SetModelScenarioFilter ] scenarioOptions
-                , Html.label [] [ Html.text "Projection" ]
-                , Html.select [ Events.onInput <| String.toInt >> Result.toMaybe >> SetProjScenarioFilter ] scenarioOptions
-                , occurrenceSetList model
+            [ Options.div [ Options.css "display" "flex" ]
+                [ occurrenceSetList model
+                , scenarioFilters
                 ]
             , inner
             ]
