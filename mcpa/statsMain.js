@@ -36,6 +36,7 @@ app.ports.requestStats.subscribe(function() {
 });
 
 document.onmousemove = document.onmouseup = document.onmousedown = function(event) {
+    event.preventDefault();
     const plot = document.getElementById("plot");
     if (plot == null) return;
     const rect = plot.getBoundingClientRect();
@@ -105,7 +106,7 @@ var observer = new MutationObserver(function(mutations) {
                 ]);
                 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: "© OpenStreetMap",
-                    minZoom: 1,
+                    minZoom: 2,
                     maxZoom: 12
                 }).addTo(map);
 
