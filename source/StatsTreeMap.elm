@@ -25,7 +25,7 @@
 port module StatsTreeMap exposing (..)
 
 import Html
-import Html.Attributes
+import Html.Attributes as A
 import Dict
 import Set
 import McpaModel
@@ -130,40 +130,25 @@ view { mcpaModel, statsModel } =
             Dict.get ( cladeId, "Observed", mcpaModel.selectedVariable ) mcpaModel.data
     in
         Html.div
-            [ Html.Attributes.style
+            [ A.style
                 [ ( "display", "flex" )
-                  -- , ( "justify-content", "space-between" )
+                , ( "justify-content", "space-between" )
                 , ( "font-family", "sans-serif" )
                 , ( "height", "100vh" )
                 ]
             ]
             [ viewTree mcpaModel False selectData |> Html.map McpaMsg
             , Html.div
-                [ Html.Attributes.style
-                    [ ( "display", "flex" )
-                    , ( "flex-direction", "column" )
-                    , ( "flex-grow", "1" )
+                [ A.style [ ( "margin", "0 12px" ) ] ]
+                [ Html.h3 [ A.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ] [ Html.text "Sites" ]
+                , Html.div
+                    [ A.class "leaflet-map"
+                    , A.attribute "data-map-sites" selectedSiteIds
+                    , A.style [ ( "width", "900px" ), ( "height", "500px" ) ]
                     ]
+                    []
                 ]
-                [ Html.div
-                    [ Html.Attributes.style [ ( "flex-shrink", "0" ), ( "margin", "0 12px" ) ] ]
-                    [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
-                        [ Html.text "Sites" ]
-                    , Html.div
-                        [ Html.Attributes.class "leaflet-map"
-                        , Html.Attributes.attribute "data-map-sites" selectedSiteIds
-                          -- (mcpaModel.selectedNode |> Maybe.map toString |> Maybe.withDefault "")
-                        , Html.Attributes.style
-                            [ ( "max-width", "900px" )
-                            , ( "height", "500px" )
-                            , ( "margin-left", "auto" )
-                            , ( "margin-right", "auto" )
-                            ]
-                        ]
-                        []
-                    ]
-                , StatsMain.viewPlot statsModel |> Html.map StatsMsg
-                ]
+            , StatsMain.viewPlot statsModel |> Html.map StatsMsg
             ]
 
 

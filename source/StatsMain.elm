@@ -497,7 +497,7 @@ viewPlot model =
                         )
                 )
     in
-        Html.div [ Html.Attributes.style [ ( "margin-left", "auto" ), ( "margin-right", "auto" ) ] ]
+        Html.div []
             [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
                 [ Html.text "Site Based Stat Relationships" ]
             , svg
