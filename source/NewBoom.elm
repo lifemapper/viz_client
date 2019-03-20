@@ -274,7 +274,7 @@ mainView model =
     case model.workFlowState of
         SubmissionFailed ->
             Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text "There was a problem submitting the job."
+                [ Html.text "There was a problem submitting the project."
                 , Html.p []
                     [ Button.render Mdl
                         [ 5 ]
@@ -286,7 +286,7 @@ mainView model =
 
         Submitting ->
             Options.div [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text "Submitting job..."
+                [ Html.text "Submitting project..."
                 , Html.p [] [ Loading.spinner [ Loading.active True ] ]
                 ]
 
@@ -313,14 +313,14 @@ mainView model =
                     Options.div [ Options.css "padding" "20px" ]
                         [ Html.p []
                             [ Html.text """
-                                 Once all of the inputs below have been defined the job
+                                 Once all of the inputs below have been defined the project
                                  can be submitted.
                                  """
                             ]
                         , Lists.ul []
                             ([ jobNameLI model ]
                                 ++ List.map (taskLI model) tasks
-                                ++ [ uploadTaskLI "Tree" model.treeUpload ]
+                                ++ [ uploadTaskLI "Phylogenetic Tree" model.treeUpload ]
                                 ++ [ uploadTaskLI "Biogeographic Hypotheses" model.hypoUpload ]
                             )
                         , Toggles.switch Mdl
@@ -339,7 +339,7 @@ mainView model =
                                 , Button.disabled |> Options.when (not <| complete model)
                                 , Options.onClick SubmitJob |> Options.when (complete model)
                                 ]
-                                [ Html.text "Submit Job" ]
+                                [ Html.text "Submit Project" ]
                             ]
                         ]
 
@@ -359,7 +359,7 @@ jobNameLI model =
                 , Textfield.render Mdl
                     [ 7 ]
                     model.mdl
-                    [ Textfield.label "Job name"
+                    [ Textfield.label "Project name"
                     , Textfield.floatingLabel
                     , Textfield.value model.archiveName
                     , Options.onInput UpdateArchiveName

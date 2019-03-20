@@ -585,9 +585,9 @@ page =
     { view = view
     , selectedTab = selectedTab
     , selectTab = selectTab
-    , tabTitles = tabTitles
+    , tabTitles = always [] --tabTitles
     , subscriptions = subscriptions
-    , title = "Projection Results"
+    , title = "Species Model Results"
     }
 
 

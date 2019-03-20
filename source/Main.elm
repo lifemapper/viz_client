@@ -280,7 +280,7 @@ header : String -> List (Html Msg)
 header title =
     [ Layout.row []
         [ Layout.title []
-            [ Html.text "Biotaphy | "
+            [ Html.text "BiotaPhy | "
             , Options.span [ Typo.subhead ] [ Html.text title ]
             ]
         ]
@@ -299,7 +299,7 @@ newLink model =
                     Options.nop
     in
         Layout.link [ Options.onClick OpenNew, Options.css "cursor" "pointer", selected ]
-            [ Html.text "New BOOM Project" ]
+            [ Html.text "New Project" ]
 
 
 resultsLink : Model -> AtomObjectRecord -> Html Msg
@@ -324,7 +324,7 @@ title : Auth.Model -> Html msg
 title login =
     Auth.getUserName login
         |> Maybe.map (\userName -> "Welcome, " ++ userName)
-        |> Maybe.withDefault "Biotaphy BOOM"
+        |> Maybe.withDefault "BiotaPhy Platform"
         |> Html.text
 
 
@@ -342,7 +342,7 @@ drawer model =
       -- , Layout.navigation [] [ newOccurrenceSetLink model ]
     , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
     , Layout.navigation []
-        [ Layout.link [ Options.onClick OpenBrowse, Options.css "cursor" "pointer" ] [ Html.text "Browse Projections" ]]
+        [ Layout.link [ Options.onClick OpenBrowse, Options.css "cursor" "pointer" ] [ Html.text "Search Species" ]]
     , case model.gridsets of
         GridSetsLoading ->
             Layout.row [] [ Loading.spinner [ Loading.active True ] ]
