@@ -337,16 +337,17 @@ view mapMdlMsg mapMsg index mdl state =
 formatIssue : MetadataIssues -> Html msg
 formatIssue issue =
     case issue of
-        MissingGroupBy ->
+        MissingTaxon ->
             Html.li []
                 [ Options.span [ Color.text Color.accent ]
-                    [ Html.text "A group by column must be chosen." ]
+                    [ Html.text "A taxon column must be chosen." ]
                 ]
 
         MissingGeo ->
             Html.li []
                 [ Options.span [ Color.text Color.accent ]
-                    [ Html.text "Columns for either geopoint or latitude and longitude must be chosen." ]
+                    -- [ Html.text "Columns for either geopoint or latitude and longitude must be chosen." ]
+                    [ Html.text "Columns for latitude and longitude must be chosen." ]
                 ]
 
 

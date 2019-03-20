@@ -132,18 +132,18 @@ initMetadata preview =
 
 
 type MetadataIssues
-    = MissingGroupBy
-    | MissingGeo
+    = MissingGeo
+    | MissingTaxon
 
 
 validateMetadata : Metadata -> List MetadataIssues
 validateMetadata { roles } =
-    [ if roles.groupBy == Nothing then
-        Just MissingGroupBy
+    [ if roles.geopoint == Nothing && (roles.latitude == Nothing || roles.longitude == Nothing) then
+        Just MissingGeo
       else
         Nothing
-    , if roles.geopoint == Nothing && (roles.latitude == Nothing || roles.longitude == Nothing) then
-        Just MissingGeo
+    , if roles.taxaName == Nothing then
+        Just MissingTaxon
       else
         Nothing
     ]
@@ -329,7 +329,7 @@ metadataTable : (Material.Msg msg -> msg) -> (MetadataMsg -> msg) -> Index -> Ma
 metadataTable mapMdlMsg mapMsg index mdl metadata =
     let
         formColumn i cell =
-            [ Options.div [ Options.css "display" "flex", Options.css "flex-direction" "column" ]
+            [ Options.div [ Options.css "display" "flex", Options.css "flex-direction" "column", Options.css "min-width" "120px" ]
                 [ Textfield.render mapMdlMsg
                     (0 :: i :: index)
                     mdl
@@ -338,6 +338,7 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                     , Textfield.maxlength 10
                     , Textfield.value (metadata.fields |> List.getAt i |> Maybe.map .shortName |> Maybe.withDefault "")
                     , Options.onInput (UpdateFieldName i >> mapMsg)
+                    , Options.css "display" "none"
                     ]
                     []
                 , Toggles.radio mapMdlMsg
@@ -352,6 +353,7 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                     mdl
                     [ Options.onToggle (ToggleGeopoint i |> mapMsg)
                     , Toggles.value (metadata.roles.geopoint == Just i)
+                    , Options.css "display" "none"
                     ]
                     [ Html.text "Geopoint" ]
                 , Toggles.checkbox mapMdlMsg
