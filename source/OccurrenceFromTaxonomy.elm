@@ -316,6 +316,7 @@ gotFacets facetField result =
                                         Debug.log "Unexpected facet counts structure" group
                                             |> always Nothing
                             )
+                        |> List.filter (\( s, _ ) -> s /= "Sedis" && s /= "N")
                         |> GotFacets facetField numFound species
 
                 _ ->
