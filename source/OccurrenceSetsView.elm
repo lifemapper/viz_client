@@ -389,7 +389,7 @@ view index model =
                     ]
 
             Upload upload ->
-                Options.div [ Options.css "display" "flex" ]
+                Options.div []
                     [ Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
                             (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
@@ -411,7 +411,7 @@ view index model =
                     ]
 
             Taxonomy model_ ->
-                Options.div [ Options.css "display" "flex" ]
+                Options.div []
                     [ Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
                             [ OccurrenceFromTaxonomy.view model_ |> Html.map TaxonomyMsg ]
@@ -433,7 +433,7 @@ view index model =
                     ]
 
             TaxonList names ->
-                Options.div [ Options.css "display" "flex" ]
+                Options.div []
                     [ Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
                             [ OccurrenceSetTaxonList.view Mdl TaxonListMsg (2 :: index) model.mdl names ]
