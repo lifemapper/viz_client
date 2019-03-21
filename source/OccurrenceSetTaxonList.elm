@@ -110,7 +110,11 @@ update msg model =
                 GetList names ->
                     let
                         names_ =
-                            text |> String.split "\n" |> List.filter (not << String.isEmpty) |> List.unique
+                            text
+                                |> String.split "\n"
+                                |> List.map String.trim
+                                |> List.filter (not << String.isEmpty)
+                                |> List.unique
                     in
                         ( { model | state = GetList names_ }, Cmd.none )
 
@@ -263,13 +267,7 @@ gotGbifResponse dontUse response =
                     (\(Decoder.GbifResponseItem item) ->
                         { response = item
                         , searchName = item.search_name ? ""
-                        , use =
-                            case item.accepted_name of
-                                Just name ->
-                                    (not <| List.member name dontUse) && (Just name) == item.search_name
-
-                                Nothing ->
-                                    False
+                        , use = False
                         , count = 0
                         , inTree = False
                         }
@@ -310,7 +308,7 @@ gotBiotaphyPointsResponse matches response =
                             |> List.map (\(Decoder.BiotaphyPointsResponseItem item) -> item)
                             |> List.filter (\{ taxon_id } -> match.response.taxon_id == Just taxon_id)
                             |> List.head
-                            |> Maybe.map (\{ count } -> { match | count = count, use = count >= 30 })
+                            |> Maybe.map (\{ count } -> { match | count = count })
                             |> Maybe.withDefault match
                     )
                 |> GotPointsMsg
@@ -355,7 +353,7 @@ gotOpenTreeResponse matches response =
                             False
             in
                 matches
-                    |> List.map (\match -> { match | inTree = inTree match, use = match.use && inTree match })
+                    |> List.map (\match -> { match | inTree = inTree match })
                     |> GotTreeMsg
 
         Err err ->
@@ -422,7 +420,7 @@ view mdlMsg mapMsg index mdl model =
                             , Html.th [] [ Html.text "GBIF Name" ]
                             , Html.th [] [ Html.text "iDigBio" ]
                             , Html.th [] [ Html.text "Open Tree" ]
-                            , Html.th [ Attributes.style [ ( "padding-left", "5px" ) ] ] [ Html.text "Use" ]
+                            , Html.th [] [ Html.text "Include in Project" ]
                             ]
                         ]
                     |> Html.table [ Attributes.style [ ( "width", "500px" ) ] ]
@@ -477,6 +475,7 @@ viewMatch mdlMsg mapMsg index mdl i item =
                 mdl
                 [ Options.onToggle <| mapMsg <| ToggleUseName i
                 , Toggles.value item.use
+                , Options.css "margin-left" "40px"
                 ]
                 []
 
@@ -492,18 +491,18 @@ viewMatch mdlMsg mapMsg index mdl i item =
 
         inTree =
             if item.inTree then
-                Icon.i "check_circle"
+                Icon.i "done"
             else
                 Html.text ""
     in
         case item.response.accepted_name of
             Just name ->
                 Html.tr []
-                    [ Html.td [] [ nameUpdater name ]
-                    , Html.td [] [ Html.text name ]
+                    [ Html.td [ Attributes.style [ ( "white-space", "nowrap" ) ] ] [ nameUpdater name ]
+                    , Html.td [ Attributes.style [ ( "white-space", "nowrap" ) ] ] [ Html.text name ]
                     , Html.td [ Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text <| toString item.count ]
                     , Html.td [ Attributes.style [ ( "text-align", "center" ) ] ] [ inTree ]
-                    , Html.td [ Attributes.style [ ( "text-align", "center" ) ] ] [ checkbox ]
+                    , Html.td [] [ checkbox ]
                     ]
 
             Nothing ->
