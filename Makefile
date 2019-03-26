@@ -7,7 +7,7 @@ debug: all
 
 boom.tar.gz: boom/elm/boomMain.js boom/elm/subsetpam.js boom/*
 	git describe --tags > boom/VERSION
-	tar -zcvf boom.tar.gz --exclude=sdmFlagsOverride.js boom
+	tar -zcvf boom.tar.gz --exclude=boomFlagsOverride.js boom
 
 mcpa.tar.gz: mcpa/elm/AncState.js mcpa/elm/Mcpa.js mcpa/elm/Stats.js mcpa/elm/StatsHeatMap.js mcpa/elm/StatsTreeMap.js mcpa/elm/FractalTree.js mcpa/*
 	git describe --tags > mcpa/VERSION
