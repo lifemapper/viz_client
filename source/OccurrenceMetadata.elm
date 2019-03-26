@@ -100,14 +100,13 @@ toJson metadata =
         roles =
             OccurrenceMetadataRole
                 { uniqueId = metadata.roles.uniqueId |> Maybe.map toString
-                , taxaName = metadata.roles.taxaName |> Maybe.map toString
-                , longitude = metadata.roles.longitude |> Maybe.map toString
-                , latitude = metadata.roles.latitude |> Maybe.map toString
-                , groupBy = metadata.roles.groupBy |> Maybe.map toString |> Maybe.withDefault ""
-                , geopoint = metadata.roles.geopoint |> Maybe.map toString
+                , taxaName = metadata.roles.taxaName |> Maybe.map toString |> Maybe.withDefault ""
+                , longitude = metadata.roles.longitude |> Maybe.map toString |> Maybe.withDefault ""
+                , latitude = metadata.roles.latitude |> Maybe.map toString |> Maybe.withDefault ""
+                , groupBy = metadata.roles.groupBy |> Maybe.map toString
                 }
     in
-        OccurrenceMetadata { role = Just roles, field = Just <| OccurrenceMetadataField fields }
+        OccurrenceMetadata { role = Just roles, field = Just <| OccurrenceMetadataField fields, delimiter = Just "," }
             |> encodeOccurrenceMetadata
             |> encode 0
 

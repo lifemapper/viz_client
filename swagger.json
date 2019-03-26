@@ -2969,6 +2969,33 @@
               "description": "The number of projections that have failed"
             }
           }
+        },
+        "workflows": {
+          "type": "object",
+          "required": [
+            "waiting",
+            "running",
+            "complete",
+            "error"
+          ],
+          "properties": {
+            "waiting": {
+              "type": "integer",
+              "description": "The number of workflows waiting to run"
+            },
+            "running": {
+              "type": "integer",
+              "description": "The number of workflows currently running"
+            },
+            "complete": {
+              "type": "integer",
+              "description": "The number of completed workflows"
+            },
+            "error": {
+              "type": "integer",
+              "description": "The number of workflows that have failed"
+            }
+          }
         }
       }
     },
@@ -3105,15 +3132,13 @@
         "role": {
           "type": "object",
           "required": [
-            "groupBy"
+            "latitude",
+            "longitude",
+            "taxaName"
           ],
           "properties": {
-            "geopoint": {
-              "description": "The field key of the field that has geopoint information.  Either\nthis or latitude and longitude must be provided.\n",
-              "type": "string"
-            },
             "groupBy": {
-              "description": "Group records by this field key",
+              "description": "If this is provided, use this field to group occurrence data.  \nIf it is not provided, taxaName will be used.  \n",
               "type": "string"
             },
             "latitude": {
@@ -3125,7 +3150,7 @@
               "type": "string"
             },
             "taxaName": {
-              "description": "The field key for the field containing taxon names",
+              "description": "The field key for the field containing taxon names. If there are\nmultiple values that should be grouped together, provide\n\"groupBy\" as well to group those values.\n",
               "type": "string"
             },
             "uniqueId": {
@@ -3133,6 +3158,9 @@
               "type": "string"
             }
           }
+        },
+        "delimiter": {
+          "type": "string"
         }
       }
     },

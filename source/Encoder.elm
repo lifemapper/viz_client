@@ -54,13 +54,12 @@ encodeOccurrenceMetadata (OccurrenceMetadata { role, field }) =
 
 
 encodeOccurrenceMetadataRole : OccurrenceMetadataRole -> Value
-encodeOccurrenceMetadataRole (OccurrenceMetadataRole { uniqueId, taxaName, longitude, latitude, groupBy, geopoint }) =
+encodeOccurrenceMetadataRole (OccurrenceMetadataRole { uniqueId, taxaName, longitude, latitude, groupBy }) =
     [ uniqueId |> Maybe.map (string >> (,) "uniqueId")
-    , taxaName |> Maybe.map (string >> (,) "taxaName")
-    , longitude |> Maybe.map (string >> (,) "longitude")
-    , latitude |> Maybe.map (string >> (,) "latitude")
-    , geopoint |> Maybe.map (string >> (,) "geopoint")
-    , groupBy |> string |> (,) "groupBy" |> Just
+    , taxaName |> (string >> (,) "taxaName") |> Just
+    , longitude |> (string >> (,) "longitude") |> Just
+    , latitude |> (string >> (,) "latitude") |> Just
+    , groupBy |> Maybe.map (string >> (,) "groupBy")
     ]
         |> List.concatMap Maybe.toList
         |> object
