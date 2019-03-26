@@ -563,7 +563,11 @@ view model =
                         [ Html.text "No projections matched." ]
 
         scenarioOptions onSelect =
-            Html.select [ Events.onInput <| String.toInt >> Result.toMaybe >> onSelect ] <|
+            Html.select
+                [ Events.onInput <| String.toInt >> Result.toMaybe >> onSelect
+                , Html.Attributes.style [ ( "width", "300px" ) ]
+                ]
+            <|
                 (Html.option [] [ Html.text "Any" ])
                     :: (model.scenarios |> List.map (\s -> Html.option [ Html.Attributes.value (toString s.id) ] [ Html.text s.name ]))
 
