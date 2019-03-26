@@ -1,6 +1,6 @@
 # viz_client
 
-[![Build Status](https://travis-ci.org/lifemapper/rutabaga.svg?branch=master)](https://travis-ci.org/lifemapper/rutabaga)
+[![Build Status](https://travis-ci.org/lifemapper/viz_client.svg?branch=master)](https://travis-ci.org/lifemapper/viz_client)
 
 ## Build dependencies
 
