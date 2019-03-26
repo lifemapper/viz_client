@@ -420,5 +420,5 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                         >> Html.tr []
                     )
     in
-        Options.div [ Options.css "overflow-x" "scroll" ]
+        Options.div [ Options.css "overflow-x" "auto" ]
             [ Html.table [] (header :: previewRows) ]
