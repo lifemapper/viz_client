@@ -36,7 +36,13 @@ app.ports.fileSelected.subscribe(function(args) {
         Papa.parse(file, {
             preview: 4,
             complete: function(results) {
-                app.ports.selectedFileName.send({id: id, filename: file.name, preview: results.data});
+                console.log('parse results', results);
+                app.ports.selectedFileName.send({
+                    id: id,
+                    filename: file.name,
+                    preview: results.data,
+                    delimiter: results.meta.delimiter
+                });
             }
         });
     } else {

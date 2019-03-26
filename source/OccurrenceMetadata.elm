@@ -68,6 +68,7 @@ type alias Metadata =
         , uniqueId : Maybe Int
         }
     , preview : List (List String)
+    , delimiter : String
     }
 
 
@@ -106,13 +107,13 @@ toJson metadata =
                 , groupBy = metadata.roles.groupBy |> Maybe.map toString
                 }
     in
-        OccurrenceMetadata { role = Just roles, field = Just <| OccurrenceMetadataField fields, delimiter = Just "," }
+        OccurrenceMetadata { role = Just roles, field = Just <| OccurrenceMetadataField fields, delimiter = Just metadata.delimiter }
             |> encodeOccurrenceMetadata
             |> encode 0
 
 
-initMetadata : List (List String) -> Metadata
-initMetadata preview =
+initMetadata : String -> List (List String) -> Metadata
+initMetadata delimiter preview =
     { fields =
         preview
             |> List.getAt 0
@@ -127,6 +128,7 @@ initMetadata preview =
         , uniqueId = Nothing
         }
     , preview = preview
+    , delimiter = delimiter
     }
 
 

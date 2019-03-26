@@ -58,7 +58,7 @@ port uploadCanceled : (String -> msg) -> Sub msg
 port uploadCmd : { id : String, url : String } -> Cmd msg
 
 
-port selectedFileName : ({ id : String, filename : String, preview : List (List String) } -> msg) -> Sub msg
+port selectedFileName : ({ id : String, filename : String, preview : List (List String), delimiter : String } -> msg) -> Sub msg
 
 
 type UploadType
@@ -106,7 +106,7 @@ getUploadedFilename state =
 
 type UploadMsg
     = FileSelectedMsg String
-    | GotFileNameMsg { id : String, filename : String, preview : List (List String) }
+    | GotFileNameMsg { id : String, filename : String, preview : List (List String), delimiter : String }
     | MetadataMsg MetadataMsg
     | GotUploadStatus { id : String, status : UploadStatus }
     | UpdateUploadFilename String
@@ -131,12 +131,12 @@ update uploadType index flags msg state =
             else
                 ( state, Cmd.none )
 
-        GotFileNameMsg { id, filename, preview } ->
+        GotFileNameMsg { id, filename, preview, delimiter } ->
             if id == fileSelectId index then
                 ( GotFileName
                     { localFileName = filename
                     , uploadAs = filename
-                    , metadata = initMetadata preview
+                    , metadata = initMetadata delimiter preview
                     , metadataIssues = []
                     }
                 , Cmd.none

@@ -45,9 +45,10 @@ encodeOpenTreePOST (OpenTreePOST taxonIds) =
 
 
 encodeOccurrenceMetadata : OccurrenceMetadata -> Value
-encodeOccurrenceMetadata (OccurrenceMetadata { role, field }) =
+encodeOccurrenceMetadata (OccurrenceMetadata { role, field, delimiter }) =
     [ role |> Maybe.map (encodeOccurrenceMetadataRole >> (,) "role")
     , field |> Maybe.map (encodeOccurrenceMetadataField >> (,) "field")
+    , delimiter |> Maybe.map (string >> (,) "delimiter")
     ]
         |> List.concatMap Maybe.toList
         |> object
