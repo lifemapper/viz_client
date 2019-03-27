@@ -42,5 +42,5 @@ deploy:
     - global-pam.tar.gz
   skip_cleanup: true
   on:
-    repo: lifemapper/rutabaga
+    repo: lifemapper/viz_client
     tags: true
