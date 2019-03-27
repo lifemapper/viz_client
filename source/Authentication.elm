@@ -75,6 +75,9 @@ getUserName state =
         LoggedIn username ->
             Just username
 
+        NotLoggedIn _ ->
+            Just "anon"
+
         _ ->
             Nothing
 

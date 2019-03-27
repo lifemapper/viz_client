@@ -60,27 +60,64 @@ function configureMap(element) {
 
     var sites = element.dataset["mapSites"].split(" ");
 
-    console.log("adding layer");
+    const node = nodeLookup.find(function(d) {
+        let mapColumn = element.dataset["mapColumn"];
+        return d.header == mapColumn || d.header.toLowerCase() == ("node_" + mapColumn);
+    });
+    const dataColumn = node && node.index;
+
 
     if (layers == null || layers.length === 0) {
+        console.log("adding layer");
         mapLayers[element._leaflet_id] = [
-            L.geoJSON(sitesObserved, {style: style(sites)}).addTo(map)
+            L.geoJSON(ancPam, {style: style(sites, dataColumn)}).addTo(map)
         ];
     } else {
-        layers[0].setStyle(style(sites));
+        layers[0].setStyle(style(sites, dataColumn));
     }
 }
 
-function style(sites) {
+function style(sites, dataColumn) {
     return function(feature) {
         const included =  sites.includes("" + feature.id);
-        const style = {
+        const data = feature.properties.data;
+
+        if (dataColumn != null) {
+            if (data["1"] && data["1"].includes(dataColumn)) {
+                return {
+                    fillOpacity: 0.6,
+                    stroke: false,
+                    fill: true,
+                    fillColor: "blue"
+                };
+            }
+
+            if (data["-1"] && data["-1"].includes(dataColumn)) {
+                return {
+                    fillOpacity: 0.6,
+                    stroke: false,
+                    fill: true,
+                    fillColor: "red"
+                };
+            }
+
+            if (data["2"] && data["2"].includes(dataColumn)) {
+                return {
+                    fillOpacity: 0.6,
+                    stroke: false,
+                    fill: true,
+                    fillColor: "purple"
+                };
+            }
+        }
+
+        return {
             fillOpacity: 0.6,
             stroke: false,
             fill: included,
             fillColor: "red"
         };
-        return style;
+
     };
 }
 
@@ -172,7 +209,7 @@ observer.observe(document.body, {
     subtree: true,
     childList: true,
     attributes: true,
-    attributeFilter: ["data-map-sites"],
+    attributeFilter: ["data-map-sites", "data-map-column"],
     attributeOldValue: true
 });
 
