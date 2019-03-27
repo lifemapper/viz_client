@@ -120,6 +120,7 @@ type alias Model =
     { mdl : Material.Model
     , page : AppPage
     , gridsets : GridSets
+    , publicGridsets : GridSets
     , flags : Flags
     , login : Auth.Model
     }
@@ -132,6 +133,7 @@ type Msg
     | BrowseProjectionsMsg BrowseProjectionsPage.Msg
     | SignUpMsg SignUp.Msg
     | GotGridSets (List AtomObjectRecord)
+    | GotPublicGridSets (List AtomObjectRecord)
     | UrlChange Location
     | OpenExisting Int
     | OpenNew
@@ -223,10 +225,13 @@ update msg model =
                 model ! [ Nav.newUrl "#browse-projections/" ]
 
             Tick _ ->
-                ( model, getGridSets model.flags model.login )
+                model ! [ getPublicGridSets model.flags, getGridSets model.flags model.login ]
 
             GotGridSets gridsets ->
                 ( { model | gridsets = GridSetsList gridsets }, Cmd.none )
+
+            GotPublicGridSets gridsets ->
+                ( { model | publicGridsets = GridSetsList gridsets }, Cmd.none )
 
             Nop ->
                 ( model, Cmd.none )
@@ -241,36 +246,42 @@ update msg model =
 
 getGridSets : Flags -> Auth.Model -> Cmd Msg
 getGridSets { apiRoot } login =
-    let
-        url =
-            case Auth.getUserName login of
-                Nothing ->
-                    apiRoot ++ "gridset?user=anon"
+    case Auth.getUserName login of
+        Just username ->
+            requestGridsets (apiRoot ++ "gridset?user=" ++ username) GotGridSets
 
-                _ ->
-                    apiRoot ++ "gridset"
-    in
-        Http.request
-            { method = "GET"
-            , headers = [ Http.header "Accept" "application/json" ]
-            , url = url
-            , body = Http.emptyBody
-            , expect = Http.expectJson decodeAtomList
-            , timeout = Nothing
-            , withCredentials = False
-            }
-            |> Http.send gotGridSets
+        Nothing ->
+            Cmd.none
 
 
-gotGridSets : Result Http.Error AtomList -> Msg
-gotGridSets result =
+getPublicGridSets : Flags -> Cmd Msg
+getPublicGridSets { apiRoot } =
+    requestGridsets (apiRoot ++ "gridset?user=public") GotPublicGridSets
+
+
+requestGridsets : String -> (List AtomObjectRecord -> Msg) -> Cmd Msg
+requestGridsets url msg =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = url
+        , body = Http.emptyBody
+        , expect = Http.expectJson decodeAtomList
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send (gotGridSets msg)
+
+
+gotGridSets : (List AtomObjectRecord -> Msg) -> Result Http.Error AtomList -> Msg
+gotGridSets msg result =
     case result of
         Ok (AtomList atoms) ->
             atoms
                 |> List.map (\(AtomObject o) -> o)
                 |> List.sortBy .modificationTime
                 |> List.reverse
-                |> GotGridSets
+                |> msg
 
         Err err ->
             Debug.log "Error fetching gridsets" (toString err) |> always Nop
@@ -316,16 +327,26 @@ resultsLink model { name, id } =
                 _ ->
                     Options.nop
     in
-        Layout.link [ Options.onClick (OpenExisting id), Options.css "cursor" "pointer", selected ]
+        Layout.link
+            [ Options.onClick (OpenExisting id)
+            , Options.css "cursor" "pointer"
+            , Options.css "padding" "8px 40px"
+            , selected
+            ]
             [ Html.text name ]
 
 
 title : Auth.Model -> Html msg
 title login =
-    Auth.getUserName login
-        |> Maybe.map (\userName -> "Welcome, " ++ userName)
-        |> Maybe.withDefault "BiotaPhy Platform"
-        |> Html.text
+    case Auth.getUserName login of
+        Just "anon" ->
+            Html.text "BiotaPhy Platform"
+
+        Just username ->
+            Html.text ("Welcome, " ++ username)
+
+        Nothing ->
+            Html.text "BiotaPhy Platform"
 
 
 drawer : Model -> List (Html Msg)
@@ -340,10 +361,18 @@ drawer model =
         ]
     , Layout.navigation [] [ newLink model ]
       -- , Layout.navigation [] [ newOccurrenceSetLink model ]
-    , Layout.title [ Typo.subhead ] [ Html.text "Completed" ]
+    , Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text "Completed" ]
     , Layout.navigation []
-        [ Layout.link [ Options.onClick OpenBrowse, Options.css "cursor" "pointer" ] [ Html.text "Search Species" ]]
+        [ Layout.link [ Options.onClick OpenBrowse, Options.css "cursor" "pointer" ] [ Html.text "Search Species" ] ]
+    , Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text "User's" ]
     , case model.gridsets of
+        GridSetsLoading ->
+            Layout.row [] [ Loading.spinner [ Loading.active True ] ]
+
+        GridSetsList list ->
+            list |> List.map (resultsLink model) |> Layout.navigation []
+    , Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text "Public" ]
+    , case model.publicGridsets of
         GridSetsLoading ->
             Layout.row [] [ Loading.spinner [ Loading.active True ] ]
 
@@ -412,6 +441,7 @@ start flags location =
             { mdl = Material.model
             , page = page
             , gridsets = GridSetsLoading
+            , publicGridsets = GridSetsLoading
             , flags = flags
             , login = login
             }
