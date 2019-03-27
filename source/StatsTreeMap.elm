@@ -60,16 +60,12 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg ({ mcpaModel, statsModel } as model) =
     case msg of
         SetSelectedNodes ( leftNodes, rightNodes ) ->
-            let
-                mcpaModel =
-                    model.mcpaModel
-            in
-                ( { model | mcpaModel = { mcpaModel | selectedNode = Nothing, flaggedNodes = ( leftNodes, rightNodes ) } }
-                , Cmd.none
-                )
+            ( { model | mcpaModel = { mcpaModel | selectedNode = Nothing, flaggedNodes = ( leftNodes, rightNodes ) } }
+            , Cmd.none
+            )
 
         SetSelectedSites sites ->
             let
@@ -91,11 +87,8 @@ update msg model =
                                         Nothing
                             )
                         |> Dict.fromList
-
-                statsModel =
-                    model.statsModel
             in
-                ( { model | statsModel = { statsModel | flagged = flagged } }, Cmd.none )
+                ( { model | statsModel = { statsModel | flagged = flagged, selected = Set.empty } }, Cmd.none )
 
         McpaMsg ((McpaModel.SelectNode n) as msg_) ->
             let
