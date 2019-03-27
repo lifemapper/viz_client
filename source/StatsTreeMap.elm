@@ -37,7 +37,7 @@ import StatsMain
 port requestSitesForNode : Int -> Cmd msg
 
 
-port sitesForNode : (List Int -> msg) -> Sub msg
+port sitesForNode : (List ( Int, String ) -> msg) -> Sub msg
 
 
 port requestNodesForSites : List Int -> Cmd msg
@@ -55,7 +55,7 @@ type alias Model =
 type Msg
     = McpaMsg McpaModel.Msg
     | StatsMsg StatsMain.Msg
-    | SetSelectedSites (List Int)
+    | SetSelectedSites (List ( Int, String ))
     | SetSelectedNodes ( List Int, List Int )
 
 
@@ -73,13 +73,29 @@ update msg model =
 
         SetSelectedSites sites ->
             let
-                selected =
-                    Set.fromList sites
+                flagged =
+                    sites
+                        |> List.filterMap
+                            (\( id, side ) ->
+                                case side of
+                                    "left" ->
+                                        Just ( id, "blue" )
+
+                                    "right" ->
+                                        Just ( id, "red" )
+
+                                    "both" ->
+                                        Just ( id, "purple" )
+
+                                    _ ->
+                                        Nothing
+                            )
+                        |> Dict.fromList
 
                 statsModel =
                     model.statsModel
             in
-                ( { model | statsModel = { statsModel | selected = selected } }, Cmd.none )
+                ( { model | statsModel = { statsModel | flagged = flagged } }, Cmd.none )
 
         McpaMsg ((McpaModel.SelectNode n) as msg_) ->
             let
@@ -137,13 +153,14 @@ view { mcpaModel, statsModel } =
                 , ( "height", "100vh" )
                 ]
             ]
-            [ viewTree mcpaModel False selectData |> Html.map McpaMsg
+            [ viewTree mcpaModel True selectData |> Html.map McpaMsg
             , Html.div
                 [ A.style [ ( "margin", "0 12px" ) ] ]
                 [ Html.h3 [ A.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ] [ Html.text "Sites" ]
                 , Html.div
                     [ A.class "leaflet-map"
                     , A.attribute "data-map-sites" selectedSiteIds
+                    , A.attribute "data-map-column" (mcpaModel.selectedNode |> Maybe.map toString |> Maybe.withDefault "")
                     , A.style [ ( "width", "900px" ), ( "height", "500px" ) ]
                     ]
                     []

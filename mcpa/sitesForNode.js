@@ -29,12 +29,13 @@ app.ports.requestSitesForNode.subscribe(function(nodeId) {
     });
     const dataColumn = node && node.index;
 
-    const sites = ancPam.features.filter(function(feature) {
+    const sites = ancPam.features.map(function(feature) {
         const data = feature.properties.data;
-        return (data[1] && data[1].includes(dataColumn))
-            ||  (data[-1] && data[-1].includes(dataColumn))
-            ||  (data[2] && data[2].includes(dataColumn));
-    }).map(function(feature) { return feature.id; });
+        if (data[1] && data[1].includes(dataColumn)) return [feature.id, "left"];
+        if (data[-1] && data[-1].includes(dataColumn)) return [feature.id, "right"];
+        if (data[2] && data[2].includes(dataColumn)) return [feature.id, "both"];
+        return null;
+    }).filter(function(result) { return result != null; });
 
     app.ports.sitesForNode.send(sites);
 });

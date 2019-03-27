@@ -150,6 +150,7 @@ port sitesSelected : (List Int -> msg) -> Sub msg
 
 type alias Model =
     { selected : Set Int
+    , flagged : Dict Int String
     , selecting : Maybe ( SvgPoint, SvgPoint )
     , variables : List String
     , statNames : Dict String { name : String, description : String }
@@ -231,7 +232,7 @@ update msg model =
                 ( { model | yCol = col, displayedRecords = records, scale = scale }, Cmd.none )
 
         SitesSelectedMsg sites ->
-            ( { model | selected = Set.fromList sites }, Cmd.none )
+            ( { model | selected = Set.fromList sites, flagged = Dict.empty }, Cmd.none )
 
         MouseMsg event ->
             case event.eventType of
@@ -246,7 +247,7 @@ update msg model =
                             else
                                 Nothing
                     in
-                        ( { model | selecting = selecting }, Cmd.none )
+                        ( { model | selecting = selecting, flagged = Dict.empty }, Cmd.none )
 
                 "mousemove" ->
                     case model.selecting of
@@ -348,7 +349,12 @@ drawScatter model =
                     , if Set.member record.siteId model.selected then
                         fill "red"
                       else
-                        fill "black"
+                        case Dict.get record.siteId model.flagged of
+                            Just color ->
+                                fill color
+
+                            Nothing ->
+                                fill "black"
                     ]
                     []
 
@@ -554,6 +560,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { selected = Set.empty
       , selecting = Nothing
+      , flagged = Dict.empty
       , variables = []
       , statNames = Dict.empty
       , stats = []
