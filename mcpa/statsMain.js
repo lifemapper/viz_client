@@ -36,16 +36,23 @@ app.ports.requestStats.subscribe(function() {
 });
 
 document.onmousemove = document.onmouseup = document.onmousedown = function(event) {
-    event.preventDefault();
     const plot = document.getElementById("plot");
     if (plot == null) return;
     const rect = plot.getBoundingClientRect();
-    app.ports.mouseEvent.send({
-        eventType: event.type,
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-        ctrlKey: event.ctrlKey
-    });
+    if (event.clientX >= rect.left &&
+        event.clientY >= rect.top &&
+        event.clientX < rect.right &&
+        event.clientY < rect.bottom
+       ) {
+        event.preventDefault();
+        const data = {
+            eventType: event.type,
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+            ctrlKey: event.ctrlKey
+        };
+        app.ports.mouseEvent.send(data);
+    }
 };
 
 function configureMap(element) {
