@@ -137,24 +137,52 @@ view { mcpaModel, statsModel } =
 
         selectData cladeId =
             Dict.get ( cladeId, "Observed", mcpaModel.selectedVariable ) mcpaModel.data
+
+        block color =
+            Html.div
+                [ A.style [ ( "width", "12px" ), ( "height", "12px" ), ( "background-color", color ), ( "display", "inline-block" ) ] ]
+                []
+
+        legend =
+            case mcpaModel.selectedNode of
+                Just _ ->
+                    Html.div [ A.style [ ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
+                        [ Html.div [ A.style [ ( "margin-bottom", "8px" ) ] ] [ Html.text "Clade 1 = ", block "blue" ]
+                        , Html.div [ A.style [ ( "margin-bottom", "8px" ) ] ] [ Html.text "Clade 2 = ", block "red" ]
+                        , Html.div [ A.style [ ( "margin-bottom", "8px" ) ] ] [ Html.text "Both clades = ", block "purple" ]
+                        ]
+
+                Nothing ->
+                    if not <| Set.isEmpty statsModel.selected then
+                        Html.div [ A.style [ ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
+                            [ Html.div [ A.style [ ( "margin-bottom", "8px" ) ] ]
+                                [ Html.text ("Species present in " ++ (statsModel.selected |> Set.size |> toString) ++ " selected sites = ")
+                                , block "red"
+                                ]
+                            ]
+                    else
+                        Html.div [ A.style [ ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
+                            [ Html.div [ A.style [ ( "margin-bottom", "8px" ) ] ]
+                                  [ Html.text "Select areas from map or plot, or nodes from tree." ] ]
     in
         Html.div
             [ A.style
                 [ ( "display", "flex" )
-                , ( "justify-content", "space-between" )
+                , ( "justify-content", "space-around" )
                 , ( "font-family", "sans-serif" )
-                , ( "height", "100vh" )
                 ]
             ]
             [ viewTree mcpaModel True selectData |> Html.map McpaMsg
             , Html.div
                 [ A.style [ ( "margin", "0 12px" ) ] ]
-                [ Html.h3 [ A.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ] [ Html.text "Sites" ]
+                [ Html.h3 [ A.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                    [ Html.text "Sites Map" ]
+                , legend
                 , Html.div
                     [ A.class "leaflet-map"
                     , A.attribute "data-map-sites" selectedSiteIds
                     , A.attribute "data-map-column" (mcpaModel.selectedNode |> Maybe.map toString |> Maybe.withDefault "")
-                    , A.style [ ( "width", "900px" ), ( "height", "500px" ) ]
+                    , A.style [ ( "width", "500px" ), ( "height", "400px" ) ]
                     ]
                     []
                 ]

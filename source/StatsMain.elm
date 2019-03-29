@@ -115,8 +115,8 @@ type alias SvgViewBox =
 
 svgViewBox : SvgViewBox
 svgViewBox =
-    { width = 800
-    , height = 800
+    { width = 500
+    , height = 500
     , minX = -100
     , minY = 0
     , maxX = 1020
@@ -195,7 +195,7 @@ update msg model =
                 -- variables |> List.getAt 1 |> Maybe.withDefault ""
                 records =
                     sitesObserved
-                        |> List.filter (.stats >> List.any (\(k, v) -> v /= Just 0.0))
+                        |> List.filter (.stats >> List.any (\( k, v ) -> v /= Just 0.0))
                         |> recordsFromStats xCol yCol
 
                 scale =
@@ -508,18 +508,18 @@ viewPlot model =
         Html.div []
             [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
                 [ Html.text "Site Based Stat Relationships" ]
+            , Html.div [ Html.Attributes.style [ ( "text-align", "center" ) ] ]
+                [ variableSelector model.yCol YColSelectedMsg
+                , Html.text " vs "
+                , variableSelector model.xCol XColSelectedMsg
+                ]
             , svg
                 [ width <| toString svgViewBox.width
                 , height <| toString svgViewBox.height
                 , viewBox <| svgViewBox2String svgViewBox
                 , Html.Attributes.id "plot"
                 ]
-                ([ g [ transform "" ] <| (drawScatter model) ] ++ selectionBox)
-            , Html.p [ Html.Attributes.style [ ( "text-align", "center" ) ] ]
-                [ variableSelector model.yCol YColSelectedMsg
-                , Html.text " vs "
-                , variableSelector model.xCol XColSelectedMsg
-                ]
+                ((drawScatter model) ++ selectionBox)
             ]
 
 

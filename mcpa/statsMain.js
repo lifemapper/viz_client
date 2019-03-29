@@ -26,15 +26,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 var maps = {};
 var mapLayers = {};
 
-app.ports.requestStats.subscribe(function() {
-    app.ports.statsForSites.send({
-        sitesObserved: sitesObserved.features.map(function(feature) {
-            return {id: feature.id, stats: Object.entries(feature.properties)};
-        }),
-        statNameLookup: Object.entries(statNameLookup)
-    });
-});
-
 document.onmousemove = document.onmouseup = document.onmousedown = function(event) {
     const plot = document.getElementById("plot");
     if (plot == null) return;
@@ -142,7 +133,7 @@ function style(sites, dataColumn) {
 //     }, [])
 // );
 
-var bbox = turf.bbox(sitesObserved);
+var bbox = turf.bbox(ancPam);
 
 var observer = new MutationObserver(function(mutations) {
     mutations.forEach(function(m) {
@@ -151,14 +142,17 @@ var observer = new MutationObserver(function(mutations) {
 
             var elements = n.getElementsByClassName("leaflet-map");
             Array.prototype.forEach.call(elements, function(element) {
-                var map = L.map(element).fitBounds([
-                    [bbox[1], bbox[0]], [bbox[3], bbox[2]]
-                ]);
+                var map = L.map(element);
+
                 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: "© OpenStreetMap",
                     minZoom: 2,
                     maxZoom: 12
                 }).addTo(map);
+
+                map.fitBounds([
+                    [bbox[1], bbox[0]], [bbox[3], bbox[2]]
+                ]);
 
                 var editableLayers = new L.FeatureGroup();
                 map.addLayer(editableLayers);
@@ -224,5 +218,17 @@ observer.observe(document.body, {
     attributes: true,
     attributeFilter: ["data-map-sites", "data-map-column"],
     attributeOldValue: true
+});
+
+var app = Elm.StatsTreeMap.fullscreen({
+    data: mcpaMatrix,
+    taxonTree: taxonTree
+});
+
+app.ports.statsForSites.send({
+    sitesObserved: sitesObserved.features.map(function(feature) {
+        return {id: feature.id, stats: Object.entries(feature.properties)};
+    }),
+    statNameLookup: Object.entries(statNameLookup)
 });
 

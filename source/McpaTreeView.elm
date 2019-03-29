@@ -104,7 +104,7 @@ viewTree model redBlue selectData =
         Html.div
             [ Html.Attributes.style [ ( "display", "flex" ), ( "flex-direction", "column" ) ] ]
             [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
-                [ Html.text "Select nodes in tree" ]
+                [ Html.text "Phylogenetic Tree" ]
             , Html.div
                 [ Html.Attributes.style
                     [ ( "display", "flex" )
@@ -115,8 +115,8 @@ viewTree model redBlue selectData =
                 [ variableSelector, toggleBranchLengths ]
             , Html.div [ Html.Attributes.style [ ( "margin-bottom", "20px" ), ( "overflow-y", "auto" ) ] ]
                 [ svg
-                    [ width "600"
-                    , height (15 * treeHeight |> toString)
+                    [ width "560"
+                    , height (14 * treeHeight |> toString)
                     , viewBox ("0 0 40 " ++ (toString treeHeight))
                     , Html.Attributes.style [ ( "background", "#000" ), ( "font-family", "sans-serif" ) ]
                       -- , Html.Events.onClick JumpUp
