@@ -194,7 +194,9 @@ update msg model =
 
                 -- variables |> List.getAt 1 |> Maybe.withDefault ""
                 records =
-                    recordsFromStats xCol yCol sitesObserved
+                    sitesObserved
+                        |> List.filter (.stats >> List.any (\(k, v) -> v /= Just 0.0))
+                        |> recordsFromStats xCol yCol
 
                 scale =
                     computeScale records

@@ -77,7 +77,13 @@ function configureMap(element) {
     if (layers == null || layers.length === 0) {
         console.log("adding layer");
         mapLayers[element._leaflet_id] = [
-            L.geoJSON(ancPam, {style: style(sites, dataColumn)}).addTo(map)
+            L.geoJSON(ancPam, {
+                style: style(sites, dataColumn),
+                filter: function(feature) {
+                    const data = feature.properties.data;
+                    return data["1"] || data["-1"] || data["2"];
+                }
+            }).addTo(map)
         ];
     } else {
         layers[0].setStyle(style(sites, dataColumn));
