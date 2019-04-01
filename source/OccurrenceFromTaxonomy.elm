@@ -347,17 +347,20 @@ view ({ options, filters, loading } as model) =
         , Html.div [ Html.Attributes.style [ ( "margin-left", "20px" ) ] ]
             [ Options.styled Html.p [ Typo.subhead, Options.css "margin" "0" ] [ Html.text "Matching species" ]
             , Html.p []
-                [ if model.speciesFound /= List.length model.taxa then
-                    Html.text <| " (showing " ++ (toString <| List.length model.taxa) ++ " of " ++ (toString model.speciesFound) ++ ")"
-                  else
-                    Html.text <| " (found " ++ (toString model.speciesFound) ++ ")"
-                ]
-            , Html.select
-                [ Html.Attributes.style [ ( "height", "400px" ), ( "width", "300px" ), ( "overflow", "auto" ) ]
-                , Html.Attributes.multiple True
-                , Events.on "change" (itemsSelected SpeciesSelected)
-                ]
-                (List.map (displayName model.selectedSpecies) model.taxa)
+                [ Html.text <| " (found " ++ (toString model.speciesFound) ++ ")" ]
+            , if model.speciesFound > List.length model.taxa then
+                Html.textarea
+                    [ Html.Attributes.style [ ( "height", "400px" ), ( "width", "300px" ) ]
+                    , Html.Attributes.readonly True
+                    ]
+                    [ Html.text "Too many matching species. Continue narrowing search using filters." ]
+              else
+                Html.select
+                    [ Html.Attributes.style [ ( "height", "400px" ), ( "width", "300px" ), ( "overflow", "auto" ) ]
+                    , Html.Attributes.multiple True
+                    , Events.on "change" (itemsSelected SpeciesSelected)
+                    ]
+                    (List.map (displayName model.selectedSpecies) model.taxa)
             ]
         , Html.div
             [ Html.Attributes.style
