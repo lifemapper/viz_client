@@ -238,10 +238,16 @@ update msg model =
 
             AuthMsg msg_ ->
                 let
-                    ( login, cmd_ ) =
+                    ( loginStateChanged, ( login, cmd_ ) ) =
                         Auth.update model.flags msg_ model.login
                 in
-                    { model | login = login } ! [ Cmd.map AuthMsg cmd_ ]
+                    { model | login = login }
+                        ! [ Cmd.map AuthMsg cmd_
+                          , if loginStateChanged then
+                                getGridSets model.flags login
+                            else
+                                Cmd.none
+                          ]
 
 
 getGridSets : Flags -> Auth.Model -> Cmd Msg
@@ -315,7 +321,7 @@ newLink model =
             , Options.css "padding" "8px 40px"
             , selected
             ]
-            [ Icon.i "add",  Html.text "New Project" ]
+            [ Icon.i "add", Html.text "New Project" ]
 
 
 resultsLink : Model -> AtomObjectRecord -> Html Msg
@@ -372,7 +378,8 @@ drawer model =
             , Options.css "padding" "8px 40px"
             ]
             [ Icon.i "search"
-            , Html.text "Search Species" ]
+            , Html.text "Search Species"
+            ]
         ]
     , case Auth.getUserName model.login of
         Just "anon" ->
@@ -467,6 +474,7 @@ start flags location =
         cmds =
             [ Material.init Mdl
             , getGridSets flags login
+            , getPublicGridSets flags
             , Cmd.map AuthMsg authInitCmd
             , cmd
             ]

@@ -83,52 +83,52 @@ getUserName state =
             Nothing
 
 
-update : Flags -> Msg -> State -> ( State, Cmd Msg )
+update : Flags -> Msg -> State -> ( Bool, ( State, Cmd Msg ) )
 update flags msg state =
     case msg of
         IsLoggedIn user ->
-            LoggedIn user ! []
+            ( True, LoggedIn user ! [] )
 
         UpdateUserName username ->
             case state of
                 NotLoggedIn fields ->
-                    NotLoggedIn { fields | username = username } ! []
+                    ( False, NotLoggedIn { fields | username = username } ! [] )
 
                 _ ->
-                    state ! []
+                    ( False, state ! [] )
 
         UpdatePassword password ->
             case state of
                 NotLoggedIn fields ->
-                    NotLoggedIn { fields | password = password } ! []
+                    ( False, NotLoggedIn { fields | password = password } ! [] )
 
                 _ ->
-                    state ! []
+                    ( False, state ! [] )
 
         DoLogin ->
             case state of
                 NotLoggedIn fields ->
-                    LoggingIn fields ! [ doLogin flags fields ]
+                    ( False, LoggingIn fields ! [ doLogin flags fields ] )
 
                 _ ->
-                    state ! []
+                    ( False, state ! [] )
 
         DoLogOut ->
-            state ! [ doLogOut flags ]
+            ( True, state ! [ doLogOut flags ] )
 
         DoReload ->
-            state ! [ Nav.reload ]
+            ( False, state ! [ Nav.reload ] )
 
         LoginFailed ->
             case state of
                 LoggingIn fields ->
-                    NotLoggedIn { fields | rejected = True } ! []
+                    ( False, NotLoggedIn { fields | rejected = True } ! [] )
 
                 _ ->
-                    NotLoggedIn { username = "", password = "", rejected = False } ! []
+                    ( False, NotLoggedIn { username = "", password = "", rejected = False } ! [] )
 
         IsAnon ->
-            NotLoggedIn { username = "", password = "", rejected = False } ! []
+            ( True, NotLoggedIn { username = "", password = "", rejected = False } ! [] )
 
 
 doLogin : Flags -> LoginFields -> Cmd Msg
