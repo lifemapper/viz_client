@@ -30,6 +30,7 @@ import Http
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
+import Material.Icon as Icon
 import Material.Layout as Layout
 import Material.Options as Options
 import Navigation as Nav
@@ -251,7 +252,7 @@ view signUpHref state =
     in
         case state of
             LoggedIn userName ->
-                [ Layout.link [ Options.onClick DoLogOut, Options.css "cursor" "pointer" ] [ Html.text "Logout" ] ]
+                [ Layout.link [ Options.onClick DoLogOut, Options.css "cursor" "pointer" ] [ Icon.i "exit_to_app", Html.text "Logout" ] ]
 
             Unknown ->
                 []

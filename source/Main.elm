@@ -27,13 +27,13 @@ module Main exposing (..)
 import Time
 import Material
 import Material.Layout as Layout
+import Material.Icon as Icon
 import Material.Typography as Typo
 import Material.Options as Options
 import Material.Helpers exposing (lift)
 import Material.Spinner as Loading
 import Material.Color as Color
 import Html exposing (Html)
-import Html.Attributes
 import Navigation as Nav exposing (Location)
 import UrlParser as Url exposing ((</>))
 import Http
@@ -309,8 +309,13 @@ newLink model =
                 _ ->
                     Options.nop
     in
-        Layout.link [ Options.onClick OpenNew, Options.css "cursor" "pointer", selected ]
-            [ Html.text "New Project" ]
+        Layout.link
+            [ Options.onClick OpenNew
+            , Options.css "cursor" "pointer"
+            , Options.css "padding" "8px 40px"
+            , selected
+            ]
+            [ Icon.i "add",  Html.text "New Project" ]
 
 
 resultsLink : Model -> AtomObjectRecord -> Html Msg
@@ -353,18 +358,31 @@ drawer : Model -> List (Html Msg)
 drawer model =
     [ Layout.title [] [ title model.login ]
     , Layout.navigation [] (Auth.view "#sign-up/" model.login |> List.map (Html.map AuthMsg))
-    , Layout.navigation []
-        [ Layout.link []
-            [ Html.a [ Html.Attributes.href "./subsetpam.html" ]
-                [ Html.text "Subset the Global PAM" ]
-            ]
-        ]
+      -- , Layout.navigation []
+      --     [ Layout.link []
+      --         [ Html.a [ Html.Attributes.href "./subsetpam.html" ]
+      --             [ Html.text "Subset the Global PAM" ]
+      --         ]
+      --     ]
     , Layout.navigation [] [ newLink model ]
-      -- , Layout.navigation [] [ newOccurrenceSetLink model ]
-    , Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text "Completed" ]
     , Layout.navigation []
-        [ Layout.link [ Options.onClick OpenBrowse, Options.css "cursor" "pointer" ] [ Html.text "Search Species" ] ]
-    , Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text "User's" ]
+        [ Layout.link
+            [ Options.onClick OpenBrowse
+            , Options.css "cursor" "pointer"
+            , Options.css "padding" "8px 40px"
+            ]
+            [ Icon.i "search"
+            , Html.text "Search Species" ]
+        ]
+    , case Auth.getUserName model.login of
+        Just "anon" ->
+            Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text "Anonymous" ]
+
+        Just username ->
+            Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text username ]
+
+        Nothing ->
+            Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text "Anonymous" ]
     , case model.gridsets of
         GridSetsLoading ->
             Layout.row [] [ Loading.spinner [ Loading.active True ] ]

@@ -660,7 +660,7 @@ page =
     , selectTab = always Nop
     , tabTitles = always []
     , subscriptions = subscriptions
-    , title = "Browse Projections"
+    , title = "Search Species"
     }
 
 
