@@ -111,6 +111,7 @@ type UploadMsg
     | GotUploadStatus { id : String, status : UploadStatus }
     | UpdateUploadFilename String
     | DoUpload
+    | ChooseNewFile
 
 
 type alias Msg =
@@ -143,6 +144,9 @@ update uploadType index flags msg state =
                 )
             else
                 ( state, Cmd.none )
+
+        ChooseNewFile ->
+            ( FileNotSelected, Cmd.none )
 
         MetadataMsg msg_ ->
             case state of
@@ -300,7 +304,14 @@ view mapMdlMsg mapMsg index mdl state =
                     [ Html.text <| "Failed uploading " ++ uploadAs ++ "." ]
 
         GotFileName { localFileName, uploadAs, metadata, metadataIssues } ->
-            [ Html.p [] [ Html.text ("File selected: " ++ localFileName) ]
+            [ Html.p []
+                [ Html.text ("File selected: " ++ localFileName)
+                , Button.render mapMdlMsg
+                    (2 :: index)
+                    mdl
+                    [ Button.raised, Options.onClick (mapMsg ChooseNewFile), Options.css "margin-left" "8px" ]
+                    [ Html.text "Choose another" ]
+                ]
             , metadataTable mapMdlMsg (MetadataMsg >> mapMsg) (2 :: index) mdl metadata
             , Html.p []
                 [ Textfield.render mapMdlMsg
