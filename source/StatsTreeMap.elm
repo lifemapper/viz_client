@@ -163,30 +163,28 @@ view { mcpaModel, statsModel } =
                     else
                         Html.div [ A.style [ ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
                             [ Html.div [ A.style [ ( "margin-bottom", "8px" ) ] ]
-                                  [ Html.text "Select areas from map or plot, or nodes from tree." ] ]
+                                [ Html.text "Select areas from map or plot, or nodes from tree." ]
+                            ]
     in
-        Html.div
-            [ A.style
-                [ ( "display", "flex" )
-                , ( "justify-content", "space-around" )
-                , ( "font-family", "sans-serif" )
-                ]
-            ]
-            [ viewTree mcpaModel True selectData |> Html.map McpaMsg
-            , Html.div
-                [ A.style [ ( "margin", "0 12px" ) ] ]
-                [ Html.h3 [ A.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
-                    [ Html.text "Sites Map" ]
-                , legend
+        Html.div [ A.style [ ( "font-family", "sans-serif" ) ] ]
+            [ Html.h2 [] [ Html.text "BiotaPhy - MCPA with Modeled Data" ]
+            , Html.div [ A.style [ ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
+                [ viewTree mcpaModel True selectData |> Html.map McpaMsg
                 , Html.div
-                    [ A.class "leaflet-map"
-                    , A.attribute "data-map-sites" selectedSiteIds
-                    , A.attribute "data-map-column" (mcpaModel.selectedNode |> Maybe.map toString |> Maybe.withDefault "")
-                    , A.style [ ( "width", "500px" ), ( "height", "400px" ) ]
+                    [ A.style [ ( "margin", "0 12px" ) ] ]
+                    [ Html.h3 [ A.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                        [ Html.text "Sites Map" ]
+                    , legend
+                    , Html.div
+                        [ A.class "leaflet-map"
+                        , A.attribute "data-map-sites" selectedSiteIds
+                        , A.attribute "data-map-column" (mcpaModel.selectedNode |> Maybe.map toString |> Maybe.withDefault "")
+                        , A.style [ ( "width", "500px" ), ( "height", "400px" ) ]
+                        ]
+                        []
                     ]
-                    []
+                , StatsMain.viewPlot statsModel |> Html.map StatsMsg
                 ]
-            , StatsMain.viewPlot statsModel |> Html.map StatsMsg
             ]
 
 

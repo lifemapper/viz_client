@@ -190,7 +190,7 @@ view model =
                 ]
     in
         Html.div [ A.style [ ( "font-family", "sans-serif" ) ] ]
-            [ Html.h2 [] [ Html.text "Site Based Statistics" ]
+            [ Html.h2 [] [ Html.text "BiotaPhy - Modeled Map Statistics" ]
             , variableSelector model.selectedVariable VariableSelectedMsg
             , map
             , text
