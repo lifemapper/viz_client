@@ -365,8 +365,7 @@ view mdlMsg mapMsg index mdl model =
     case model.state of
         GetList names ->
             Options.div []
-                [ Options.styled Html.p [ Typo.title ] [ Html.text "Provide List of Species Names" ]
-                , Options.styled Html.textarea
+                [ Options.styled Html.textarea
                     [ Options.attribute <|
                         Attributes.placeholder
                             ("Paste species names here, one per line. \n\n"

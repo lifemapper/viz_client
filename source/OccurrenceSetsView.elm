@@ -37,6 +37,7 @@ import Decoder
 import OccurrenceSetChooser
 import Leaflet
 import Material
+import Material.Toggles as Toggles
 import Material.Options as Options
 import Material.Typography as Typo
 import Material.List as L
@@ -323,7 +324,7 @@ init flags =
     , mappedSet = Nothing
     , chooser = OccurrenceSetChooser.init flags
     , mapCard = MapCard.init Nothing Nothing
-    , source = Choose
+    , source = TaxonList <| OccurrenceSetTaxonList.init flags
     , mdl = Material.model
     , programFlags = flags
     }
@@ -353,25 +354,65 @@ occurrenceSetLI model i o =
 occurrenceSetList : Index -> Model -> Html Msg
 occurrenceSetList index model =
     Options.div [ Options.css "margin" "20px" ]
-        [ Options.styled Html.p [ Typo.title ] [ Html.text "Choose Occurrence Sets" ]
+        [ Options.styled Html.p [ Typo.subhead ] [ Html.text "Choose Occurrence Sets" ]
         , L.ul [] <|
             List.append
                 (List.indexedMap (occurrenceSetLI model) model.occurrenceSets)
                 [ (OccurrenceSetChooser.view True (0 :: index) model.chooser |> Html.map ChooserMsg) ]
-        , Html.p []
-            [ Html.text "Alternatively, "
-            , Options.styled Html.a
-                [ Options.onClick UseTaxonList, Options.css "cursor" "pointer" ]
-                [ Html.text "provide a list of species" ]
-            , Html.text " or "
-            , Options.styled Html.a
-                [ Options.onClick UseTaxonomy, Options.css "cursor" "pointer" ]
-                [ Html.text "select from our list of taxa" ]
-            , Html.text " or "
-            , Options.styled Html.a
-                [ Options.onClick UseUpload, Options.css "cursor" "pointer" ]
-                [ Html.text "upload your data." ]
+        ]
+
+
+sourceChooser : Index -> Model -> Html Msg
+sourceChooser idx model =
+    Options.div [ Options.css "margin" "20px" ]
+        [ Toggles.radio Mdl
+            (0 :: idx)
+            model.mdl
+            [ Options.css "margin-right" "16px"
+            , case model.source of
+                TaxonList _ ->
+                    Toggles.value True
+
+                _ ->
+                    Options.onToggle UseTaxonList
             ]
+            [ Html.text "Provide a list of species names" ]
+        , Toggles.radio Mdl
+            (1 :: idx)
+            model.mdl
+            [ Options.css "margin-right" "16px"
+            , case model.source of
+                Taxonomy _ ->
+                    Toggles.value True
+
+                _ ->
+                    Options.onToggle UseTaxonomy
+            ]
+            [ Html.text "Select by taxonomy" ]
+        , Toggles.radio Mdl
+            (2 :: idx)
+            model.mdl
+            [ Options.css "margin-right" "16px"
+            , case model.source of
+                Choose ->
+                    Toggles.value True
+
+                _ ->
+                    Options.onToggle ChooseOccurrences
+            ]
+            [ Html.text "Use GBIF data" ]
+        , Toggles.radio Mdl
+            (3 :: idx)
+            model.mdl
+            [ Options.css "margin-right" "16px"
+            , case model.source of
+                Upload _ ->
+                    Toggles.value True
+
+                _ ->
+                    Options.onToggle UseUpload
+            ]
+            [ Html.text "Upload CSV file of species points" ]
         ]
 
 
@@ -383,74 +424,38 @@ view index model =
     in
         case model.source of
             Choose ->
-                Options.div [ Options.css "display" "flex" ]
-                    [ occurrenceSetList index model
-                    , MapCard.view index mapCardTitle model.mapCard |> Html.map MapCardMsg
+                Options.div []
+                    [ sourceChooser (0 :: index) model
+                    , Options.div [ Options.css "display" "flex" ]
+                        [ occurrenceSetList index model
+                        , MapCard.view index mapCardTitle model.mapCard |> Html.map MapCardMsg
+                        ]
                     ]
 
             Upload upload ->
                 Options.div []
-                    [ Options.div [ Options.css "margin" "20px" ]
+                    [ sourceChooser (0 :: index) model
+                    , Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
                             (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
-                        , Html.p []
-                            [ Html.text "Alternatively, "
-                            , Options.styled Html.a
-                                [ Options.onClick UseTaxonList, Options.css "cursor" "pointer" ]
-                                [ Html.text "provide a list of species" ]
-                            , Html.text " or "
-                            , Options.styled Html.a
-                                [ Options.onClick UseTaxonomy, Options.css "cursor" "pointer" ]
-                                [ Html.text "select from our list of taxa" ]
-                            , Html.text " or "
-                            , Options.styled Html.a
-                                [ Options.onClick ChooseOccurrences, Options.css "cursor" "pointer" ]
-                                [ Html.text "use Lifemapper data." ]
-                            ]
                         ]
                     ]
 
             Taxonomy model_ ->
                 Options.div []
-                    [ Options.div [ Options.css "margin" "20px" ]
+                    [ sourceChooser (0 :: index) model
+                    , Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
                             [ OccurrenceFromTaxonomy.view model_ |> Html.map TaxonomyMsg ]
-                        , Html.p []
-                            [ Html.text "Alternatively, "
-                            , Options.styled Html.a
-                                [ Options.onClick ChooseOccurrences, Options.css "cursor" "pointer" ]
-                                [ Html.text "use Lifemapper data" ]
-                            , Html.text " or "
-                            , Options.styled Html.a
-                                [ Options.onClick UseTaxonList, Options.css "cursor" "pointer" ]
-                                [ Html.text "provide a list of species" ]
-                            , Html.text " or "
-                            , Options.styled Html.a
-                                [ Options.onClick UseUpload, Options.css "cursor" "pointer" ]
-                                [ Html.text "upload your data." ]
-                            ]
                         ]
                     ]
 
             TaxonList names ->
                 Options.div []
-                    [ Options.div [ Options.css "margin" "20px" ]
+                    [ sourceChooser (0 :: index) model
+                    , Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
                             [ OccurrenceSetTaxonList.view Mdl TaxonListMsg (2 :: index) model.mdl names ]
-                        , Html.p []
-                            [ Html.text "Alternatively, "
-                            , Options.styled Html.a
-                                [ Options.onClick ChooseOccurrences, Options.css "cursor" "pointer" ]
-                                [ Html.text "use Lifemapper data" ]
-                            , Html.text " or "
-                            , Options.styled Html.a
-                                [ Options.onClick UseTaxonomy, Options.css "cursor" "pointer" ]
-                                [ Html.text "select from our list of taxa" ]
-                            , Html.text " or "
-                            , Options.styled Html.a
-                                [ Options.onClick UseUpload, Options.css "cursor" "pointer" ]
-                                [ Html.text "upload your data." ]
-                            ]
                         ]
                     ]
 
