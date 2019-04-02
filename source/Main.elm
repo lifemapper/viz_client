@@ -318,10 +318,32 @@ newLink model =
         Layout.link
             [ Options.onClick OpenNew
             , Options.css "cursor" "pointer"
-            , Options.css "padding" "8px 40px"
+            , Options.css "padding" "8px 20px"
             , selected
             ]
             [ Icon.i "add", Html.text "New Project" ]
+
+
+searchLink : Model -> Html Msg
+searchLink model =
+    let
+        selected =
+            case model.page of
+                BrowseProjections _ ->
+                    Color.background (Color.color Color.Grey Color.S300)
+
+                _ ->
+                    Options.nop
+    in
+        Layout.link
+            [ Options.onClick OpenBrowse
+            , Options.css "cursor" "pointer"
+            , Options.css "padding" "8px 20px"
+            , selected
+            ]
+            [ Icon.i "search"
+            , Html.text "Search Species"
+            ]
 
 
 resultsLink : Model -> AtomObjectRecord -> Html Msg
@@ -341,7 +363,7 @@ resultsLink model { name, id } =
         Layout.link
             [ Options.onClick (OpenExisting id)
             , Options.css "cursor" "pointer"
-            , Options.css "padding" "8px 40px"
+            , Options.css "padding" "8px 20px"
             , selected
             ]
             [ Html.text name ]
@@ -362,7 +384,7 @@ title login =
 
 drawer : Model -> List (Html Msg)
 drawer model =
-    [ Layout.title [] [ title model.login ]
+    [ Layout.title [ Options.css "padding" "0 20px" ] [ title model.login ]
     , Layout.navigation [] (Auth.view "#sign-up/" model.login |> List.map (Html.map AuthMsg))
       -- , Layout.navigation []
       --     [ Layout.link []
@@ -370,39 +392,38 @@ drawer model =
       --             [ Html.text "Subset the Global PAM" ]
       --         ]
       --     ]
-    , Layout.navigation [] [ newLink model ]
-    , Layout.navigation []
-        [ Layout.link
-            [ Options.onClick OpenBrowse
-            , Options.css "cursor" "pointer"
-            , Options.css "padding" "8px 40px"
-            ]
-            [ Icon.i "search"
-            , Html.text "Search Species"
-            ]
-        ]
-    , case Auth.getUserName model.login of
-        Just "anon" ->
-            Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text "Anonymous" ]
+    , Layout.navigation [] [ searchLink model ]
+    , Layout.title [ Typo.subhead, Options.css "line-height" "32px", Options.css "padding" "20px 20px 0px" ]
+        (case Auth.getUserName model.login of
+            Just "anon" ->
+                [ Icon.i "person", Html.text " Anonymous" ]
 
-        Just username ->
-            Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text username ]
+            Just username ->
+                [ Icon.i "person", Html.text <| " " ++ username ]
 
-        Nothing ->
-            Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text "Anonymous" ]
+            Nothing ->
+                [ Icon.i "person", Html.text " Anonymous" ]
+        )
     , case model.gridsets of
         GridSetsLoading ->
             Layout.row [] [ Loading.spinner [ Loading.active True ] ]
 
         GridSetsList list ->
-            list |> List.map (resultsLink model) |> Layout.navigation []
-    , Layout.title [ Typo.subhead, Options.css "line-height" "32px" ] [ Html.text "Public" ]
+            case list of
+                [] ->
+                    Layout.navigation [ Options.css "padding" "0" ] [ newLink model ]
+
+                _ ->
+                    Layout.navigation [ Options.css "padding" "0" ]
+                        (newLink model :: (list |> List.map (resultsLink model)))
+    , Layout.title [ Typo.subhead, Options.css "line-height" "32px", Options.css "padding" "20px 20px 0px" ]
+        [ Icon.i "people", Html.text " Public" ]
     , case model.publicGridsets of
         GridSetsLoading ->
             Layout.row [] [ Loading.spinner [ Loading.active True ] ]
 
         GridSetsList list ->
-            list |> List.map (resultsLink model) |> Layout.navigation []
+            list |> List.map (resultsLink model) |> Layout.navigation [ Options.css "padding" "0" ]
     ]
 
 

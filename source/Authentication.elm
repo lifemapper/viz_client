@@ -252,7 +252,9 @@ view signUpHref state =
     in
         case state of
             LoggedIn userName ->
-                [ Layout.link [ Options.onClick DoLogOut, Options.css "cursor" "pointer" ] [ Icon.i "exit_to_app", Html.text "Logout" ] ]
+                [ Layout.link [ Options.onClick DoLogOut, Options.css "cursor" "pointer", Options.css "padding" "8px 20px" ]
+                    [ Icon.i "exit_to_app", Html.text "Logout" ]
+                ]
 
             Unknown ->
                 []
