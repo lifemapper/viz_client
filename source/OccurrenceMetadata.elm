@@ -118,7 +118,8 @@ initMetadata delimiter preview =
         preview
             |> List.getAt 0
             |> Maybe.withDefault []
-            |> List.map (always { shortName = "", fieldType = "string" })
+            |> truncAndDeDup
+            |> List.map (\colName -> { shortName = colName, fieldType = "string" })
     , roles =
         { groupBy = Nothing
         , geopoint = Nothing
@@ -132,13 +133,59 @@ initMetadata delimiter preview =
     }
 
 
+truncAndDeDup : List String -> List String
+truncAndDeDup strings =
+    let
+        truncd =
+            strings |> List.map (String.left 10)
+
+        ( _, result ) =
+            truncd
+                |> List.foldl
+                    (\s ( used, result ) ->
+                        let
+                            new =
+                                replaceTailUntilUnique used s 0
+                        in
+                            ( new :: used, result ++ [ new ] )
+                    )
+                    ( [], [] )
+    in
+        result
+
+
+replaceTailUntilUnique : List String -> String -> Int -> String
+replaceTailUntilUnique used s count =
+    let
+        new =
+            appendCount count s
+    in
+        if List.member new used then
+            replaceTailUntilUnique used s (count + 1)
+        else
+            new
+
+
+appendCount : Int -> String -> String
+appendCount n s =
+    let
+        nString =
+            toString n
+    in
+        if n == 0 then
+            s
+        else
+            (s |> String.dropRight (String.length nString)) ++ nString
+
+
 type MetadataIssues
     = MissingGeo
     | MissingTaxon
+    | DuplicatedNames (List String)
 
 
 validateMetadata : Metadata -> List MetadataIssues
-validateMetadata { roles } =
+validateMetadata { roles, fields } =
     [ if roles.geopoint == Nothing && (roles.latitude == Nothing || roles.longitude == Nothing) then
         Just MissingGeo
       else
@@ -147,6 +194,12 @@ validateMetadata { roles } =
         Just MissingTaxon
       else
         Nothing
+    , case fields |> List.map .shortName |> List.sort |> List.group |> List.filter (\vs -> List.length vs > 1) of
+        [] ->
+            Nothing
+
+        dupedNames ->
+            List.filterMap List.head dupedNames |> DuplicatedNames |> Just
     ]
         |> List.concatMap Maybe.toList
 
@@ -339,7 +392,6 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                     , Textfield.maxlength 10
                     , Textfield.value (metadata.fields |> List.getAt i |> Maybe.map .shortName |> Maybe.withDefault "")
                     , Options.onInput (UpdateFieldName i >> mapMsg)
-                    , Options.css "display" "none"
                     ]
                     []
                 , Toggles.radio mapMdlMsg

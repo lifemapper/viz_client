@@ -331,7 +331,7 @@ view mapMdlMsg mapMsg index text mdl state =
                     ]
                     []
                 ]
-            , Html.ul [] <| List.map formatIssue metadataIssues
+            , Html.ul [] <| List.concatMap formatIssue metadataIssues
             , Button.render mapMdlMsg
                 (1 :: index)
                 mdl
@@ -353,21 +353,33 @@ view mapMdlMsg mapMsg index text mdl state =
             ]
 
 
-formatIssue : MetadataIssues -> Html msg
+formatIssue : MetadataIssues -> List (Html msg)
 formatIssue issue =
     case issue of
         MissingTaxon ->
-            Html.li []
+            [ Html.li []
                 [ Options.span [ Color.text Color.accent ]
                     [ Html.text "A taxon column must be chosen." ]
                 ]
+            ]
 
         MissingGeo ->
-            Html.li []
+            [ Html.li []
                 [ Options.span [ Color.text Color.accent ]
                     -- [ Html.text "Columns for either geopoint or latitude and longitude must be chosen." ]
                     [ Html.text "Columns for latitude and longitude must be chosen." ]
                 ]
+            ]
+
+        DuplicatedNames ns ->
+            ns
+                |> List.map
+                    (\name ->
+                        Html.li []
+                            [ Options.span [ Color.text Color.accent ]
+                                [ Html.text <| "The column name \"" ++ name ++ "\" is used more than once." ]
+                            ]
+                    )
 
 
 subscriptions : (UploadMsg -> msg) -> Sub msg
