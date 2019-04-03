@@ -255,8 +255,15 @@ doUpload uploadType index flags { localFileName, uploadAs, metadata } =
                 )
 
 
-view : (Material.Msg msg -> msg) -> (UploadMsg -> msg) -> Index -> Material.Model -> FileSelectState -> List (Html msg)
-view mapMdlMsg mapMsg index mdl state =
+view :
+    (Material.Msg msg -> msg)
+    -> (UploadMsg -> msg)
+    -> Index
+    -> List (Html msg)
+    -> Material.Model
+    -> FileSelectState
+    -> List (Html msg)
+view mapMdlMsg mapMsg index text mdl state =
     case state of
         Finished filename ->
             [ Html.text <| "Uploaded " ++ filename ++ "." ]
@@ -336,7 +343,8 @@ view mapMdlMsg mapMsg index mdl state =
             [ Html.text "Opening file..." ]
 
         FileNotSelected ->
-            [ Html.input
+            [ Html.p [] text
+            , Html.input
                 [ Attribute.type_ "file"
                 , Attribute.id <| fileSelectId index
                 , Events.on "change" (Decode.succeed <| mapMsg <| FileSelectedMsg <| fileSelectId index)

@@ -303,11 +303,11 @@ mainView model =
 
                 TreeUpload ->
                     Options.div [ Options.css "padding" "20px" ]
-                        (UploadFile.view Mdl UploadMsg [ 3 ] model.mdl model.treeUpload)
+                        (UploadFile.view Mdl UploadMsg [ 3 ] treeUploadText model.mdl model.treeUpload)
 
                 HypothesisUpload ->
                     Options.div [ Options.css "padding" "20px" ]
-                        (UploadFile.view Mdl UploadMsg [ 4 ] model.mdl model.hypoUpload)
+                        (UploadFile.view Mdl UploadMsg [ 4 ] hypothesisUploadText model.mdl model.hypoUpload)
 
                 PostProjection ->
                     Options.div [ Options.css "padding" "20px" ]
@@ -342,6 +342,50 @@ mainView model =
                                 [ Html.text "Submit Project" ]
                             ]
                         ]
+
+
+treeUploadText : List (Html msg)
+treeUploadText =
+    [ Html.p []
+        [ Html.text <|
+            "If you provide a phylogenetic tree with your experiment and select to compute pam stats, "
+                ++ "Lifemapper will use it to generate phylogenetic diversity stats based on the models and "
+                ++ "the study area created. If you provide biogeographic hypotheses as well in the next tab, "
+                ++ "this tree will be used to perform a Metacommunity Phylogenetics Analysis (MCPA) indicating "
+                ++ "which clades are correlated more with environment and which are correlated more with "
+                ++ "biogeography based on the generated models. Your tree file can be Newick, Nexus, or NeXML format."
+        ]
+    ]
+
+
+hypothesisUploadText : List (Html msg)
+hypothesisUploadText =
+    [ Html.p []
+        [ Html.text <|
+            "If you have provided a tree with your models, you can upload a set of "
+                ++ "biogeographic hypotheses to be used to perform a Metacommunity "
+                ++ "Phylogenetics Analysis (MCPA) indicating which clades are correlated "
+                ++ "more with environment and which are correlated more with historical biogeography "
+                ++ "based on the generated models.  These hypotheses should be uploaded as a zip file "
+                ++ "including a set of shapefiles to use as hypotheses.  Each shapefile should include "
+                ++ "one or two features, where each feature indicates a side of the hypothesis (for "
+                ++ "example: East of the Mississippi River and West of the Mississippi River, or inside "
+                ++ "a test region or not if there is only one feature).  You should also include a JSON "
+                ++ "metadata for each hypothesis as well.  It should be named the same as the shapefile "
+                ++ "it corresponds with, with a “.json” extension.  The content of the metadata file "
+                ++ "should look like:"
+        , Html.pre []
+            [ Html.text <|
+                "{\n"
+                    ++ "   “description” : “A description of the hypothesis”,\n"
+                    ++ "   “author” : “The author of the shapefile”,\n"
+                    ++ "   “title” : “A title of this hypothesis”,\n"
+                    ++ "   “citation” : “A citation if applicable”,\n"
+                    ++ "   “bbox” : [min x, min y, max x, max y]\n"
+                    ++ "}"
+            ]
+        ]
+    ]
 
 
 jobNameLI : Model -> Html Msg

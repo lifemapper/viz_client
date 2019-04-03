@@ -416,6 +416,17 @@ sourceChooser idx model =
         ]
 
 
+uploadText : List (Html msg)
+uploadText =
+    [ Html.text <|
+        "You can provide occurrence data in CSV format for one or more species. "
+            ++ "Your CSV file should include a header row and at least latitude, longitude, "
+            ++ "and taxon name columns.  You may include additional columns and those columns may "
+            ++ "have different names.  After you select your CSV file, we will allow you to specify "
+            ++ "metadata about each of the columns in the file."
+    ]
+
+
 view : Index -> Model -> Html Msg
 view index model =
     let
@@ -437,7 +448,7 @@ view index model =
                     [ sourceChooser (0 :: index) model
                     , Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
-                            (UploadFile.view Mdl UploadMsg (1 :: index) model.mdl upload)
+                            (UploadFile.view Mdl UploadMsg (1 :: index) uploadText model.mdl upload)
                         ]
                     ]
 
