@@ -46,7 +46,7 @@ app.ports.fileSelected.subscribe(function(args) {
             }
         });
     } else {
-        app.ports.selectedFileName.send({id: id, filename: file.name, preview: []});
+        app.ports.selectedFileName.send({id: id, filename: file.name, preview: [], delimiter: ""});
     }
 });
 
