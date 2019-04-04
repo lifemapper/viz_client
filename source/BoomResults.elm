@@ -343,7 +343,7 @@ loadProgress { apiRoot } id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = apiRoot ++ "gridset/" ++ (toString id) ++ "/progress"
+        , url = apiRoot ++ "gridset/" ++ (toString id) ++ "/progress?detail=1"
         , body = Http.emptyBody
         , expect = Http.expectJson Decoder.decodeGridsetProgress
         , timeout = Nothing
@@ -449,11 +449,16 @@ view { state, packageStatus, mdl, programFlags } =
                     [ Html.text "Requesting status...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
 
             MonitoringProgress _ (Decoder.GridsetProgress progress) ->
-                Options.div
-                    [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
-                    [ Html.text "Waiting for results..."
-                    , Html.p [] [ Loading.progress (100 * progress.progress) ]
-                    ]
+                if progress.progress == -1 then
+                    Options.div
+                        [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
+                        [ Html.text "Unfortunately, the project failed."]
+                else
+                    Options.div
+                        [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
+                        [ Html.text "Waiting for results..."
+                        , Html.p [] [ Loading.progress (100 * progress.progress) ]
+                        ]
 
             GetProjectionsList _ ->
                 Options.div
