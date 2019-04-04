@@ -42,7 +42,6 @@ import Material.Spinner as Spinner
 import Material.Progress as Loading
 import Material.Grid as Grid
 import Material.Button as Button
-import Material.Icon as Icon
 
 
 type alias ProjectionInfo =
@@ -414,22 +413,33 @@ gotMetadata loadingInfo result =
 view : Model -> Html Msg
 view { state, packageStatus, mdl, programFlags } =
     let
-        header =
+        header projCount =
             Options.div
                 [ Options.css "display" "flex"
-                , Options.css "margin" "20px 0 0 20px"
+                , Options.css "justify-content" "space-between"
+                , Options.css "margin" "20px 20px 0 20px"
                 ]
-                [ Options.div [ Typo.title, Options.css "margin-top" "6px" ] [ Html.text "Projection results " ]
+                [ Options.div [ Typo.title, Options.css "margin-top" "6px" ]
+                    [ Html.text <|
+                        if projCount == 1 then
+                            "Project produced one species model."
+                        else
+                            "Project produced " ++ (toString projCount) ++ " species models."
+                    ]
                 , case packageStatus of
                     WaitingForPackage id ->
-                        Button.render Mdl [ 666 ] mdl [ Button.icon, Button.disabled ] [ Icon.i "cloud_download" ]
+                        Button.render Mdl
+                            [ 666 ]
+                            mdl
+                            [ Button.raised, Button.disabled ]
+                            [ Html.text "Download Results Package" ]
 
                     PackageReady id ->
                         Button.render Mdl
                             [ 666 ]
                             mdl
-                            [ Button.icon, Button.link <| packageUrl programFlags id ]
-                            [ Icon.i "cloud_download" ]
+                            [ Button.raised, Button.link <| packageUrl programFlags id ]
+                            [ Html.text "Download Results Package" ]
                 ]
     in
         case state of
@@ -462,7 +472,7 @@ view { state, packageStatus, mdl, programFlags } =
 
             DisplaySeparate display ->
                 Options.div []
-                    [ header
+                    [ header <| List.length display
                     , display
                         |> List.indexedMap viewSeparate
                         |> Grid.grid []
