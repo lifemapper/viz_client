@@ -25,6 +25,7 @@
 module Main exposing (..)
 
 import Time
+import Dict exposing (Dict)
 import Material
 import Material.Layout as Layout
 import Material.Icon as Icon
@@ -37,6 +38,7 @@ import Html exposing (Html)
 import Navigation as Nav exposing (Location)
 import UrlParser as Url exposing ((</>))
 import Http
+import Json.Decode as Json
 import Page
 import NewBoom
 import BoomResults
@@ -120,7 +122,9 @@ type alias Model =
     { mdl : Material.Model
     , page : AppPage
     , gridsets : GridSets
+    , gridsetsProgress : Dict Int Float
     , publicGridsets : GridSets
+    , publicGridsetsProgress : Dict Int Float
     , flags : Flags
     , login : Auth.Model
     }
@@ -134,6 +138,7 @@ type Msg
     | SignUpMsg SignUp.Msg
     | GotGridSets (List AtomObjectRecord)
     | GotPublicGridSets (List AtomObjectRecord)
+    | GotGridSetsProgress Int Float
     | UrlChange Location
     | OpenExisting Int
     | OpenNew
@@ -228,10 +233,13 @@ update msg model =
                 model ! [ getPublicGridSets model.flags, getGridSets model.flags model.login ]
 
             GotGridSets gridsets ->
-                ( { model | gridsets = GridSetsList gridsets }, Cmd.none )
+                ( { model | gridsets = GridSetsList gridsets }, getGridSetsProgress model.flags gridsets )
 
             GotPublicGridSets gridsets ->
-                ( { model | publicGridsets = GridSetsList gridsets }, Cmd.none )
+                ( { model | publicGridsets = GridSetsList gridsets }, getGridSetsProgress model.flags gridsets )
+
+            GotGridSetsProgress id progress ->
+                ( { model | gridsetsProgress = Dict.insert id progress model.gridsetsProgress }, Cmd.none )
 
             Nop ->
                 ( model, Cmd.none )
@@ -248,6 +256,35 @@ update msg model =
                             else
                                 Cmd.none
                           ]
+
+
+getGridSetsProgress : Flags -> List AtomObjectRecord -> Cmd Msg
+getGridSetsProgress { apiRoot } gridsets =
+    gridsets
+        |> List.map
+            (\{ id } ->
+                Http.request
+                    { method = "GET"
+                    , headers = [ Http.header "Accept" "application/json" ]
+                    , url = apiRoot ++ "gridset/" ++ (toString id) ++ "/progress"
+                    , body = Http.emptyBody
+                    , expect = Http.expectJson (Json.field "progress" Json.float)
+                    , timeout = Nothing
+                    , withCredentials = False
+                    }
+                    |> Http.send (gotGridSetsProgress id)
+            )
+        |> Cmd.batch
+
+
+gotGridSetsProgress : Int -> Result Http.Error Float -> Msg
+gotGridSetsProgress id result =
+    case result of
+        Ok progress ->
+            GotGridSetsProgress id progress
+
+        Err err ->
+            Debug.log "Error fetching gridset progress" (toString err) |> always Nop
 
 
 getGridSets : Flags -> Auth.Model -> Cmd Msg
@@ -359,14 +396,29 @@ resultsLink model { name, id } =
 
                 _ ->
                     Options.nop
+
+        icon =
+            case Dict.get id model.gridsetsProgress of
+                Nothing ->
+                    []
+
+                Just -1 ->
+                    [ Icon.i "error_outline" ]
+
+                Just 1 ->
+                    [ Icon.i "done" ]
+
+                _ ->
+                    [ Icon.i "hourglass_empty" ]
     in
         Layout.link
             [ Options.onClick (OpenExisting id)
             , Options.css "cursor" "pointer"
             , Options.css "padding" "8px 20px"
+            , Options.css "white-space" "nowrap"
             , selected
             ]
-            [ Html.text name ]
+            ([ Html.text <| name ++ " "] ++ icon)
 
 
 title : Auth.Model -> Html msg
@@ -487,7 +539,9 @@ start flags location =
             { mdl = Material.model
             , page = page
             , gridsets = GridSetsLoading
+            , gridsetsProgress = Dict.empty
             , publicGridsets = GridSetsLoading
+            , publicGridsetsProgress = Dict.empty
             , flags = flags
             , login = login
             }
