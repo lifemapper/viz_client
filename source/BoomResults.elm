@@ -44,6 +44,16 @@ import Material.Grid as Grid
 import Material.Button as Button
 
 
+cardSize : Int
+cardSize =
+    4
+
+
+resultsPerPage : Int
+resultsPerPage =
+    6
+
+
 type alias ProjectionInfo =
     { record : Decoder.ProjectionRecord
     , occurrenceRecord : Decoder.OccurrenceSetRecord
@@ -62,7 +72,7 @@ type State
     | GetProjectionsList Int
     | LoadingProjections LoadingInfo
     | NoProjections
-    | DisplaySeparate (List ( ProjectionInfo, MapCard.Model ))
+    | DisplaySeparate Int (List ( ProjectionInfo, MapCard.Model ))
 
 
 type PackageStatus
@@ -97,6 +107,7 @@ type Msg
     | NewProjectionInfo ProjectionInfo
     | CheckForPackage Int
     | GotPackageStatus Int Bool
+    | SetPage Int
     | MapCardMsg Int MapCard.Msg
     | Nop
     | Mdl (Material.Msg Msg)
@@ -127,8 +138,8 @@ update msg model =
     let
         liftedMapCardUpdate i msg_ model =
             case model.state of
-                DisplaySeparate display ->
-                    updateMapCard i msg_ display DisplaySeparate model
+                DisplaySeparate page display ->
+                    updateMapCard i msg_ display (DisplaySeparate page) model
 
                 _ ->
                     ( model, Cmd.none )
@@ -191,6 +202,14 @@ update msg model =
                     _ ->
                         ( model, Cmd.none )
 
+            SetPage p ->
+                case model.state of
+                    DisplaySeparate page display ->
+                        ( { model | state = DisplaySeparate p display }, Cmd.none )
+
+                    _ ->
+                        ( model, Cmd.none )
+
             GotPackageStatus id available ->
                 if available then
                     { model | packageStatus = PackageReady id } ! []
@@ -208,7 +227,7 @@ displaySeparate : List ProjectionInfo -> State
 displaySeparate infos =
     infos
         |> List.map (\info -> ( info, makeSeparateMap info ))
-        |> DisplaySeparate
+        |> DisplaySeparate 0
 
 
 makeSeparateMap : ProjectionInfo -> MapCard.Model
@@ -367,7 +386,7 @@ loadProjections { apiRoot } id =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "application/json" ]
-        , url = apiRoot ++ "sdmProject?user=anon&gridsetid=" ++ (toString id)
+        , url = apiRoot ++ "sdmProject?gridsetid=" ++ (toString id)
         , body = Http.emptyBody
         , expect = Http.expectJson Decoder.decodeAtomList
         , timeout = Nothing
@@ -413,7 +432,7 @@ gotMetadata loadingInfo result =
 view : Model -> Html Msg
 view { state, packageStatus, mdl, programFlags } =
     let
-        header projCount =
+        header page projCount =
             Options.div
                 [ Options.css "display" "flex"
                 , Options.css "justify-content" "space-between"
@@ -426,6 +445,33 @@ view { state, packageStatus, mdl, programFlags } =
                         else
                             "Project produced " ++ (toString projCount) ++ " species models."
                     ]
+                , if projCount > resultsPerPage then
+                    Options.div [] <|
+                        List.concat <|
+                            [ [ Html.text <|
+                                    "Showing page "
+                                        ++ (toString <| 1 + page)
+                                        ++ " of "
+                                        ++ (toString <| ceiling <| projCount / (toFloat resultsPerPage))
+                                        ++ "."
+                              ]
+                            , if (1 + page) * resultsPerPage < projCount then
+                                [ Options.styled Html.a
+                                    [ Options.css "cursor" "pointer", Options.onClick (SetPage <| page + 1) ]
+                                    [ Html.text " next" ]
+                                ]
+                              else
+                                []
+                            , if page > 0 then
+                                [ Options.styled Html.a
+                                    [ Options.css "cursor" "pointer", Options.onClick (SetPage <| page - 1) ]
+                                    [ Html.text " prev" ]
+                                ]
+                              else
+                                []
+                            ]
+                  else
+                    Options.div [] []
                 , case packageStatus of
                     WaitingForPackage id ->
                         Button.render Mdl
@@ -452,7 +498,7 @@ view { state, packageStatus, mdl, programFlags } =
                 if progress.progress == -1 then
                     Options.div
                         [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
-                        [ Html.text "Unfortunately, the project failed."]
+                        [ Html.text "Unfortunately, the project failed." ]
                 else
                     Options.div
                         [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
@@ -475,11 +521,13 @@ view { state, packageStatus, mdl, programFlags } =
                     [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
                     [ Html.text "No projections were returned." ]
 
-            DisplaySeparate display ->
+            DisplaySeparate page display ->
                 Options.div []
-                    [ header <| List.length display
+                    [ header page <| List.length display
                     , display
                         |> List.indexedMap viewSeparate
+                        |> List.drop (page * resultsPerPage)
+                        |> List.take resultsPerPage
                         |> Grid.grid []
                     ]
 
@@ -490,11 +538,6 @@ viewSeparate i ( { record }, mapCard ) =
         [ MapCard.view [ i ] (projectionTitle record) mapCard
             |> Html.map (MapCardMsg i)
         ]
-
-
-cardSize : Int
-cardSize =
-    4
 
 
 page : Page Model Msg
