@@ -64,7 +64,6 @@ type State
     | LoadingProjections LoadingInfo
     | NoProjections
     | DisplaySeparate (List ( ProjectionInfo, MapCard.Model ))
-    | DisplayGrouped (List ( List ProjectionInfo, MapCard.Model ))
 
 
 type PackageStatus
@@ -97,7 +96,6 @@ type Msg
     | GotProjectionAtoms Int (List Decoder.AtomObjectRecord)
     | GotProjection Decoder.ProjectionRecord
     | NewProjectionInfo ProjectionInfo
-    | SetDisplayGrouped Bool
     | CheckForPackage Int
     | GotPackageStatus Int Bool
     | MapCardMsg Int MapCard.Msg
@@ -132,9 +130,6 @@ update msg model =
             case model.state of
                 DisplaySeparate display ->
                     updateMapCard i msg_ display DisplaySeparate model
-
-                DisplayGrouped display ->
-                    updateMapCard i msg_ display DisplayGrouped model
 
                 _ ->
                     ( model, Cmd.none )
@@ -197,22 +192,6 @@ update msg model =
                     _ ->
                         ( model, Cmd.none )
 
-            SetDisplayGrouped True ->
-                case model.state of
-                    DisplaySeparate display ->
-                        ( { model | state = display |> List.map Tuple.first |> displayGrouped }, Cmd.none )
-
-                    _ ->
-                        ( model, Cmd.none )
-
-            SetDisplayGrouped False ->
-                case model.state of
-                    DisplayGrouped display ->
-                        ( { model | state = display |> List.concatMap Tuple.first |> displaySeparate }, Cmd.none )
-
-                    _ ->
-                        ( model, Cmd.none )
-
             GotPackageStatus id available ->
                 if available then
                     { model | packageStatus = PackageReady id } ! []
@@ -241,30 +220,6 @@ makeSeparateMap info =
     ]
         |> List.concat
         |> MapCard.init (boundingBoxForProjection info)
-
-
-displayGrouped : List ProjectionInfo -> State
-displayGrouped infos =
-    infos
-        |> List.sortBy (.record >> .squid >> Maybe.withDefault "")
-        |> List.groupWhile (\x y -> x.record.squid == y.record.squid)
-        |> List.map (\group -> ( group, makeGroupedMap group ))
-        |> DisplayGrouped
-
-
-makeGroupedMap : List ProjectionInfo -> MapCard.Model
-makeGroupedMap projections =
-    case projections of
-        [] ->
-            MapCard.init Nothing []
-
-        first :: _ ->
-            [ makeBackgroundMap first
-            , List.filterMap makeProjectionMap projections
-            , makeOccurrenceMap first
-            ]
-                |> List.concat
-                |> MapCard.init (boundingBoxForProjection first)
 
 
 makeOccurrenceMap : ProjectionInfo -> List MapCard.NamedMap
@@ -513,14 +468,6 @@ view { state, packageStatus, mdl, programFlags } =
                         |> Grid.grid []
                     ]
 
-            DisplayGrouped display ->
-                Options.div []
-                    [ header
-                    , display
-                        |> List.indexedMap viewGrouped
-                        |> Grid.grid []
-                    ]
-
 
 viewSeparate : Int -> ( ProjectionInfo, MapCard.Model ) -> Grid.Cell Msg
 viewSeparate i ( { record }, mapCard ) =
@@ -535,57 +482,14 @@ cardSize =
     4
 
 
-viewGrouped : Int -> ( List ProjectionInfo, MapCard.Model ) -> Grid.Cell Msg
-viewGrouped i ( projections, mapCard ) =
-    case projections of
-        [] ->
-            Grid.cell [ Grid.size Grid.All cardSize ] []
-
-        { record } :: _ ->
-            Grid.cell [ Grid.size Grid.All cardSize ]
-                [ MapCard.view [ i ] (record.speciesName |> Maybe.withDefault (toString record.id)) mapCard
-                    |> Html.map (MapCardMsg i)
-                ]
-
-
-selectedTab : Model -> Int
-selectedTab model =
-    case model.state of
-        DisplayGrouped _ ->
-            1
-
-        _ ->
-            0
-
-
-selectTab : Int -> Msg
-selectTab i =
-    SetDisplayGrouped (i == 1)
-
-
-tabTitles : Model -> List (Html Msg)
-tabTitles model =
-    let
-        titles =
-            List.map Html.text [ "Ungrouped", "Group by species" ]
-    in
-        case model.state of
-            DisplayGrouped _ ->
-                titles
-
-            DisplaySeparate _ ->
-                titles
-
-            _ ->
-                []
-
-
 page : Page Model Msg
 page =
     { view = view
-    , selectedTab = selectedTab
-    , selectTab = selectTab
-    , tabTitles = always [] --tabTitles
+    , selectedTab = always 0
+    , selectTab = always Nop
+    , tabTitles =
+        always []
+        --tabTitles
     , subscriptions = subscriptions
     , title = "Species Model Results"
     }
