@@ -135,47 +135,33 @@ initMetadata delimiter preview =
 
 truncAndDeDup : List String -> List String
 truncAndDeDup strings =
-    let
-        truncd =
-            strings |> List.map (String.left 10)
-
-        ( _, result ) =
-            truncd
-                |> List.foldl
-                    (\s ( used, result ) ->
-                        let
-                            new =
-                                replaceTailUntilUnique used s 0
-                        in
-                            ( new :: used, result ++ [ new ] )
-                    )
-                    ( [], [] )
-    in
-        result
+    strings
+        |> List.map (String.left 10)
+        |> List.foldl (\s result -> result ++ [ replaceTailUntilUnique result s 0 ]) []
 
 
 replaceTailUntilUnique : List String -> String -> Int -> String
-replaceTailUntilUnique used s count =
+replaceTailUntilUnique used string count =
     let
         new =
-            appendCount count s
+            replaceTailWith count string
     in
         if List.member new used then
-            replaceTailUntilUnique used s (count + 1)
+            replaceTailUntilUnique used string (count + 1)
         else
             new
 
 
-appendCount : Int -> String -> String
-appendCount n s =
-    let
-        nString =
-            toString n
-    in
-        if n == 0 then
-            s
-        else
-            (s |> String.dropRight (String.length nString)) ++ nString
+replaceTailWith : Int -> String -> String
+replaceTailWith count string =
+    if count < 1 then
+        string
+    else
+        let
+            newTail =
+                toString count
+        in
+            (string |> String.dropRight (String.length newTail)) ++ newTail
 
 
 type MetadataIssues
