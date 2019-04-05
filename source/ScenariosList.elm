@@ -1,25 +1,27 @@
 {-
-Copyright (C) 2018, University of Kansas Center for Research
+   Copyright (C) 2018, University of Kansas Center for Research
 
-Lifemapper Project, lifemapper [at] ku [dot] edu,
-Biodiversity Institute,
-1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
+   Lifemapper Project, lifemapper [at] ku [dot] edu,
+   Biodiversity Institute,
+   1345 Jayhawk Boulevard, Lawrence, Kansas, 66045, USA
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or (at
-your option) any later version.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or (at
+   your option) any later version.
 
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-02110-1301, USA.
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
 -}
+
+
 module ScenariosList
     exposing
         ( Model
@@ -70,17 +72,30 @@ init flags =
 
 getPackages : Flags -> (Msg -> msg) -> Cmd msg
 getPackages { apiRoot } msgMap =
-    Http.request
-        { method = "GET"
-        , headers = [ Http.header "Accept" "application/json" ]
-        , url = apiRoot ++ "scenpackage"
-        , body = Http.emptyBody
-        , expect = Http.expectJson decodeAtomList
-        , timeout = Nothing
-        , withCredentials = False
-        }
-        |> Http.send gotPackageList
-        |> Cmd.map msgMap
+    Cmd.batch
+        [ Http.request
+            { method = "GET"
+            , headers = [ Http.header "Accept" "application/json" ]
+            , url = apiRoot ++ "scenpackage"
+            , body = Http.emptyBody
+            , expect = Http.expectJson decodeAtomList
+            , timeout = Nothing
+            , withCredentials = False
+            }
+            |> Http.send gotPackageList
+            |> Cmd.map msgMap
+        , Http.request
+            { method = "GET"
+            , headers = [ Http.header "Accept" "application/json" ]
+            , url = apiRoot ++ "scenpackage?user=public"
+            , body = Http.emptyBody
+            , expect = Http.expectJson decodeAtomList
+            , timeout = Nothing
+            , withCredentials = False
+            }
+            |> Http.send gotPackageList
+            |> Cmd.map msgMap
+        ]
 
 
 gotPackageList : Result Http.Error AtomList -> Msg
@@ -123,12 +138,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotPackageList atoms ->
-            ( { model | packageList = atoms, packages = [] }
+            ( { model | packageList = List.uniqueBy .id (model.packageList ++ atoms) }
             , atoms |> List.map (.id >> getPackage model.programFlags) |> Cmd.batch
             )
 
         GotPackage p ->
-            ( { model | packages = p :: model.packages }, Cmd.none )
+            ( { model | packages = List.uniqueBy .id (p :: model.packages) }, Cmd.none )
 
         Nop ->
             ( model, Cmd.none )
