@@ -117,7 +117,7 @@ var observer = new MutationObserver(function(mutations) {
 
             var elements = n.getElementsByClassName("leaflet-map");
             Array.prototype.forEach.call(elements, function(element) {
-                var map = L.map(element, {minZoom: 2})
+                var map = L.map(element, {scrollWheelZoom: false, minZoom: 2})
                     .setView([0, 0], 1);
                 var tandemMoveHandler = tandemMove(map);
                 map.on('moveend', tandemMoveHandler).on('zoomend', tandemMoveHandler);
