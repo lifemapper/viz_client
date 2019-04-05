@@ -123,8 +123,10 @@ type alias Model =
     , page : AppPage
     , gridsets : GridSets
     , gridsetsProgress : Dict Int Float
+    , showAllGridsets : Bool
     , publicGridsets : GridSets
     , publicGridsetsProgress : Dict Int Float
+    , showAllPublicGridsets : Bool
     , flags : Flags
     , login : Auth.Model
     }
@@ -139,6 +141,8 @@ type Msg
     | GotGridSets (List AtomObjectRecord)
     | GotPublicGridSets (List AtomObjectRecord)
     | GotGridSetsProgress Int Float
+    | ShowAllGridsets Bool
+    | ShowAllPublicGridsets Bool
     | UrlChange Location
     | OpenExisting Int
     | OpenNew
@@ -240,6 +244,12 @@ update msg model =
 
             GotGridSetsProgress id progress ->
                 ( { model | gridsetsProgress = Dict.insert id progress model.gridsetsProgress }, Cmd.none )
+
+            ShowAllGridsets state ->
+                ( { model | showAllGridsets = state }, Cmd.none )
+
+            ShowAllPublicGridsets state ->
+                ( { model | showAllPublicGridsets = state }, Cmd.none )
 
             Nop ->
                 ( model, Cmd.none )
@@ -418,7 +428,7 @@ resultsLink model { name, id } =
             , Options.css "white-space" "nowrap"
             , selected
             ]
-            ([ Html.text <| name ++ " "] ++ icon)
+            ([ Html.text <| name ++ " " ] ++ icon)
 
 
 title : Auth.Model -> Html msg
@@ -467,7 +477,11 @@ drawer model =
 
                 _ ->
                     Layout.navigation [ Options.css "padding" "0" ]
-                        (newLink model :: (list |> List.map (resultsLink model)))
+                        (List.concat
+                            [ [ newLink model ]
+                            , showMoreOrLess model.showAllGridsets ShowAllGridsets (list |> List.map (resultsLink model))
+                            ]
+                        )
     , Layout.title [ Typo.subhead, Options.css "line-height" "32px", Options.css "padding" "20px 20px 0px" ]
         [ Icon.i "people", Html.text " Public" ]
     , case model.publicGridsets of
@@ -475,8 +489,37 @@ drawer model =
             Layout.row [] [ Loading.spinner [ Loading.active True ] ]
 
         GridSetsList list ->
-            list |> List.map (resultsLink model) |> Layout.navigation [ Options.css "padding" "0" ]
+            Layout.navigation [ Options.css "padding" "0" ] <|
+                showMoreOrLess model.showAllPublicGridsets ShowAllPublicGridsets (list |> List.map (resultsLink model))
     ]
+
+
+showMoreOrLess : Bool -> (Bool -> Msg) -> List (Html Msg) -> List (Html Msg)
+showMoreOrLess showAll setter items =
+    if List.length items > 5 then
+        if showAll then
+            (items |> List.take 5)
+                ++ [ Layout.link
+                        [ Options.onClick (setter False)
+                        , Options.css "cursor" "pointer"
+                        , Options.css "padding" "8px 20px"
+                        , Options.css "white-space" "nowrap"
+                        ]
+                        ([ Icon.i "folder_open", Html.text " Show less" ])
+                   ]
+                ++ (items |> List.drop 5)
+        else
+            (items |> List.take 5)
+                ++ [ Layout.link
+                        [ Options.onClick (setter True)
+                        , Options.css "cursor" "pointer"
+                        , Options.css "padding" "8px 20px"
+                        , Options.css "white-space" "nowrap"
+                        ]
+                        ([ Icon.i "folder", Html.text " Show more" ])
+                   ]
+    else
+        items
 
 
 pageImplementation : AppPage -> Page.Page Model Msg
@@ -540,8 +583,10 @@ start flags location =
             , page = page
             , gridsets = GridSetsLoading
             , gridsetsProgress = Dict.empty
+            , showAllGridsets = False
             , publicGridsets = GridSetsLoading
             , publicGridsetsProgress = Dict.empty
+            , showAllPublicGridsets = False
             , flags = flags
             , login = login
             }
