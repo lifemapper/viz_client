@@ -25,7 +25,7 @@
 module McpaTreeView exposing (viewTree)
 
 import Html
-import Html.Attributes
+import Html.Attributes as A
 import Html.Events
 import List.Extra as List
 import Svg exposing (..)
@@ -72,15 +72,15 @@ viewTree model redBlue selectData =
                 >> SelectVariable
 
         variableSelector =
-            Html.div [ Html.Attributes.style [ ( "margin-bottom", "8px" ) ] ]
-                [ Html.span [] [ Html.text "Node color: " ]
-                , Html.select [ Html.Events.onInput select, Html.Attributes.style [ ( "max-width", "355px" ) ] ]
+            Html.div [ A.style [ ( "margin-bottom", "8px" ) ] ]
+                [ Html.span [] [ Html.text "Predictor: " ]
+                , Html.select [ Html.Events.onInput select, A.style [ ( "max-width", "355px" ) ] ]
                     (variables
                         |> List.indexedMap
                             (\i v ->
                                 Html.option
-                                    [ Html.Attributes.selected (v == model.selectedVariable)
-                                    , Html.Attributes.value (toString i)
+                                    [ A.selected (v == model.selectedVariable)
+                                    , A.value (toString i)
                                     ]
                                     [ Html.text v ]
                             )
@@ -91,34 +91,55 @@ viewTree model redBlue selectData =
             Html.div []
                 [ Html.label []
                     [ Html.input
-                        [ Html.Attributes.type_ "checkbox"
-                        , Html.Attributes.checked model.showBranchLengths
-                        , Html.Attributes.readonly True
+                        [ A.type_ "checkbox"
+                        , A.checked model.showBranchLengths
+                        , A.readonly True
                         , Html.Events.onClick ToggleShowLengths
                         ]
                         []
                     , Html.text "Show branch lengths"
                     ]
                 ]
+
+        ( color0, color1 ) =
+            ( computeColor 1.0 0.0, computeColor 1.0 1.0 )
+
+        legend =
+            Html.div
+                [ A.style
+                    [ ( "width", "558px" )
+                    , ( "background", "linear-gradient(to right, " ++ color0 ++ ", " ++ color1 ++ ")" )
+                    , ( "display", "flex" )
+                    , ( "flex-direction", "row" )
+                    , ( "justify-content", "space-between" )
+                    , ( "margin", "5px 0" )
+                    , ( "border", "solid 2px" )
+                    ]
+                ]
+                [ Html.p [ A.style [ ( "margin", "3px" ) ] ] [ Html.text "0.0" ]
+                , Html.p [ A.style [ ( "margin", "3px" ) ] ] [ Html.text "Semiparital Correlation b/w Node and Selected Predictor" ]
+                , Html.p [ A.style [ ( "margin", "3px" ) ] ] [ Html.text "1.0" ]
+                ]
     in
         Html.div
-            [ Html.Attributes.style [ ( "display", "flex" ), ( "flex-direction", "column" ) ] ]
-            [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+            [ A.style [ ( "display", "flex" ), ( "flex-direction", "column" ) ] ]
+            [ Html.h3 [ A.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
                 [ Html.text "Phylogenetic Tree" ]
             , Html.div
-                [ Html.Attributes.style
+                [ A.style
                     [ ( "display", "flex" )
                     , ( "justify-content", "space-between" )
                     , ( "flex-shrink", "0" )
                     ]
                 ]
                 [ variableSelector, toggleBranchLengths ]
-            , Html.div [ Html.Attributes.style [ ( "margin-bottom", "20px" ), ( "overflow-y", "auto" ) ] ]
+            , legend
+            , Html.div [ A.style [ ( "margin-bottom", "20px" ), ( "overflow-y", "auto" ) ] ]
                 [ svg
                     [ width "560"
                     , height (14 * treeHeight |> toString)
                     , viewBox ("0 0 40 " ++ (toString treeHeight))
-                    , Html.Attributes.style [ ( "background", "#000" ), ( "font-family", "sans-serif" ) ]
+                    , A.style [ ( "background", "#000" ), ( "font-family", "sans-serif" ) ]
                       -- , Html.Events.onClick JumpUp
                     ]
                     -- (clickBox :: treeSvg)
