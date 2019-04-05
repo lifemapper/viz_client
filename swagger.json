@@ -2943,6 +2943,10 @@
             }
           }
         },
+        "message": {
+          "type": "string",
+          "description": "May be populated with a message explaining gridset status or progress.\n"
+        },
         "projections": {
           "type": "object",
           "required": [

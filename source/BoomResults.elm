@@ -452,12 +452,13 @@ view { state, packageStatus, mdl, programFlags } =
             if progress.progress == -1 then
                 Options.div
                     [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
-                    [ Html.text "Unfortunately, the project failed." ]
+                    [ Html.text <| Maybe.withDefault "Unfortunately, the project failed." progress.message ]
             else
                 Options.div
                     [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
                     [ Html.text "Waiting for results..."
                     , Html.p [] [ Loading.progress (100 * progress.progress) ]
+                    , Html.p [] [ Html.text <| Maybe.withDefault "" progress.message ]
                     ]
 
         GetProjectionsList _ ->
@@ -502,7 +503,7 @@ view { state, packageStatus, mdl, programFlags } =
                                 if (List.length display) == 1 then
                                     "Project produced one species model."
                                 else
-                                    "Project produced " ++ (display |> List.length |> toString ) ++ " species models."
+                                    "Project produced " ++ (display |> List.length |> toString) ++ " species models."
                             ]
                         , if Set.size species > 1 then
                             Options.div []
