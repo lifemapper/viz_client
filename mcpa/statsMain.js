@@ -142,7 +142,7 @@ var observer = new MutationObserver(function(mutations) {
 
             var elements = n.getElementsByClassName("leaflet-map");
             Array.prototype.forEach.call(elements, function(element) {
-                var map = L.map(element);
+                var map = L.map(element, {worldCopyJump: true});
 
                 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: "© OpenStreetMap",

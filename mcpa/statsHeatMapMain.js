@@ -81,14 +81,13 @@ var observer = new MutationObserver(function(mutations) {
 
             var elements = n.getElementsByClassName("leaflet-map");
             Array.prototype.forEach.call(elements, function(element) {
-                var map = L.map(element).fitBounds([
+                var map = L.map(element, {worldCopyJump: true}).fitBounds([
                     [bbox[1], bbox[0]], [bbox[3], bbox[2]]
                 ]);
                 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: "© OpenStreetMap",
                     minZoom: 2,
-                    maxZoom: 12,
-                    worldCopyJump: true
+                    maxZoom: 12
                 }).addTo(map);
 
                 maps[element._leaflet_id] = map;
