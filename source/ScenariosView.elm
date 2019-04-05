@@ -172,11 +172,11 @@ modelScenarioLI index model package currentlySelected i (Scenario s) =
             ]
 
 
-projectionScenarioLI : Index -> Model -> ScenarioPackageRecord -> List ScenarioRecord -> ScenarioLiFunc
-projectionScenarioLI index model package currentlySelected i (Scenario s) =
+projectionScenarioLI : Index -> Model -> ScenarioPackageRecord -> List ScenarioRecord -> Maybe ScenarioRecord -> ScenarioLiFunc
+projectionScenarioLI index model package currentlySelected modelScenario i (Scenario s) =
     let
         isSelected =
-            List.member s currentlySelected
+            (List.member s currentlySelected) || (Just s == modelScenario)
 
         toggle =
             if isSelected then
@@ -192,6 +192,7 @@ projectionScenarioLI index model package currentlySelected i (Scenario s) =
                     model.mdl
                     [ Toggles.value isSelected
                     , Options.onToggle toggle
+                    , Options.when (Just s == modelScenario) Toggles.disabled
                     ]
                     []
                 ]
@@ -219,9 +220,9 @@ packageCard index model package =
 
         projLI =
             if isSelected then
-                projectionScenarioLI (1 :: index) model package model.projectionScenarios
+                projectionScenarioLI (1 :: index) model package model.projectionScenarios model.modelScenario
             else
-                projectionScenarioLI (1 :: index) model package []
+                projectionScenarioLI (1 :: index) model package [] Nothing
     in
         Card.view
             [ Options.css "width" "100%"
