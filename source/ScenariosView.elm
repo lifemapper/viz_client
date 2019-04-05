@@ -73,6 +73,7 @@ type alias Model =
     , package : Maybe ScenarioPackageRecord
     , projectionScenarios : List ScenarioRecord
     , modelScenario : Maybe ScenarioRecord
+    , mouseIn : Maybe ScenarioPackageRecord
     }
 
 
@@ -101,6 +102,7 @@ type Msg
     | SelectModelScenario ScenarioPackageRecord ScenarioRecord
     | SelectProjectionScenario ScenarioPackageRecord ScenarioRecord
     | UnselectProjectionScenario ScenarioRecord
+    | MouseIn (Maybe ScenarioPackageRecord)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -123,6 +125,9 @@ update msg model =
 
         UnselectProjectionScenario id ->
             ( { model | projectionScenarios = remove id model.projectionScenarios }, Cmd.none )
+
+        MouseIn package ->
+            ( { model | mouseIn = package }, Cmd.none )
 
 
 type alias ScenarioLiFunc =
@@ -226,16 +231,23 @@ packageCard index model package =
     in
         Card.view
             [ Options.css "width" "100%"
-            , if isSelected then
+            , if model.mouseIn == Just package then
+                Elevation.e16
+              else if isSelected then
                 Elevation.e8
               else
                 Elevation.e2
+            , Options.onMouseEnter (MouseIn (Just package))
+            , Options.onMouseLeave (MouseIn Nothing)
             ]
             [ Card.title [ Card.border ] [ Card.head [] [ Html.text <| "Package: " ++ (package.name ? "") ] ]
             , Card.text []
                 [ Options.div [ Typo.subhead ] [ Html.text "Choose Model Layers" ]
                 , listScenarios modelLI package.scenarios
-                , Options.div [ Typo.subhead ] [ Html.text "Choose Projection Layers" ]
+                , Options.div []
+                    [ Options.span [ Typo.subhead ] [ Html.text "Choose Projection Layers" ]
+                    , Html.text " (The model layer is included in projections automatically.)"
+                    ]
                 , listScenarios projLI package.scenarios
                 ]
             ]
@@ -243,12 +255,21 @@ packageCard index model package =
 
 view : Index -> SL.Model -> Model -> Html Msg
 view index sl model =
-    sl.packages
-        |> List.sortBy .id
-        -- just so the packages appear in a consistent order between page loads
-        |>
-            List.indexedMap (\i package -> Grid.cell [ Grid.size Grid.All 4 ] [ packageCard (i :: index) model package ])
-        |> Grid.grid []
+    Options.div []
+        [ Options.styled Html.p
+            [ Options.css "padding" "20px", Options.css "margin" "0" ]
+            [ Html.text <|
+                "Note: All layers must be chosen from a single package. "
+                    ++ "Previous selections will be cleared when a layer is selected from "
+                    ++ "a different package."
+            ]
+        , sl.packages
+            |> List.sortBy .id
+            -- just so the packages appear in a consistent order between page loads
+            |>
+                List.indexedMap (\i package -> Grid.cell [ Grid.size Grid.All 4 ] [ packageCard (i :: index) model package ])
+            |> Grid.grid []
+        ]
 
 
 problems : Model -> Maybe String
@@ -272,6 +293,7 @@ init =
     , package = Nothing
     , modelScenario = Nothing
     , projectionScenarios = []
+    , mouseIn = Nothing
     }
 
 
