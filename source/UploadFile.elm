@@ -266,7 +266,13 @@ view :
 view mapMdlMsg mapMsg index text mdl state =
     case state of
         Finished filename ->
-            [ Html.text <| "Uploaded " ++ filename ++ "." ]
+            [ Html.p [] [ Html.text <| "Uploaded " ++ filename ++ "." ]
+            , Button.render mapMdlMsg
+                (2 :: index)
+                mdl
+                [ Button.raised, Options.onClick (mapMsg ChooseNewFile), Options.css "margin-left" "8px" ]
+                [ Html.text "Choose a different file" ]
+            ]
 
         FileNameConflict { localFileName, uploadAs } ->
             [ Html.p [] [ Html.text ("File selected: " ++ localFileName) ]
@@ -287,6 +293,11 @@ view mapMdlMsg mapMsg index text mdl state =
                 mdl
                 [ Button.raised, Options.onClick (mapMsg DoUpload) ]
                 [ Html.text "Upload" ]
+            , Button.render mapMdlMsg
+                (2 :: index)
+                mdl
+                [ Button.raised, Options.onClick (mapMsg ChooseNewFile), Options.css "margin-left" "8px" ]
+                [ Html.text "Choose a different file" ]
             ]
 
         UploadingFile { localFileName, uploadAs, status } ->
@@ -311,14 +322,7 @@ view mapMdlMsg mapMsg index text mdl state =
                     [ Html.text <| "Failed uploading " ++ uploadAs ++ "." ]
 
         GotFileName { localFileName, uploadAs, metadata, metadataIssues } ->
-            [ Html.p []
-                [ Html.text ("File selected: " ++ localFileName)
-                , Button.render mapMdlMsg
-                    (2 :: index)
-                    mdl
-                    [ Button.raised, Options.onClick (mapMsg ChooseNewFile), Options.css "margin-left" "8px" ]
-                    [ Html.text "Choose another" ]
-                ]
+            [ Html.p [] [ Html.text ("File selected: " ++ localFileName)]
             , metadataTable mapMdlMsg (MetadataMsg >> mapMsg) (2 :: index) mdl metadata
             , Html.p []
                 [ Textfield.render mapMdlMsg
@@ -337,6 +341,11 @@ view mapMdlMsg mapMsg index text mdl state =
                 mdl
                 [ Button.raised, Options.onClick (mapMsg DoUpload) ]
                 [ Html.text "Upload" ]
+            , Button.render mapMdlMsg
+                (2 :: index)
+                mdl
+                [ Button.raised, Options.onClick (mapMsg ChooseNewFile), Options.css "margin-left" "8px" ]
+                [ Html.text "Choose a different file" ]
             ]
 
         FileSelected ->
