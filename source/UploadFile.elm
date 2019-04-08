@@ -82,6 +82,7 @@ type FileSelectState
     | GotFileName { localFileName : String, uploadAs : String, metadata : Metadata, metadataIssues : List MetadataIssues }
     | UploadingFile { localFileName : String, uploadAs : String, metadata : Metadata, status : UploadStatus }
     | FileNameConflict { localFileName : String, uploadAs : String, metadata : Metadata }
+    | UploadingFailed { localFileName : String, uploadAs : String, metadata : Metadata, status : UploadStatus }
     | Finished String
 
 
@@ -196,7 +197,7 @@ update uploadType index flags msg state =
                                 ( Finished uploadAs, Cmd.none )
 
                             _ ->
-                                ( UploadingFile { info | status = status }, Cmd.none )
+                                ( UploadingFailed { info | status = status }, Cmd.none )
 
                     _ ->
                         ( state, Cmd.none )
@@ -321,8 +322,17 @@ view mapMdlMsg mapMsg index text mdl state =
                 UploadCanceled ->
                     [ Html.text <| "Failed uploading " ++ uploadAs ++ "." ]
 
+        UploadingFailed { localFileName, uploadAs, status } ->
+            [ Html.p [] [ Html.text <| "Uploading of " ++ uploadAs ++ "finished but resulted in failure." ]
+            , Button.render mapMdlMsg
+                (2 :: index)
+                mdl
+                [ Button.raised, Options.onClick (mapMsg ChooseNewFile), Options.css "margin-left" "8px" ]
+                [ Html.text "Choose a different file" ]
+            ]
+
         GotFileName { localFileName, uploadAs, metadata, metadataIssues } ->
-            [ Html.p [] [ Html.text ("File selected: " ++ localFileName)]
+            [ Html.p [] [ Html.text ("File selected: " ++ localFileName) ]
             , metadataTable mapMdlMsg (MetadataMsg >> mapMsg) (2 :: index) mdl metadata
             , Html.p []
                 [ Textfield.render mapMdlMsg
