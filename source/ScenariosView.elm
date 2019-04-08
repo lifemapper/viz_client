@@ -274,17 +274,10 @@ view index sl model =
 
 problems : Model -> Maybe String
 problems model =
-    Maybe.or
-        (if model.modelScenario == Nothing then
-            Just "No model layers selected."
-         else
-            Nothing
-        )
-        (if model.projectionScenarios == [] then
-            Just "No projection layers selected."
-         else
-            Nothing
-        )
+    if model.modelScenario == Nothing then
+        Just "No model layers selected."
+    else
+        Nothing
 
 
 init : Model
