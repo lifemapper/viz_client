@@ -35,6 +35,7 @@ import Material.Helpers exposing (lift)
 import Material.Spinner as Loading
 import Material.Color as Color
 import Html exposing (Html)
+import Html.Attributes as A
 import Navigation as Nav exposing (Location)
 import UrlParser as Url exposing ((</>))
 import Http
@@ -61,6 +62,7 @@ type AppPage
     | SignUp SignUp.Model
     | BrowseProjections BrowseProjectionsPage.Model
     | PageNotFound
+    | Welcome
 
 
 initResultsPage : Flags -> Int -> ( AppPage, Cmd Msg )
@@ -104,10 +106,11 @@ location2Page flags location =
     let
         route =
             Url.oneOf
-                [ Url.map (initNewBoomPage flags) Url.top
+                [ Url.map (initNewBoomPage flags) (Url.s "new")
                 , Url.map (initResultsPage flags) (Url.s "results" </> Url.int)
                 , Url.map (initBrowsePage flags) (Url.s "browse-projections")
                 , Url.map (initSignUpPage flags) (Url.s "sign-up")
+                , Url.map ( Welcome, Cmd.none ) Url.top
                 ]
     in
         Url.parseHash route location
@@ -147,6 +150,7 @@ type Msg
     | OpenExisting Int
     | OpenNew
     | OpenBrowse
+    | OpenWelcome
     | Tick Time.Time
     | AuthMsg Auth.Msg
     | Nop
@@ -228,10 +232,13 @@ update msg model =
                 model ! [ Nav.newUrl ("#results/" ++ toString id) ]
 
             OpenNew ->
-                model ! [ Nav.newUrl "#" ]
+                model ! [ Nav.newUrl "#new/" ]
 
             OpenBrowse ->
                 model ! [ Nav.newUrl "#browse-projections/" ]
+
+            OpenWelcome ->
+                model ! [ Nav.newUrl "#/" ]
 
             Tick _ ->
                 model ! [ getPublicGridSets model.flags, getGridSets model.flags model.login ]
@@ -446,7 +453,8 @@ title login =
 
 drawer : Model -> List (Html Msg)
 drawer model =
-    [ Layout.title [ Options.css "padding" "0 20px" ] [ title model.login ]
+    [ Layout.title [ Options.onClick OpenWelcome, Options.css "padding" "0 20px", Options.css "cursor" "pointer" ]
+        [ title model.login ]
     , Layout.navigation [] (Auth.view "#sign-up/" model.login |> List.map (Html.map AuthMsg))
       -- , Layout.navigation []
       --     [ Layout.link []
@@ -544,6 +552,59 @@ pageImplementation p =
             , tabTitles = always []
             , subscriptions = always Sub.none
             , title = "Page Not Found"
+            }
+
+        Welcome ->
+            { view =
+                always <|
+                    Options.div [ Options.css "margin" "20px" ]
+                        [ Options.styled Html.h1 [ Typo.headline ] [ Html.text "BiotaPhy Project" ]
+                        , Options.styled Html.p
+                            []
+                            [ Html.text "The BiotaPhy project is a collaboration among "
+                            , Html.a [ A.href "https://www.idigbio.org/" ] [ Html.text "iDigBio" ]
+                            , Html.text ", "
+                            , Html.a [ A.href "http://lifemapper.org/" ] [ Html.text "Lifemapper" ]
+                            , Html.text ", and "
+                            , Html.a [ A.href "https://ot38.opentreeoflife.org/about/open-tree-of-life" ] [ Html.text "Open Tree of Life" ]
+                            , Html.text ". It is supported by NSF BIO Award #1458422."
+                            ]
+                        , Options.div
+                            [ Options.css "display" "flex"
+                            , Options.css "justify-content" "space-between"
+                            , Options.css "width" "800px"
+                            ]
+                            [ Html.a [ A.href "https://www.idigbio.org/" ]
+                                [ Html.img
+                                    [ A.src "./images/idigbio_logo.png"
+                                    , A.alt "iDigBio"
+                                    , A.style [ ( "width", "213px" ), ( "height", "65px" ) ]
+                                    ]
+                                    []
+                                ]
+                            , Html.a [ A.href "http://lifemapper.org/" ]
+                                [ Html.img
+                                    [ A.src "./images/lm_logo.png"
+                                    , A.alt "Lifemapper"
+                                    , A.style [ ( "width", "107px" ), ( "height", "111px" ) ]
+                                    ]
+                                    []
+                                ]
+                            , Html.a [ A.href "https://ot38.opentreeoflife.org/about/open-tree-of-life" ]
+                                [ Html.img
+                                    [ A.src "./images/otl_logo.png"
+                                    , A.alt "Open Tree of Life"
+                                    , A.style [ ( "width", "241px" ), ( "height", "126px" ) ]
+                                    ]
+                                    []
+                                ]
+                            ]
+                        ]
+            , selectedTab = always 0
+            , selectTab = always Nop
+            , tabTitles = always []
+            , subscriptions = always Sub.none
+            , title = "Welcome"
             }
 
 
