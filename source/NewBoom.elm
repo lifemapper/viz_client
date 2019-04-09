@@ -22,19 +22,21 @@
 -}
 
 
-module NewBoom exposing (Model, page, init, update, Msg)
+module NewBoom exposing (Model, page, init, update, Msg, jobNameTextField, focusToJobName)
 
 import List.Extra exposing (elemIndex, getAt)
 import Html exposing (Html)
 import Http
+import Dom
+import Task
 import Material
+import Material.Textfield as Textfield
 import Material.Options as Options
 import Material.List as Lists
 import Material.Icon as Icon
 import Material.Typography as Typo
 import Material.Button as Button
 import Material.Toggles as Toggles
-import Material.Textfield as Textfield
 import Material.Helpers exposing (lift)
 import Material.Spinner as Loading
 import ScenariosView as Scns
@@ -169,11 +171,19 @@ type Msg
     | ToggleComputeStats
     | UpdateArchiveName String
     | UploadMsg UploadFile.Msg
+    | FocusJobName
+    | Nop
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Nop ->
+            model ! []
+
+        FocusJobName ->
+            model ! [ focusToJobName ]
+
         SelectTab tab ->
             ( { model | selectedTab = tab }, Cmd.none )
 
@@ -320,8 +330,8 @@ mainView model =
                         , Lists.ul []
                             ([ jobNameLI model ]
                                 ++ List.map (taskLI model) tasks
-                                ++ [ uploadTaskLI "Phylogenetic Tree" model.treeUpload ]
-                                ++ [ uploadTaskLI "Biogeographic Hypotheses" model.hypoUpload ]
+                                ++ [ uploadTaskLI TreeUpload "Phylogenetic Tree" model.treeUpload ]
+                                ++ [ uploadTaskLI HypothesisUpload "Biogeographic Hypotheses" model.hypoUpload ]
                             )
                         , Toggles.switch Mdl
                             [ 6 ]
@@ -393,27 +403,46 @@ jobNameLI model =
             else
                 Icon.i "check_box"
     in
-        Lists.li []
+        Lists.li [ Options.onClick FocusJobName ]
             [ Lists.content [] <|
                 [ icon
-                , Textfield.render Mdl
-                    [ 7 ]
-                    model.mdl
-                    [ Textfield.label "Project name"
-                    , Textfield.floatingLabel
-                    , Textfield.value model.archiveName
-                    , Options.onInput UpdateArchiveName
+                , Html.text "Project Name"
+                , Options.span [ Options.css "margin-left" "5px", Typo.caption ]
+                    [ if model.archiveName == "" then
+                        Html.text "(No project name.)"
+                      else
+                        Html.text <| "(" ++ model.archiveName ++ ")"
                     ]
-                    []
                 ]
             ]
 
 
-uploadTaskLI : String -> UploadFile.Model -> Html Msg
-uploadTaskLI title upload =
+jobNameTextField : Model -> Html Msg
+jobNameTextField model =
+    Textfield.render Mdl
+        [ 888 ]
+        model.mdl
+        [ Textfield.label "New project name"
+        , Textfield.floatingLabel
+        , Options.css "margin-left" "10px"
+        , Options.css "width" "200px"
+        , Options.id "new-project-name"
+        , Textfield.value model.archiveName
+        , Options.onInput (String.trim >> UpdateArchiveName)
+        ]
+        []
+
+
+focusToJobName : Cmd Msg
+focusToJobName =
+    Dom.focus "new-project-name" |> Task.attempt (always Nop)
+
+
+uploadTaskLI : Tab -> String -> UploadFile.Model -> Html Msg
+uploadTaskLI tab title upload =
     case UploadFile.getUploadedFilename upload of
         Just filename ->
-            Lists.li []
+            Lists.li [ Options.onClick (SelectTab tab) ]
                 [ Lists.content []
                     [ Icon.i "check_box"
                     , Html.text title
@@ -423,7 +452,7 @@ uploadTaskLI title upload =
                 ]
 
         Nothing ->
-            Lists.li []
+            Lists.li [ Options.onClick (SelectTab tab) ]
                 [ Lists.content []
                     [ Icon.i "check_box_outline_blank"
                     , Html.text title
@@ -453,7 +482,8 @@ taskLI model ( tab, problemFunc ) =
                       ]
                     )
     in
-        Lists.li [] [ Lists.content [] <| [ icon, tabTitle tab ] ++ hint ]
+        Lists.li [ Options.onClick (SelectTab tab) ]
+            [ Lists.content [] <| [ icon, tabTitle tab ] ++ hint ]
 
 
 tasks : List ( Tab, Model -> Maybe String )

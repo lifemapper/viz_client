@@ -80,7 +80,7 @@ initNewBoomPage flags =
         ( model_, msg_ ) =
             NewBoom.init flags
     in
-        ( NewBoom model_, Cmd.map NewBoomMsg msg_ )
+        NewBoom model_ ! [ Cmd.map NewBoomMsg NewBoom.focusToJobName, Cmd.map NewBoomMsg msg_ ]
 
 
 initSignUpPage : Flags -> ( AppPage, Cmd Msg )
@@ -360,22 +360,17 @@ header title =
 
 newLink : Model -> Html Msg
 newLink model =
-    let
-        selected =
-            case model.page of
-                NewBoom _ ->
-                    Color.background (Color.color Color.Grey Color.S300)
+    case model.page of
+        NewBoom model_ ->
+            NewBoom.jobNameTextField model_ |> Html.map NewBoomMsg
 
-                _ ->
-                    Options.nop
-    in
-        Layout.link
-            [ Options.onClick OpenNew
-            , Options.css "cursor" "pointer"
-            , Options.css "padding" "8px 20px"
-            , selected
-            ]
-            [ Icon.i "add", Html.text "New Project" ]
+        _ ->
+            Layout.link
+                [ Options.onClick OpenNew
+                , Options.css "cursor" "pointer"
+                , Options.css "padding" "8px 20px"
+                ]
+                [ Icon.i "add", Html.text "New Project" ]
 
 
 searchLink : Model -> Html Msg
