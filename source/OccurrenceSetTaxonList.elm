@@ -33,6 +33,7 @@ import Material.Typography as Typo
 import Material.Button as Button
 import Material.Toggles as Toggles
 import Material.Spinner as Loading
+import Material.Tooltip as Tooltip
 import Material.Icon as Icon
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -63,8 +64,8 @@ type alias Match =
     { response : Decoder.GbifResponseItemRecord
     , searchName : String
     , use : Bool
-    , count : Int
-    , inTree : Bool
+    , count : Maybe Int
+    , inTree : Maybe Bool
     }
 
 
@@ -268,8 +269,8 @@ gotGbifResponse dontUse response =
                         { response = item
                         , searchName = item.search_name ? ""
                         , use = False
-                        , count = 0
-                        , inTree = False
+                        , count = Nothing
+                        , inTree = Nothing
                         }
                     )
                 |> GotMatchesMsg
@@ -308,13 +309,13 @@ gotBiotaphyPointsResponse matches response =
                             |> List.map (\(Decoder.BiotaphyPointsResponseItem item) -> item)
                             |> List.filter (\{ taxon_id } -> match.response.taxon_id == Just taxon_id)
                             |> List.head
-                            |> Maybe.map (\{ count } -> { match | count = count })
+                            |> Maybe.map (\{ count } -> { match | count = Just count })
                             |> Maybe.withDefault match
                     )
                 |> GotPointsMsg
 
         Err err ->
-            GettingPointsFailedMsg
+            matches |> List.map (\match -> { match | count = Nothing }) |> GotPointsMsg
 
 
 requestTree : Flags -> List Match -> Cmd Msg
@@ -353,11 +354,13 @@ gotOpenTreeResponse matches response =
                             False
             in
                 matches
-                    |> List.map (\match -> { match | inTree = inTree match })
+                    |> List.map (\match -> { match | inTree = Just (inTree match) })
                     |> GotTreeMsg
 
         Err err ->
-            TreeRequestFailedMsg
+            matches
+                |> List.map (\match -> { match | inTree = Nothing })
+                |> GotTreeMsg
 
 
 view : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model -> Model -> Html msg
@@ -489,18 +492,43 @@ viewMatch mdlMsg mapMsg index mdl i item =
                     []
 
         inTree =
-            if item.inTree then
-                Icon.i "done"
-            else
-                Html.text ""
+            case item.inTree of
+                Just True ->
+                    [ Icon.i "done" ]
+
+                Just False ->
+                    [ Html.text "" ]
+
+                Nothing ->
+                    [ Icon.view "error_outline" [ Tooltip.attach mdlMsg (0 :: i :: index) ]
+                    , Tooltip.render mdlMsg
+                        (0 :: i :: index)
+                        mdl
+                        []
+                        [ Html.text "There was a problem accessing the Open Tree API." ]
+                    ]
+
+        itemCount =
+            case item.count of
+                Just n ->
+                    [ n |> toString |> Html.text ]
+
+                Nothing ->
+                    [ Icon.view "error_outline" [ Tooltip.attach mdlMsg (0 :: i :: index) ]
+                    , Tooltip.render mdlMsg
+                        (0 :: i :: index)
+                        mdl
+                        []
+                        [ Html.text "There was a problem accessing the iDigBio API." ]
+                    ]
     in
         case item.response.accepted_name of
             Just name ->
                 Html.tr []
                     [ Html.td [ Attributes.style [ ( "white-space", "nowrap" ) ] ] [ nameUpdater name ]
                     , Html.td [ Attributes.style [ ( "white-space", "nowrap" ) ] ] [ Html.text name ]
-                    , Html.td [ Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text <| toString item.count ]
-                    , Html.td [ Attributes.style [ ( "text-align", "center" ) ] ] [ inTree ]
+                    , Html.td [ Attributes.style [ ( "text-align", "right" ) ] ] itemCount
+                    , Html.td [ Attributes.style [ ( "text-align", "center" ) ] ] inTree
                     , Html.td [] [ checkbox ]
                     ]
 
