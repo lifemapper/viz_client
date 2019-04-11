@@ -365,30 +365,38 @@ occurrenceSetList index model =
 sourceChooser : Index -> Model -> Html Msg
 sourceChooser idx model =
     Options.div [ Options.css "margin" "20px" ]
-        [ Toggles.radio Mdl
-            (0 :: idx)
-            model.mdl
-            [ Options.css "margin-right" "16px"
-            , case model.source of
-                TaxonList _ ->
-                    Toggles.value True
-
-                _ ->
-                    Options.onToggle UseTaxonList
+        [ Options.div
+            [ Options.css "border" "1px solid"
+            , Options.css "display" "inline-block"
+            , Options.css "padding" "5px"
+            , Options.css "margin-right" "10px"
             ]
-            [ Html.text "Provide a list of species names" ]
-        , Toggles.radio Mdl
-            (1 :: idx)
-            model.mdl
-            [ Options.css "margin-right" "16px"
-            , case model.source of
-                Taxonomy _ ->
-                    Toggles.value True
+            [ Options.styled Html.p [ Typo.subhead ] [ Html.text "Data from iDigBio and Open Tree: " ]
+            , Toggles.radio Mdl
+                (0 :: idx)
+                model.mdl
+                [ Options.css "margin-right" "16px"
+                , case model.source of
+                    TaxonList _ ->
+                        Toggles.value True
 
-                _ ->
-                    Options.onToggle UseTaxonomy
+                    _ ->
+                        Options.onToggle UseTaxonList
+                ]
+                [ Html.text "List of species" ]
+            , Toggles.radio Mdl
+                (1 :: idx)
+                model.mdl
+                [ Options.css "margin-right" "16px"
+                , case model.source of
+                    Taxonomy _ ->
+                        Toggles.value True
+
+                    _ ->
+                        Options.onToggle UseTaxonomy
+                ]
+                [ Html.text "Taxonomic search" ]
             ]
-            [ Html.text "Select by taxonomy" ]
         , Toggles.radio Mdl
             (2 :: idx)
             model.mdl
