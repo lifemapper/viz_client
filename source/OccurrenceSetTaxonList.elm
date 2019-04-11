@@ -61,7 +61,9 @@ type State
 
 
 type alias Match =
-    { response : Decoder.GbifResponseItemRecord
+    { acceptedName : Maybe String
+    , searchedName : Maybe String
+    , taxonId : Maybe Int
     , searchName : String
     , use : Bool
     , count : Maybe Int
@@ -75,7 +77,7 @@ getTaxonIds model =
         GotMatches matches ->
             matches
                 |> List.filter .use
-                |> List.filterMap (.response >> .taxon_id)
+                |> List.filterMap .taxonId
 
         _ ->
             []
@@ -231,7 +233,7 @@ update msg model =
                                 |> List.filterMap
                                     (\match ->
                                         if not match.use then
-                                            match.response.accepted_name
+                                            match.acceptedName
                                         else
                                             Nothing
                                     )
@@ -266,7 +268,9 @@ gotGbifResponse dontUse response =
             items
                 |> List.map
                     (\(Decoder.GbifResponseItem item) ->
-                        { response = item
+                        { taxonId = item.taxon_id
+                        , acceptedName = item.accepted_name
+                        , searchedName = item.search_name
                         , searchName = item.search_name ? ""
                         , use = False
                         , count = Nothing
@@ -287,7 +291,7 @@ requestPoints flags matches =
         , url = flags.apiRoot ++ "biotaphypoints"
         , body =
             matches
-                |> List.filterMap (.response >> .taxon_id)
+                |> List.filterMap .taxonId
                 |> Decoder.BiotaphyPointsPost
                 |> Encoder.encodeBiotaphyPointsPost
                 |> Http.jsonBody
@@ -307,7 +311,7 @@ gotBiotaphyPointsResponse matches response =
                     (\match ->
                         items
                             |> List.map (\(Decoder.BiotaphyPointsResponseItem item) -> item)
-                            |> List.filter (\{ taxon_id } -> match.response.taxon_id == Just taxon_id)
+                            |> List.filter (\{ taxon_id } -> match.taxonId == Just taxon_id)
                             |> List.head
                             |> Maybe.map (\{ count } -> { match | count = Just count })
                             |> Maybe.withDefault match
@@ -326,7 +330,7 @@ requestTree flags matches =
         , url = flags.apiRoot ++ "opentree"
         , body =
             matches
-                |> List.filterMap (.response >> .taxon_id)
+                |> List.filterMap .taxonId
                 |> Decoder.OpenTreePOST
                 |> Encoder.encodeOpenTreePOST
                 |> Http.jsonBody
@@ -346,7 +350,7 @@ gotOpenTreeResponse matches response =
                     unmatched_ids
 
                 inTree match =
-                    case match.response.taxon_id of
+                    case match.taxonId of
                         Just id ->
                             not <| List.member id unmatchedIds
 
@@ -431,7 +435,7 @@ view mdlMsg mapMsg index mdl model =
                     mdl
                     [ Button.raised
                     , Options.css "margin" "5px"
-                    , Options.when (matches |> List.all (\match -> Just match.searchName == match.response.search_name))
+                    , Options.when (matches |> List.all (\match -> Just match.searchName == match.searchedName))
                         Button.disabled
                     , Options.onClick <| mapMsg MatchAgain
                     ]
@@ -482,8 +486,8 @@ viewMatch mdlMsg mapMsg index mdl i item =
                 []
 
         nameUpdater name =
-            if item.response.search_name == Just name then
-                Html.text <| item.response.search_name ? ""
+            if item.searchedName == Just name then
+                Html.text <| item.searchedName ? ""
             else
                 Options.styled Html.input
                     [ Options.attribute <| Attributes.value <| item.searchName
@@ -522,7 +526,7 @@ viewMatch mdlMsg mapMsg index mdl i item =
                         [ Html.text "There was a problem accessing the iDigBio API." ]
                     ]
     in
-        case item.response.accepted_name of
+        case item.acceptedName of
             Just name ->
                 Html.tr []
                     [ Html.td [ Attributes.style [ ( "white-space", "nowrap" ) ] ] [ nameUpdater name ]
