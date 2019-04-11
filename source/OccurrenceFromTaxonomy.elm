@@ -667,6 +667,16 @@ viewMatch mdlMsg mapMsg index mdl i (TaxonomyListItem item) =
                 [ Options.onToggle <| mapMsg <| ToggleUseName i
                 , Toggles.value item.use
                 , Options.css "margin-left" "40px"
+                , Options.disabled <|
+                    case item.count of
+                        Just 0 ->
+                            True
+
+                        Nothing ->
+                            True
+
+                        _ ->
+                            False
                 ]
                 []
 
