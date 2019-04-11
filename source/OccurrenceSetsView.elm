@@ -102,7 +102,7 @@ toApi model =
                 { occurrence_ids = Nothing
                 , points_filename = Nothing
                 , point_count_min = Nothing
-                , taxon_ids = Just (taxonomy |> OccurrenceFromTaxonomy.getTaxonIds)
+                , taxon_ids = Just (taxonomy |> OccurrenceFromTaxonomy.getTaxonIds |> Decoder.BoomOccurrenceSetTaxon_ids)
                 , taxon_names = Nothing
                 , delimiter = Nothing
                 }
@@ -457,7 +457,7 @@ view index model =
                     [ sourceChooser (0 :: index) model
                     , Options.div [ Options.css "margin" "20px" ]
                         [ Options.div [ Options.css "margin-bottom" "10px" ]
-                            [ OccurrenceFromTaxonomy.view model_ |> Html.map TaxonomyMsg ]
+                            [ OccurrenceFromTaxonomy.view Mdl TaxonomyMsg (3 :: index) model.mdl model_ ]
                         ]
                     ]
 
@@ -487,7 +487,7 @@ problems model =
                 Nothing
 
         Taxonomy taxonomy ->
-            if taxonomy.speciesForOccurrences == [] then
+            if OccurrenceFromTaxonomy.getTaxonIds taxonomy == [] then
                 Just "No species chosen for occurrence points."
             else
                 Nothing

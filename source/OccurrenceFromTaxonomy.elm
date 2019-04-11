@@ -32,12 +32,20 @@ import Json.Encode as Encode
 import Html exposing (Html)
 import Html.Events as Events
 import Html.Attributes
+import Material
+import Material.Button as Button
 import Material.Options as Options
 import Material.Typography as Typo
+import Material.Spinner as Loading
+import Material.Tooltip as Tooltip
+import Material.Icon as Icon
+import Material.Toggles as Toggles
+import Helpers exposing (Index)
 import Http
 import QueryString as Q
 import ProgramFlags exposing (Flags)
 import Decoder
+import Encoder
 
 
 type TaxonomyList
@@ -45,7 +53,13 @@ type TaxonomyList
 
 
 type TaxonomyListItem
-    = TaxonomyListItem { taxon_key : String, scientific_name : String }
+    = TaxonomyListItem
+        { taxon_key : String
+        , scientific_name : String
+        , use : Bool
+        , count : Maybe Int
+        , inTree : Maybe Bool
+        }
 
 
 type TaxonRank
@@ -105,7 +119,24 @@ type alias Model =
     , taxa : List TaxonomyListItem
     , speciesFound : Int
     , loading : Bool
+    , state : State
     , flags : Flags
+    }
+
+
+type State
+    = SelectingSpecies
+    | RequestingPoints
+    | RequestingTree
+    | GotMatches (List TaxonomyListItem)
+
+
+type alias Match =
+    { name : Maybe String
+    , taxonId : Maybe Int
+    , use : Bool
+    , count : Maybe Int
+    , inTree : Maybe Bool
     }
 
 
@@ -120,16 +151,27 @@ init flags =
     , taxa = []
     , speciesFound = 0
     , loading = False
+    , state = SelectingSpecies
     , flags = flags
     }
         ! [ getFacets flags Dict.empty TaxonKingdom ]
 
 
-getTaxonIds : Model -> Decoder.BoomOccurrenceSetTaxon_ids
+getTaxonIds : Model -> List Int
 getTaxonIds model =
-    model.speciesForOccurrences
-        |> List.filterMap (\(TaxonomyListItem { taxon_key }) -> taxon_key |> String.toInt |> Result.toMaybe)
-        |> Decoder.BoomOccurrenceSetTaxon_ids
+    case model.state of
+        GotMatches items ->
+            items
+                |> List.filterMap
+                    (\(TaxonomyListItem { taxon_key, use }) ->
+                        if use then
+                            taxon_key |> String.toInt |> Result.toMaybe
+                        else
+                            Nothing
+                    )
+
+        _ ->
+            []
 
 
 type Msg
@@ -140,11 +182,47 @@ type Msg
     | TransferSelectedSpecies
     | RemoveSelectedSpecies
     | GotFacets TaxonRank Int (List ( String, String )) (List ( String, Int ))
+    | CheckTaxa
+    | GotPointsMsg (List TaxonomyListItem)
+    | GotTreeMsg (List TaxonomyListItem)
+    | GoBack
+    | ToggleUseName Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ToggleUseName i ->
+            case model.state of
+                GotMatches matches ->
+                    let
+                        matches_ =
+                            matches
+                                |> List.indexedMap
+                                    (\j (TaxonomyListItem match) ->
+                                        if j == i then
+                                            TaxonomyListItem { match | use = not match.use }
+                                        else
+                                            TaxonomyListItem match
+                                    )
+                    in
+                        { model | state = GotMatches matches_ } ! []
+
+                _ ->
+                    model ! []
+
+        GoBack ->
+            { model | state = SelectingSpecies } ! []
+
+        CheckTaxa ->
+            { model | state = RequestingPoints } ! [ requestPoints model.flags model.speciesForOccurrences ]
+
+        GotPointsMsg items ->
+            { model | state = RequestingTree } ! [ requestTree model.flags items ]
+
+        GotTreeMsg items ->
+            { model | state = GotMatches items } ! []
+
         GotFacets facetField speciesFound species facets ->
             let
                 ( higher, lower ) =
@@ -162,7 +240,13 @@ update msg model =
                         |> List.sortBy Tuple.second
                         |> List.map
                             (\( taxon_key, scientific_name ) ->
-                                TaxonomyListItem { taxon_key = taxon_key, scientific_name = scientific_name }
+                                TaxonomyListItem
+                                    { taxon_key = taxon_key
+                                    , scientific_name = scientific_name
+                                    , count = Nothing
+                                    , inTree = Nothing
+                                    , use = False
+                                    }
                             )
             in
                 ( { model | rank = rank, options = options, taxa = taxa, speciesFound = speciesFound, loading = False }, Cmd.none )
@@ -326,62 +410,209 @@ gotFacets facetField result =
             Debug.crash "problem getting taxonomy facets" result
 
 
-view : Model -> Html Msg
-view ({ options, filters, loading } as model) =
-    Html.div [ Html.Attributes.style [ ( "display", "flex" ) ] ]
-        [ Html.div []
-            [ Options.styled Html.p [ Typo.subhead ] [ Html.text "Filter available species" ]
-            , Html.table []
-                (ranks
-                    |> List.remove TaxonSpecies
-                    |> List.map
-                        (\rank ->
-                            Html.tr []
-                                [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ]
-                                    [ toString rank ++ ": " |> String.dropLeft 5 |> Html.text ]
-                                , Html.td [] [ selector loading filters rank <| Dict.get (rankString rank) options ? [] ]
-                                ]
-                        )
-                )
-            ]
-        , Html.div [ Html.Attributes.style [ ( "margin-left", "20px" ) ] ]
-            [ Options.styled Html.p [ Typo.subhead, Options.css "margin" "0" ] [ Html.text "Matching species" ]
-            , Html.p []
-                [ Html.text <| " (found " ++ (toString model.speciesFound) ++ ")" ]
-            , if model.speciesFound > List.length model.taxa then
-                Html.textarea
-                    [ Html.Attributes.style [ ( "height", "400px" ), ( "width", "300px" ) ]
-                    , Html.Attributes.readonly True
+requestPoints : Flags -> List TaxonomyListItem -> Cmd Msg
+requestPoints flags matches =
+    Http.request
+        { method = "POST"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = flags.apiRoot ++ "biotaphypoints"
+        , body =
+            matches
+                |> List.filterMap (\(TaxonomyListItem { taxon_key }) -> String.toInt taxon_key |> Result.toMaybe)
+                |> Decoder.BiotaphyPointsPost
+                |> Encoder.encodeBiotaphyPointsPost
+                |> Http.jsonBody
+        , expect = Http.expectJson Decoder.decodeBiotaphyPointsResponse
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send (gotBiotaphyPointsResponse matches)
+
+
+gotBiotaphyPointsResponse : List TaxonomyListItem -> Result Http.Error Decoder.BiotaphyPointsResponse -> Msg
+gotBiotaphyPointsResponse matches response =
+    case response of
+        Ok (Decoder.BiotaphyPointsResponse items) ->
+            matches
+                |> List.map
+                    (\(TaxonomyListItem match) ->
+                        items
+                            |> List.map (\(Decoder.BiotaphyPointsResponseItem item) -> item)
+                            |> List.filter (\{ taxon_id } -> match.taxon_key == toString taxon_id)
+                            |> List.head
+                            |> Maybe.map (\{ count } -> { match | count = Just count })
+                            |> Maybe.withDefault match
+                            |> TaxonomyListItem
+                    )
+                |> GotPointsMsg
+
+        Err err ->
+            matches |> List.map (\(TaxonomyListItem item) -> TaxonomyListItem { item | count = Nothing }) |> GotPointsMsg
+
+
+requestTree : Flags -> List TaxonomyListItem -> Cmd Msg
+requestTree flags matches =
+    Http.request
+        { method = "POST"
+        , headers = [ Http.header "Accept" "application/json" ]
+        , url = flags.apiRoot ++ "opentree"
+        , body =
+            matches
+                |> List.filterMap (\(TaxonomyListItem { taxon_key }) -> String.toInt taxon_key |> Result.toMaybe)
+                |> Decoder.OpenTreePOST
+                |> Encoder.encodeOpenTreePOST
+                |> Http.jsonBody
+        , expect = Http.expectJson Decoder.decodeOpenTreePOSTresponse
+        , timeout = Nothing
+        , withCredentials = False
+        }
+        |> Http.send (gotOpenTreeResponse matches)
+
+
+gotOpenTreeResponse : List TaxonomyListItem -> Result Http.Error Decoder.OpenTreePOSTresponse -> Msg
+gotOpenTreeResponse matches response =
+    case response of
+        Ok (Decoder.OpenTreePOSTresponse { unmatched_ids }) ->
+            let
+                (Decoder.OpenTreePOSTresponseUnmatched_ids unmatchedIds) =
+                    unmatched_ids
+
+                inTree match =
+                    case String.toInt match.taxon_key |> Result.toMaybe of
+                        Just id ->
+                            not <| List.member id unmatchedIds
+
+                        Nothing ->
+                            False
+            in
+                matches
+                    |> List.map (\(TaxonomyListItem match) -> TaxonomyListItem { match | inTree = Just (inTree match) })
+                    |> GotTreeMsg
+
+        Err err ->
+            matches
+                |> List.map (\(TaxonomyListItem match) -> TaxonomyListItem { match | inTree = Nothing })
+                |> GotTreeMsg
+
+
+view : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model -> Model -> Html msg
+view mdlMsg mapMsg index mdl model =
+    case model.state of
+        SelectingSpecies ->
+            selectSpeciesView mdlMsg mapMsg index mdl model
+
+        RequestingPoints ->
+            Options.div []
+                [ Options.styled Html.p [ Typo.title ] [ Html.text "Requesting occurence points from iDigBio..." ]
+                , Loading.spinner [ Loading.active True ]
+                ]
+
+        RequestingTree ->
+            Options.div []
+                [ Options.styled Html.p [ Typo.title ] [ Html.text "Requesting tree from Open Tree..." ]
+                , Loading.spinner [ Loading.active True ]
+                ]
+
+        GotMatches matches ->
+            Options.div []
+                [ Options.styled Html.p [ Typo.title ] [ Html.text "Data provider results:" ]
+                , matches
+                    |> List.indexedMap (viewMatch mdlMsg mapMsg (3 :: index) mdl)
+                    |> (++)
+                        [ Html.tr []
+                            [ Html.th [] [ Html.text "Searched" ]
+                            , Html.th [] [ Html.text "iDigBio" ]
+                            , Html.th [] [ Html.text "Open Tree" ]
+                            , Html.th [] [ Html.text "Include in Project" ]
+                            ]
+                        ]
+                    |> Html.table [ Html.Attributes.style [ ( "width", "500px" ) ] ]
+                , Button.render mdlMsg
+                    (2 :: index)
+                    mdl
+                    [ Button.raised
+                    , Options.css "margin" "5px"
+                    , Options.onClick <| mapMsg GoBack
                     ]
-                    [ Html.text "Too many matching species. Continue narrowing search using filters." ]
-              else
-                Html.select
+                    [ Html.text "Go Back" ]
+                ]
+
+
+selectSpeciesView : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model -> Model -> Html msg
+selectSpeciesView mdlMsg mapMsg index mdl ({ options, filters, loading } as model) =
+    Html.div []
+        [ Html.div [ Html.Attributes.style [ ( "display", "flex" ) ] ]
+            [ Html.div []
+                [ Options.styled Html.p [ Typo.subhead ] [ Html.text "Filter available species" ]
+                , Html.table []
+                    (ranks
+                        |> List.remove TaxonSpecies
+                        |> List.map
+                            (\rank ->
+                                Html.tr []
+                                    [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ]
+                                        [ toString rank ++ ": " |> String.dropLeft 5 |> Html.text ]
+                                    , Html.td []
+                                        [ Html.map mapMsg <|
+                                            selector loading filters rank <|
+                                                Dict.get (rankString rank) options
+                                                    ? []
+                                        ]
+                                    ]
+                            )
+                    )
+                ]
+            , Html.div [ Html.Attributes.style [ ( "margin-left", "20px" ) ] ]
+                [ Options.styled Html.p [ Typo.subhead, Options.css "margin" "0" ] [ Html.text "Matching species" ]
+                , Html.p []
+                    [ Html.text <| " (found " ++ (toString model.speciesFound) ++ ")" ]
+                , if model.speciesFound > List.length model.taxa then
+                    Html.textarea
+                        [ Html.Attributes.style [ ( "height", "400px" ), ( "width", "300px" ) ]
+                        , Html.Attributes.readonly True
+                        ]
+                        [ Html.text "Too many matching species. Continue narrowing search using filters." ]
+                  else
+                    Html.select
+                        [ Html.Attributes.style [ ( "height", "400px" ), ( "width", "300px" ), ( "overflow", "auto" ) ]
+                        , Html.Attributes.multiple True
+                        , Events.on "change" (itemsSelected SpeciesSelected)
+                        ]
+                        (List.map (displayName model.selectedSpecies) model.taxa)
+                        |> Html.map mapMsg
+                ]
+            , Html.div
+                [ Html.Attributes.style
+                    [ ( "display", "flex" )
+                    , ( "flex-direction", "column" )
+                    , ( "justify-content", "space-around" )
+                    , ( "margin", "20px" )
+                    ]
+                ]
+                [ Html.button [ Events.onClick TransferSelectedSpecies ] [ Html.text ">" ] |> Html.map mapMsg
+                , Html.button [ Events.onClick RemoveSelectedSpecies ] [ Html.text "<" ] |> Html.map mapMsg
+                ]
+            , Html.div []
+                [ Options.styled Html.p [ Typo.subhead, Options.css "margin" "0" ] [ Html.text "Selected species" ]
+                , Html.p [] [ Html.text " (occurrence points from iDigBio)" ]
+                , Html.select
                     [ Html.Attributes.style [ ( "height", "400px" ), ( "width", "300px" ), ( "overflow", "auto" ) ]
                     , Html.Attributes.multiple True
-                    , Events.on "change" (itemsSelected SpeciesSelected)
+                    , Events.on "change" (itemsSelected SpeciesForOccurrencesSelected)
                     ]
-                    (List.map (displayName model.selectedSpecies) model.taxa)
-            ]
-        , Html.div
-            [ Html.Attributes.style
-                [ ( "display", "flex" )
-                , ( "flex-direction", "column" )
-                , ( "justify-content", "space-around" )
-                , ( "margin", "20px" )
+                    (List.map (displayName model.selectedSpeciesForOccurrences) model.speciesForOccurrences)
+                    |> Html.map mapMsg
                 ]
             ]
-            [ Html.button [ Events.onClick TransferSelectedSpecies ] [ Html.text ">" ]
-            , Html.button [ Events.onClick RemoveSelectedSpecies ] [ Html.text "<" ]
-            ]
-        , Html.div []
-            [ Options.styled Html.p [ Typo.subhead, Options.css "margin" "0" ] [ Html.text "Selected species" ]
-            , Html.p [] [ Html.text " (occurrence points from iDigBio)" ]
-            , Html.select
-                [ Html.Attributes.style [ ( "height", "400px" ), ( "width", "300px" ), ( "overflow", "auto" ) ]
-                , Html.Attributes.multiple True
-                , Events.on "change" (itemsSelected SpeciesForOccurrencesSelected)
+        , Html.p []
+            [ Button.render mdlMsg
+                (1 :: index)
+                mdl
+                [ Button.raised
+                , Options.onClick <| mapMsg CheckTaxa
+                , Options.disabled (List.length model.speciesForOccurrences < 1)
                 ]
-                (List.map (displayName model.selectedSpeciesForOccurrences) model.speciesForOccurrences)
+                [ Html.text "Match" ]
             ]
         ]
 
@@ -424,3 +655,55 @@ selector loading filters rank values =
                     ("--" :: values)
                         |> List.map (\v -> Html.option [] [ Html.text v ])
                         |> Html.select [ Events.onInput <| SetFilter rank, Html.Attributes.disabled loading ]
+
+
+viewMatch : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model -> Int -> TaxonomyListItem -> Html msg
+viewMatch mdlMsg mapMsg index mdl i (TaxonomyListItem item) =
+    let
+        checkbox =
+            Toggles.checkbox mdlMsg
+                (i :: index)
+                mdl
+                [ Options.onToggle <| mapMsg <| ToggleUseName i
+                , Toggles.value item.use
+                , Options.css "margin-left" "40px"
+                ]
+                []
+
+        inTree =
+            case item.inTree of
+                Just True ->
+                    [ Icon.i "done" ]
+
+                Just False ->
+                    [ Html.text "" ]
+
+                Nothing ->
+                    [ Icon.view "error_outline" [ Tooltip.attach mdlMsg (0 :: i :: index) ]
+                    , Tooltip.render mdlMsg
+                        (0 :: i :: index)
+                        mdl
+                        []
+                        [ Html.text "There was a problem accessing the Open Tree API." ]
+                    ]
+
+        itemCount =
+            case item.count of
+                Just n ->
+                    [ n |> toString |> Html.text ]
+
+                Nothing ->
+                    [ Icon.view "error_outline" [ Tooltip.attach mdlMsg (0 :: i :: index) ]
+                    , Tooltip.render mdlMsg
+                        (0 :: i :: index)
+                        mdl
+                        []
+                        [ Html.text "There was a problem accessing the iDigBio API." ]
+                    ]
+    in
+        Html.tr []
+            [ Html.td [ Html.Attributes.style [ ( "white-space", "nowrap" ) ] ] [ Html.text item.scientific_name ]
+            , Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] itemCount
+            , Html.td [ Html.Attributes.style [ ( "text-align", "center" ) ] ] inTree
+            , Html.td [] [ checkbox ]
+            ]
