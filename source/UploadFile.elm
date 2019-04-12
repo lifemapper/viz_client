@@ -193,11 +193,14 @@ update uploadType index flags msg state =
                                 , Cmd.none
                                 )
 
-                            UploadComplete 200 _ ->
+                            UploadComplete 202 _ ->
                                 ( Finished uploadAs, Cmd.none )
 
-                            _ ->
+                            UploadComplete _ _ ->
                                 ( UploadingFailed { info | status = status }, Cmd.none )
+
+                            _ ->
+                                ( UploadingFile { info | status = status }, Cmd.none )
 
                     _ ->
                         ( state, Cmd.none )
@@ -323,7 +326,7 @@ view mapMdlMsg mapMsg index text mdl state =
                     [ Html.text <| "Failed uploading " ++ uploadAs ++ "." ]
 
         UploadingFailed { localFileName, uploadAs, status } ->
-            [ Html.p [] [ Html.text <| "Uploading of " ++ uploadAs ++ "finished but resulted in failure." ]
+            [ Html.p [] [ Html.text <| "Uploading of " ++ uploadAs ++ " finished but resulted in failure." ]
             , Button.render mapMdlMsg
                 (2 :: index)
                 mdl

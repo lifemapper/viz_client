@@ -86,6 +86,7 @@ toApi { modelScenario, projectionScenarios } =
                     { model_scenario = Just <| BoomScenarioPackageModel_scenario { scenario_code = modelScenario.code }
                     , projection_scenario =
                         projectionScenarios
+                            |> ((::) modelScenario)
                             |> List.map (\s -> BoomScenarioPackageProjection_scenarioItem { scenario_code = s.code })
                             |> BoomScenarioPackageProjection_scenario
                             |> Just

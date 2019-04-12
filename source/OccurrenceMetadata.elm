@@ -380,36 +380,29 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                     , Options.onInput (UpdateFieldName i >> mapMsg)
                     ]
                     []
+                -- , Toggles.checkbox mapMdlMsg
+                --     (1 :: 1 :: i :: index)
+                --     mdl
+                --     [ Options.onToggle (ToggleGeopoint i |> mapMsg)
+                --     , Toggles.value (metadata.roles.geopoint == Just i)
+                --     , Options.css "display" "none"
+                --     ]
+                --     [ Html.text "Geopoint" ]
                 , Toggles.radio mapMdlMsg
-                    (0 :: 1 :: i :: index)
-                    mdl
-                    [ Options.onToggle (ToggleGroupBy i |> mapMsg)
-                    , Toggles.value (metadata.roles.groupBy == Just i)
-                    ]
-                    [ Html.text "Group By" ]
-                , Toggles.checkbox mapMdlMsg
-                    (1 :: 1 :: i :: index)
-                    mdl
-                    [ Options.onToggle (ToggleGeopoint i |> mapMsg)
-                    , Toggles.value (metadata.roles.geopoint == Just i)
-                    , Options.css "display" "none"
-                    ]
-                    [ Html.text "Geopoint" ]
-                , Toggles.checkbox mapMdlMsg
                     (2 :: 1 :: i :: index)
                     mdl
                     [ Options.onToggle (ToggleLatitude i |> mapMsg)
                     , Toggles.value (metadata.roles.latitude == Just i)
                     ]
                     [ Html.text "Latitude" ]
-                , Toggles.checkbox mapMdlMsg
+                , Toggles.radio mapMdlMsg
                     (3 :: 1 :: i :: index)
                     mdl
                     [ Options.onToggle (ToggleLongitude i |> mapMsg)
                     , Toggles.value (metadata.roles.longitude == Just i)
                     ]
                     [ Html.text "Longitude" ]
-                , Toggles.checkbox mapMdlMsg
+                , Toggles.radio mapMdlMsg
                     (4 :: 1 :: i :: index)
                     mdl
                     [ Options.onToggle (ToggleTaxaName i |> mapMsg)
@@ -423,6 +416,13 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                     , Toggles.value (metadata.roles.uniqueId == Just i)
                     ]
                     [ Html.text "Unique ID" ]
+                , Toggles.checkbox mapMdlMsg
+                    (0 :: 1 :: i :: index)
+                    mdl
+                    [ Options.onToggle (ToggleGroupBy i |> mapMsg)
+                    , Toggles.value (metadata.roles.groupBy == Just i)
+                    ]
+                    [ Html.text "Group By" ]
                 , Html.select [ Html.Events.onInput (UpdateFieldType i >> mapMsg) ] <|
                     List.map
                         (\v ->
