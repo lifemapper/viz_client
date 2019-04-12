@@ -106,7 +106,7 @@ rankString rank =
             "taxon_genus"
 
         TaxonSpecies ->
-            "taxon_species"
+            "scientific_name"
 
 
 type alias Model =
