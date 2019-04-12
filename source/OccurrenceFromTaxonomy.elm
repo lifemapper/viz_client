@@ -661,24 +661,26 @@ viewMatch : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model
 viewMatch mdlMsg mapMsg index mdl i (TaxonomyListItem item) =
     let
         checkbox =
-            Toggles.checkbox mdlMsg
-                (i :: index)
-                mdl
-                [ Options.onToggle <| mapMsg <| ToggleUseName i
-                , Toggles.value item.use
-                , Options.css "margin-left" "40px"
-                , Options.disabled <|
-                    case item.count of
-                        Just 0 ->
-                            True
+            case item.count of
+                Just 0 ->
+                    []
 
-                        Nothing ->
-                            True
+                Just 1 ->
+                    []
 
-                        _ ->
-                            False
-                ]
-                []
+                Nothing ->
+                    []
+
+                _ ->
+                    [ Toggles.checkbox mdlMsg
+                        (i :: index)
+                        mdl
+                        [ Options.onToggle <| mapMsg <| ToggleUseName i
+                        , Toggles.value item.use
+                        , Options.css "margin-left" "40px"
+                        ]
+                        []
+                    ]
 
         inTree =
             case item.inTree of
@@ -715,5 +717,5 @@ viewMatch mdlMsg mapMsg index mdl i (TaxonomyListItem item) =
             [ Html.td [ Html.Attributes.style [ ( "white-space", "nowrap" ) ] ] [ Html.text item.scientific_name ]
             , Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] itemCount
             , Html.td [ Html.Attributes.style [ ( "text-align", "center" ) ] ] inTree
-            , Html.td [] [ checkbox ]
+            , Html.td [] checkbox
             ]

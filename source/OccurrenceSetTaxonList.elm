@@ -476,24 +476,26 @@ viewMatch : (Material.Msg msg -> msg) -> (Msg -> msg) -> Index -> Material.Model
 viewMatch mdlMsg mapMsg index mdl i item =
     let
         checkbox =
-            Toggles.checkbox mdlMsg
-                (i :: index)
-                mdl
-                [ Options.onToggle <| mapMsg <| ToggleUseName i
-                , Toggles.value item.use
-                , Options.css "margin-left" "40px"
-                , Options.disabled <|
-                    case item.count of
-                        Just 0 ->
-                            True
+            case item.count of
+                Just 0 ->
+                    []
 
-                        Nothing ->
-                            True
+                Just 1 ->
+                    []
 
-                        _ ->
-                            False
-                ]
-                []
+                Nothing ->
+                    []
+
+                _ ->
+                    [ Toggles.checkbox mdlMsg
+                        (i :: index)
+                        mdl
+                        [ Options.onToggle <| mapMsg <| ToggleUseName i
+                        , Toggles.value item.use
+                        , Options.css "margin-left" "40px"
+                        ]
+                        []
+                    ]
 
         nameUpdater name =
             if item.searchedName == Just name then
@@ -543,7 +545,7 @@ viewMatch mdlMsg mapMsg index mdl i item =
                     , Html.td [ Attributes.style [ ( "white-space", "nowrap" ) ] ] [ Html.text name ]
                     , Html.td [ Attributes.style [ ( "text-align", "right" ) ] ] itemCount
                     , Html.td [ Attributes.style [ ( "text-align", "center" ) ] ] inTree
-                    , Html.td [] [ checkbox ]
+                    , Html.td [] checkbox
                     ]
 
             Nothing ->
