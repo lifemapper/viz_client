@@ -26,6 +26,7 @@ module NewBoom exposing (Model, page, init, update, Msg, jobNameTextField, focus
 
 import List.Extra exposing (elemIndex, getAt)
 import Html exposing (Html)
+import Html.Attributes as Attributes
 import Http
 import Dom
 import Task
@@ -430,6 +431,7 @@ jobNameTextField model =
                 , Options.css "margin-left" "10px"
                 , Options.css "width" "200px"
                 , Options.id "new-project-name"
+                , Options.attribute <| Attributes.spellcheck False
                 , Textfield.value model.archiveName
                 , Options.onInput (String.trim >> UpdateArchiveName)
                 ]
