@@ -442,134 +442,170 @@ gotMetadata loadingInfo result =
 
 view : Model -> Html Msg
 view { state, packageStatus, mdl, programFlags } =
-    case state of
-        RequestingStatus _ ->
-            Options.div
-                [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text "Requesting status...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
+    let
+        downloadButton =
+            case packageStatus of
+                WaitingForPackage id ->
+                    Button.render Mdl
+                        [ 666 ]
+                        mdl
+                        [ Button.raised, Button.disabled ]
+                        [ Html.text "Download Results Package" ]
 
-        MonitoringProgress _ (Decoder.GridsetProgress progress) ->
-            if progress.progress == -1 then
-                Options.div
-                    [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
-                    [ Html.text <| (Maybe.withDefault "Unfortunately, the project failed" progress.message) ++ "." ]
-            else
-                Options.div
-                    [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
-                    [ Html.text "Waiting for results..."
-                    , Html.p [] [ Loading.progress (100 * progress.progress) ]
-                    , Html.p [] [ Html.text <| (Maybe.withDefault "" progress.message) ++ "." ]
-                    ]
-
-        GetProjectionsList _ ->
-            Options.div
-                [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text "Loading projections...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
-
-        LoadingProjections _ ->
-            Options.div
-                [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text "Loading projections...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
-
-        NoProjections ->
-            Options.div
-                [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
-                [ Html.text "No projections were returned." ]
-
-        DisplaySeparate page speciesFilter display ->
-            let
-                filtered =
-                    if speciesFilter == "all" then
-                        display
-                    else
-                        display |> List.filter (Tuple.first >> .record >> .speciesName >> ((==) (Just speciesFilter)))
-
-                projCount =
-                    List.length filtered
-
-                species =
-                    display
-                        |> List.filterMap (Tuple.first >> .record >> .speciesName)
-                        |> Set.fromList
-            in
+                PackageReady id ->
+                    Button.render Mdl
+                        [ 666 ]
+                        mdl
+                        [ Button.raised, Button.link <| packageUrl programFlags id ]
+                        [ Html.text "Download Results Package" ]
+    in
+        case state of
+            RequestingStatus _ ->
                 Options.div []
                     [ Options.div
                         [ Options.css "display" "flex"
-                        , Options.css "justify-content" "space-between"
+                        , Options.css "justify-content" "flex-end"
                         , Options.css "margin" "20px 20px 0 20px"
                         ]
-                        [ Options.div [ Typo.title, Options.css "margin-top" "6px" ]
-                            [ Html.text <|
-                                if (List.length display) == 1 then
-                                    "Project produced one species model."
-                                else
-                                    "Project produced " ++ (display |> List.length |> toString) ++ " species models."
-                            ]
-                        , if Set.size species > 1 then
-                            Options.div []
-                                [ Html.text "Showing: "
-                                , Options.styled Html.select
-                                    [ Options.onInput SetSpeciesFilter ]
-                                    (species
-                                        |> Set.toList
-                                        |> List.map
-                                            (\species ->
-                                                Html.option [ Html.Attributes.selected (species == speciesFilter) ]
-                                                    [ Html.text species ]
-                                            )
-                                        |> ((::) (Html.option [ Html.Attributes.value "all" ] [ Html.text "All species" ]))
-                                    )
-                                ]
-                          else
-                            Options.div [] []
-                        , if projCount > resultsPerPage then
-                            Options.div [] <|
-                                List.concat <|
-                                    [ [ Html.text <|
-                                            "Showing page "
-                                                ++ (toString <| 1 + page)
-                                                ++ " of "
-                                                ++ (toString <| ceiling <| (toFloat projCount) / (toFloat resultsPerPage))
-                                                ++ "."
-                                      ]
-                                    , if (1 + page) * resultsPerPage < projCount then
-                                        [ Options.styled Html.a
-                                            [ Options.css "cursor" "pointer", Options.onClick (SetPage <| page + 1) ]
-                                            [ Html.text " next" ]
-                                        ]
-                                      else
-                                        []
-                                    , if page > 0 then
-                                        [ Options.styled Html.a
-                                            [ Options.css "cursor" "pointer", Options.onClick (SetPage <| page - 1) ]
-                                            [ Html.text " prev" ]
-                                        ]
-                                      else
-                                        []
-                                    ]
-                          else
-                            Options.div [] []
-                        , case packageStatus of
-                            WaitingForPackage id ->
-                                Button.render Mdl
-                                    [ 666 ]
-                                    mdl
-                                    [ Button.raised, Button.disabled ]
-                                    [ Html.text "Download Results Package" ]
-
-                            PackageReady id ->
-                                Button.render Mdl
-                                    [ 666 ]
-                                    mdl
-                                    [ Button.raised, Button.link <| packageUrl programFlags id ]
-                                    [ Html.text "Download Results Package" ]
-                        ]
-                    , filtered
-                        |> List.indexedMap viewSeparate
-                        |> List.drop (page * resultsPerPage)
-                        |> List.take resultsPerPage
-                        |> Grid.grid []
+                        [ downloadButton ]
+                    , Options.div
+                        [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                        [ Html.text "Requesting status...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
                     ]
+
+            MonitoringProgress _ (Decoder.GridsetProgress progress) ->
+                Options.div []
+                    [ Options.div
+                        [ Options.css "display" "flex"
+                        , Options.css "justify-content" "flex-end"
+                        , Options.css "margin" "20px 20px 0 20px"
+                        ]
+                        [ downloadButton ]
+                    , if progress.progress == -1 then
+                        Options.div
+                            [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
+                            [ Html.text <| (Maybe.withDefault "Unfortunately, the project failed" progress.message) ++ "." ]
+                      else
+                        Options.div
+                            [ Options.css "margin" "auto", Options.css "padding-top" "50px", Options.css "width" "400px", Typo.headline ]
+                            [ Html.text "Waiting for results..."
+                            , Html.p [] [ Loading.progress (100 * progress.progress) ]
+                            , Html.p [] [ Html.text <| (Maybe.withDefault "" progress.message) ++ "." ]
+                            ]
+                    ]
+
+            GetProjectionsList _ ->
+                Options.div []
+                    [ Options.div
+                        [ Options.css "display" "flex"
+                        , Options.css "justify-content" "flex-end"
+                        , Options.css "margin" "20px 20px 0 20px"
+                        ]
+                        [ downloadButton ]
+                    , Options.div
+                        [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                        [ Html.text "Loading projections...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
+                    ]
+
+            LoadingProjections _ ->
+                Options.div []
+                    [ Options.div
+                        [ Options.css "display" "flex"
+                        , Options.css "justify-content" "flex-end"
+                        , Options.css "margin" "20px 20px 0 20px"
+                        ]
+                        [ downloadButton ]
+                    , Options.div
+                        [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                        [ Html.text "Loading projections...", Html.p [] [ Spinner.spinner [ Spinner.active True ] ] ]
+                    ]
+
+            NoProjections ->
+                Options.div
+                    [ Options.css "text-align" "center", Options.css "padding-top" "50px", Typo.headline ]
+                    [ Html.text "No projections were returned." ]
+
+            DisplaySeparate page speciesFilter display ->
+                let
+                    filtered =
+                        if speciesFilter == "all" then
+                            display
+                        else
+                            display |> List.filter (Tuple.first >> .record >> .speciesName >> ((==) (Just speciesFilter)))
+
+                    projCount =
+                        List.length filtered
+
+                    species =
+                        display
+                            |> List.filterMap (Tuple.first >> .record >> .speciesName)
+                            |> Set.fromList
+                in
+                    Options.div []
+                        [ Options.div
+                            [ Options.css "display" "flex"
+                            , Options.css "justify-content" "space-between"
+                            , Options.css "margin" "20px 20px 0 20px"
+                            ]
+                            [ Options.div [ Typo.title, Options.css "margin-top" "6px" ]
+                                [ Html.text <|
+                                    if (List.length display) == 1 then
+                                        "Project produced one species model."
+                                    else
+                                        "Project produced " ++ (display |> List.length |> toString) ++ " species models."
+                                ]
+                            , if Set.size species > 1 then
+                                Options.div []
+                                    [ Html.text "Showing: "
+                                    , Options.styled Html.select
+                                        [ Options.onInput SetSpeciesFilter ]
+                                        (species
+                                            |> Set.toList
+                                            |> List.map
+                                                (\species ->
+                                                    Html.option [ Html.Attributes.selected (species == speciesFilter) ]
+                                                        [ Html.text species ]
+                                                )
+                                            |> ((::) (Html.option [ Html.Attributes.value "all" ] [ Html.text "All species" ]))
+                                        )
+                                    ]
+                              else
+                                Options.div [] []
+                            , if projCount > resultsPerPage then
+                                Options.div [] <|
+                                    List.concat <|
+                                        [ [ Html.text <|
+                                                "Showing page "
+                                                    ++ (toString <| 1 + page)
+                                                    ++ " of "
+                                                    ++ (toString <| ceiling <| (toFloat projCount) / (toFloat resultsPerPage))
+                                                    ++ "."
+                                          ]
+                                        , if (1 + page) * resultsPerPage < projCount then
+                                            [ Options.styled Html.a
+                                                [ Options.css "cursor" "pointer", Options.onClick (SetPage <| page + 1) ]
+                                                [ Html.text " next" ]
+                                            ]
+                                          else
+                                            []
+                                        , if page > 0 then
+                                            [ Options.styled Html.a
+                                                [ Options.css "cursor" "pointer", Options.onClick (SetPage <| page - 1) ]
+                                                [ Html.text " prev" ]
+                                            ]
+                                          else
+                                            []
+                                        ]
+                              else
+                                Options.div [] []
+                            , downloadButton
+                            ]
+                        , filtered
+                            |> List.indexedMap viewSeparate
+                            |> List.drop (page * resultsPerPage)
+                            |> List.take resultsPerPage
+                            |> Grid.grid []
+                        ]
 
 
 viewSeparate : Int -> ( ProjectionInfo, MapCard.Model ) -> Grid.Cell Msg
