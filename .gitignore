@@ -8,4 +8,4 @@
 /mcpa/elm/*.js
 /mcpa/package
 /*/VERSION
-
+*.DS_Store
