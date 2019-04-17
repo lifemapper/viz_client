@@ -26,6 +26,7 @@ module NewBoom exposing (Model, page, init, update, Msg, jobNameTextField, focus
 
 import List.Extra exposing (elemIndex, getAt)
 import Html exposing (Html)
+import Html.Attributes as Attributes
 import Http
 import Dom
 import Task
@@ -39,6 +40,7 @@ import Material.Button as Button
 import Material.Toggles as Toggles
 import Material.Helpers exposing (lift)
 import Material.Spinner as Loading
+import Material.Layout as Layout
 import ScenariosView as Scns
 import AlgorithmsView as Algs
 import OccurrenceSetsView as Occs
@@ -419,18 +421,28 @@ jobNameLI model =
 
 jobNameTextField : Model -> Html Msg
 jobNameTextField model =
-    Textfield.render Mdl
-        [ 888 ]
-        model.mdl
-        [ Textfield.label "New project name"
-        , Textfield.floatingLabel
-        , Options.css "margin-left" "10px"
-        , Options.css "width" "200px"
-        , Options.id "new-project-name"
-        , Textfield.value model.archiveName
-        , Options.onInput (String.trim >> UpdateArchiveName)
-        ]
-        []
+    case model.workFlowState of
+        Defining ->
+            Textfield.render Mdl
+                [ 888 ]
+                model.mdl
+                [ Textfield.label "New project name"
+                , Textfield.floatingLabel
+                , Options.css "margin-left" "10px"
+                , Options.css "width" "200px"
+                , Options.id "new-project-name"
+                , Options.attribute <| Attributes.spellcheck False
+                , Textfield.value model.archiveName
+                , Options.onInput (String.trim >> UpdateArchiveName)
+                ]
+                []
+
+        _ ->
+            Layout.link
+                [ Options.css "cursor" "pointer"
+                , Options.css "padding" "8px 20px"
+                ]
+                [ Html.text model.archiveName, Icon.i "hourglass_empty" ]
 
 
 focusToJobName : Cmd Msg

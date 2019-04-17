@@ -106,7 +106,7 @@ rankString rank =
             "taxon_genus"
 
         TaxonSpecies ->
-            "taxon_species"
+            "scientific_name"
 
 
 type alias Model =
@@ -586,7 +586,8 @@ selectSpeciesView mdlMsg mapMsg index mdl ({ options, filters, loading } as mode
                     [ ( "display", "flex" )
                     , ( "flex-direction", "column" )
                     , ( "justify-content", "space-around" )
-                    , ( "margin", "20px" )
+                    , ( "margin", "100px 20px 0 20px" )
+                    , ( "height", "100px" )
                     ]
                 ]
                 [ Html.button [ Events.onClick TransferSelectedSpecies ] [ Html.text ">" ] |> Html.map mapMsg

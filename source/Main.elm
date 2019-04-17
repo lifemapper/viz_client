@@ -553,10 +553,9 @@ pageImplementation p =
             { view =
                 always <|
                     Options.div [ Options.css "margin" "20px" ]
-                        [ Options.styled Html.h1 [ Typo.headline ] [ Html.text "BiotaPhy Project" ]
-                        , Options.styled Html.p
+                        [ Options.styled Html.p
                             []
-                            [ Html.text "The BiotaPhy project is a collaboration among "
+                            [ Html.text "The BiotaPhy Project is a collaboration among "
                             , Html.a [ A.href "https://www.idigbio.org/" ] [ Html.text "iDigBio" ]
                             , Html.text ", "
                             , Html.a [ A.href "http://lifemapper.org/" ] [ Html.text "Lifemapper" ]

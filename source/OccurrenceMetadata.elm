@@ -236,8 +236,14 @@ updateMetadata msg metadata =
             let
                 roles =
                     metadata.roles
+
+                roles_ =
+                    if roles.groupBy == Just i then
+                        { roles | groupBy = Nothing }
+                    else
+                        { roles | groupBy = Just i }
             in
-                { metadata | roles = { roles | groupBy = Just i } }
+                { metadata | roles = roles_ }
 
         ToggleGeopoint i ->
             let
@@ -380,14 +386,14 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                     , Options.onInput (UpdateFieldName i >> mapMsg)
                     ]
                     []
-                -- , Toggles.checkbox mapMdlMsg
-                --     (1 :: 1 :: i :: index)
-                --     mdl
-                --     [ Options.onToggle (ToggleGeopoint i |> mapMsg)
-                --     , Toggles.value (metadata.roles.geopoint == Just i)
-                --     , Options.css "display" "none"
-                --     ]
-                --     [ Html.text "Geopoint" ]
+                  -- , Toggles.checkbox mapMdlMsg
+                  --     (1 :: 1 :: i :: index)
+                  --     mdl
+                  --     [ Options.onToggle (ToggleGeopoint i |> mapMsg)
+                  --     , Toggles.value (metadata.roles.geopoint == Just i)
+                  --     , Options.css "display" "none"
+                  --     ]
+                  --     [ Html.text "Geopoint" ]
                 , Toggles.radio mapMdlMsg
                     (2 :: 1 :: i :: index)
                     mdl
