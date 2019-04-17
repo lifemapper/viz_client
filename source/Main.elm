@@ -566,13 +566,13 @@ pageImplementation p =
                         , Options.div
                             [ Options.css "display" "flex"
                             , Options.css "justify-content" "space-between"
-                            , Options.css "width" "800px"
+                            , Options.css "width" "900px"
                             ]
                             [ Html.a [ A.href "https://www.idigbio.org/" ]
                                 [ Html.img
                                     [ A.src "./images/idigbio_logo.png"
                                     , A.alt "iDigBio"
-                                    , A.style [ ( "width", "213px" ), ( "height", "65px" ) ]
+                                    , A.style [ ( "width", "300px" ), ( "margin-top", "20px" ) ]
                                     ]
                                     []
                                 ]
@@ -580,7 +580,7 @@ pageImplementation p =
                                 [ Html.img
                                     [ A.src "./images/lm_logo.png"
                                     , A.alt "Lifemapper"
-                                    , A.style [ ( "width", "107px" ), ( "height", "111px" ) ]
+                                    , A.style [ ( "width", "298px" ) ]
                                     ]
                                     []
                                 ]
@@ -588,7 +588,7 @@ pageImplementation p =
                                 [ Html.img
                                     [ A.src "./images/otl_logo.png"
                                     , A.alt "Open Tree of Life"
-                                    , A.style [ ( "width", "241px" ), ( "height", "126px" ) ]
+                                    , A.style [ ( "width", "241px" ) ]
                                     ]
                                     []
                                 ]
