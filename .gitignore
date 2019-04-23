@@ -9,3 +9,5 @@
 /mcpa/package
 /*/VERSION
 *.DS_Store
+.project
+
