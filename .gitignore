@@ -6,7 +6,6 @@
 /boom/boomFlagsOverride.js
 /mcpa.tar.gz
 /mcpa/elm/*.js
-/mcpa/package
 /*/VERSION
 *.DS_Store
 .project
