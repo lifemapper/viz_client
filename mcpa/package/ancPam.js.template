@@ -1,0 +1,1 @@
+var ancPam = JSON.parse(`##ANC_PAM_JSON##`);

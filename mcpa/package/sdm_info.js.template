@@ -1,0 +1,1 @@
+var projection_info = JSON.parse(`##sdm_info##`);

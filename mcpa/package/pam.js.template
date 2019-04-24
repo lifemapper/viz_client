@@ -1,0 +1,1 @@
+var pam = JSON.parse(`##PAM_JSON##`);

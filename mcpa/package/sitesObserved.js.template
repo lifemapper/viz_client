@@ -1,0 +1,1 @@
+var sitesObserved = JSON.parse(`##SITES_OBS_JSON##`);

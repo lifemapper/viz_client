@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>BiotaPhy Browse Maps for Project ##gridset_name##</title>
+        <link rel="stylesheet" href="css/package.css" />
+    </head>
+    <body>
+        <header>
+            <div>
+                BiotaPhy | 
+                <span class="gridset-title">Browse Maps for Project ##gridset_name##</span>
+            </div>
+        </header>
+        <div class="map-page-container">
+##for_prj_in_projections##
+            <div class="map-container">
+                <div class="map-image-container">
+                    <a href="##prj.image_path##" target="_blank">
+                        <img src="##prj.image_path##" class="map-image" alt="##prj.label##" />
+                    </a>
+                </div>
+                <div class="map-label-container">
+                    <span class="map-label">##prj.label##</span>
+                </div>
+            </div>
+##end_for_prj_in_projections##
+        </div>
+        <footer>
+            <div>
+                The BiotaPhy Project is supported by NSF BIO Award #1458422 |
+                <span class="release-version">BiotaPhy Results Package Software Version ##PACKAGE_VERSION##</span>
+            </div>
+        </footer>
+    </body>
+</html>
