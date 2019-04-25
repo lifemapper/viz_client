@@ -182,6 +182,12 @@ view { mcpaModel, statsModel } =
                         , A.style [ ( "width", "500px" ), ( "height", "400px" ) ]
                         ]
                         []
+                    , Html.p [ A.style [ ( "width", "500px" ) ] ]
+                        [ Html.text <|
+                            "The map shows sites where the selected species are present. "
+                                ++ "Use the select by bounding box or by polygon tools to "
+                                ++ "highlight in the tree which species are present at those selected sites."
+                        ]
                     ]
                 , StatsMain.viewPlot statsModel |> Html.map StatsMsg
                 ]

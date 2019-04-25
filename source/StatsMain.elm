@@ -520,6 +520,16 @@ viewPlot model =
                 , Html.Attributes.id "plot"
                 ]
                 ((drawScatter model) ++ selectionBox)
+            , Html.p [ Html.Attributes.style [ ( "width", "500px" ) ] ]
+                [ Html.text <|
+                    "The scatter plot shows relationships between site based statistics; "
+                        ++ "each dot represents a single site.  If sites in the map are highlighted, "
+                        ++ "the corresponding sites are highlighted in the same color in the scatter plot. "
+                        ++ "You can brush sites in the plot by clicking and dragging to create a selection box. "
+                        ++ "Doing so will highlight the selected points as well as those sites on the map and "
+                        ++ "the species present at those sites in the tree.  Use the two drop down boxes to select "
+                        ++ "the metrics to use for the X and Y axes."
+                ]
             ]
 
 
