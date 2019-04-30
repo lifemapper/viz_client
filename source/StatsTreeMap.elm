@@ -167,8 +167,7 @@ view { mcpaModel, statsModel } =
                             ]
     in
         Html.div [ A.style [ ( "font-family", "sans-serif" ) ] ]
-            [ Html.h2 [] [ Html.text "BiotaPhy - MCPA with Modeled Data" ]
-            , Html.div [ A.style [ ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
+            [ Html.div [ A.style [ ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
                 [ viewTree mcpaModel True selectData |> Html.map McpaMsg
                 , Html.div
                     [ A.style [ ( "margin", "0 12px" ) ] ]
@@ -179,10 +178,10 @@ view { mcpaModel, statsModel } =
                         [ A.class "leaflet-map"
                         , A.attribute "data-map-sites" selectedSiteIds
                         , A.attribute "data-map-column" (mcpaModel.selectedNode |> Maybe.map toString |> Maybe.withDefault "")
-                        , A.style [ ( "width", "500px" ), ( "height", "400px" ) ]
+                        , A.style [ ( "width", "625px" ), ( "height", "500px" ) ]
                         ]
                         []
-                    , Html.p [ A.style [ ( "width", "500px" ) ] ]
+                    , Html.p [ A.style [ ( "width", "625px" ) ] ]
                         [ Html.text <|
                             "The map shows sites where the selected species are present. "
                                 ++ "Use the select by bounding box or by polygon tools to "

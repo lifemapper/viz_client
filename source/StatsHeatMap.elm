@@ -190,8 +190,10 @@ view model =
                 ]
     in
         Html.div [ A.style [ ( "font-family", "sans-serif" ) ] ]
-            [ Html.h2 [] [ Html.text "BiotaPhy - Modeled Map Statistics" ]
-            , variableSelector model.selectedVariable VariableSelectedMsg
+            [ Html.div [] 
+                [ variableSelector model.selectedVariable VariableSelectedMsg
+                  , Html.span [] [ Html.text " statistic displayed on map"]
+                ] 
             , map
             , text
             ]
