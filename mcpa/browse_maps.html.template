@@ -21,7 +21,10 @@
                     </a>
                 </div>
                 <div class="map-label-container">
-                    <span class="map-label">##prj.label##</span>
+                    <span class="map-label"><b>Species Name:</b> ##prj.species_name##</span>
+                    <span class="map-label"><b>Model Algorithm:</b> ##prj.algorithm_code##</span>
+                    <span class="map-label"><b>Projection Scenario Code:</b> ##prj.scenario_code##</span>
+                    <span class="map-label"><b>Data Path:</b> <a href="##prj.file_path##">##prj.file_path##</a></span>
                 </div>
             </div>
 ##end_for_prj_in_projections##
