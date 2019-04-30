@@ -21,7 +21,9 @@
                 <span class="header-subtitle">Modeled Map Statistics</span>
             </div>
         </header>
-        <div id="app" class="heat-map-div"></div>
+        <div id="app" class="heat-map-div">
+            <div>Please wait while the page loads...</div>
+        </div>
         <footer>
             <div>
                 The BiotaPhy Project is supported by NSF BIO Award #1458422 |

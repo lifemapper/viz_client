@@ -125,6 +125,7 @@ observer.observe(document.body, {
 });
 
 var node = document.getElementById("app");
+while(node.firstChild) { node.removeChild(node.firstChild);}
 var app = Elm.StatsHeatMap.embed(node);
 
 //var app = Elm.StatsHeatMap.fullscreen();

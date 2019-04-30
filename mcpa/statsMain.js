@@ -221,6 +221,7 @@ observer.observe(document.body, {
 });
 
 var node = document.getElementById("app");
+while(node.firstChild) { node.removeChild(node.firstChild);}
 var app = Elm.StatsTreeMap.embed(node, {
     data: mcpaMatrix,
     taxonTree: taxonTree
