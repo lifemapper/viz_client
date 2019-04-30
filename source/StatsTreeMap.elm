@@ -171,7 +171,7 @@ view { mcpaModel, statsModel } =
                 [ viewTree mcpaModel True selectData |> Html.map McpaMsg
                 , Html.div
                     [ A.style [ ( "margin", "0 12px" ) ] ]
-                    [ Html.h3 [ A.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                    [ Html.h3 [ A.style [ ( "text-align", "center" )] ]
                         [ Html.text "Sites Map" ]
                     , legend
                     , Html.div

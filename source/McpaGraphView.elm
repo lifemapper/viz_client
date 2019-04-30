@@ -148,7 +148,7 @@ viewGraph selectedNode showBarGraph variableFormatter vars dataForVar =
             ]
             [ Html.div
                 [ Html.Attributes.style [ ( "flex-shrink", "0" ), ( "margin", "0 12px" ) ] ]
-                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ) ] ]
                     [ Html.text "Subtree Left (blue) vs. Right (red) of selected node" ]
                 , Html.div
                     [ Html.Attributes.class "leaflet-map"
@@ -163,7 +163,7 @@ viewGraph selectedNode showBarGraph variableFormatter vars dataForVar =
                     ]
                     []
                 ]
-            , Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+            , Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ) ] ]
                 [ Html.text "Semipartial Correlations b/w Clade and Predictors" ]
             , Html.div [ Html.Attributes.style [ ( "width", "100%" ) ] ]
                 [ Html.div
