@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>BiotaPhy - MCPA with Modeled Data for Project ##gridset_name##</title>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css"
+              integrity="sha512-07I2e+7D8p6he1SIM+1twR5TIrhUQn9+I6yjqD53JQjFiMf8EtC93ty0/5vJTZGF8aAocvHYNEDJajGdNx1IsQ=="
+              crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"
+                integrity="sha512-A7vV8IFfih/D732iSSKi20u/ooOfj/AGehOKq0f4vLT1Zr2Y+RX7C+w8A1gaSasGtRUZpF/NZgzSAu4/Gc41Lg=="
+                crossorigin=""></script>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@0.4.12/dist/leaflet.draw.css"/>
+        <script src="https://unpkg.com/leaflet-draw@0.4.12/dist/leaflet.draw.js"></script>
+        <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+        <link rel="stylesheet" href="css/package.css" />
+    </head>
+    <body>
+        <header>
+            <div>
+                BiotaPhy | 
+                <span class="header-subtitle">MCPA with Modeled Data for Project ##gridset_name##</span>
+            </div>
+        </header>
+        <div id="app" class="mcpa-div">
+            <div>Please wait while the page loads...</div>
+        </div>
+        <footer>
+            <div>
+                The BiotaPhy Project is supported by NSF BIO Award #1458422 |
+                <span class="release-version">BiotaPhy Results Package Software Version ##PACKAGE_VERSION##</span>
+            </div>
+        </footer>
+        <script src="./package/ancPam.js"></script>
+        <script src="./package/mcpaMatrix.js"></script>
+        <script src="./package/tree.js"></script>
+        <script src="./package/nodeLookup.js"></script>
+        <script src="./package/sitesObserved.js"></script>
+        <script src="./package/statNameLookup.json"></script>
+        <script src="./elm/StatsTreeMap.js"></script>
+        <script src="./statsMain.js"></script>
+        <script src="./sitesForNode.js"></script>
+    </body>
+</html>

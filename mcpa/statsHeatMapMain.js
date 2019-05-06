@@ -124,8 +124,11 @@ observer.observe(document.body, {
     attributeOldValue: true
 });
 
+var node = document.getElementById("app");
+while(node.firstChild) { node.removeChild(node.firstChild);}
+var app = Elm.StatsHeatMap.embed(node);
 
-var app = Elm.StatsHeatMap.fullscreen();
+//var app = Elm.StatsHeatMap.fullscreen();
 
 app.ports.requestStats.subscribe(function() {
     const statRanges = sitesObserved.features.reduce(function(ranges, feature) {

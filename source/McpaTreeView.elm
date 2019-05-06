@@ -123,7 +123,7 @@ viewTree model redBlue selectData =
     in
         Html.div
             [ A.style [ ( "display", "flex" ), ( "flex-direction", "column" ) ] ]
-            [ Html.h3 [ A.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+            [ Html.h3 [ A.style [ ( "text-align", "center" ) ] ]
                 [ Html.text "Phylogenetic Tree" ]
             , Html.div
                 [ A.style

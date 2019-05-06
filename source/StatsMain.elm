@@ -506,7 +506,7 @@ viewPlot model =
                 )
     in
         Html.div []
-            [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+            [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ) ] ]
                 [ Html.text "Site Based Stat Relationships" ]
             , Html.div [ Html.Attributes.style [ ( "text-align", "center" ) ] ]
                 [ variableSelector model.yCol YColSelectedMsg
@@ -551,7 +551,7 @@ view model =
             [ viewPlot model
             , Html.div
                 [ Html.Attributes.style [ ( "flex-grow", "1" ) ] ]
-                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ), ( "text-decoration", "underline" ) ] ]
+                [ Html.h3 [ Html.Attributes.style [ ( "text-align", "center" ) ] ]
                     [ Html.text "Site Map" ]
                 , Html.div
                     [ Html.Attributes.class "leaflet-map"

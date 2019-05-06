@@ -220,10 +220,17 @@ observer.observe(document.body, {
     attributeOldValue: true
 });
 
-var app = Elm.StatsTreeMap.fullscreen({
+var node = document.getElementById("app");
+while(node.firstChild) { node.removeChild(node.firstChild);}
+var app = Elm.StatsTreeMap.embed(node, {
     data: mcpaMatrix,
     taxonTree: taxonTree
 });
+
+//var app = Elm.StatsTreeMap.fullscreen({
+//    data: mcpaMatrix,
+//    taxonTree: taxonTree
+//});
 
 app.ports.statsForSites.send({
     sitesObserved: sitesObserved.features.map(function(feature) {
