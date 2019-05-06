@@ -117,7 +117,7 @@ viewTree model redBlue selectData =
                     ]
                 ]
                 [ Html.p [ A.style [ ( "margin", "3px" ) ] ] [ Html.text "0.0" ]
-                , Html.p [ A.style [ ( "margin", "3px" ) ] ] [ Html.text "Semiparital Correlation b/w Node and Selected Predictor" ]
+                , Html.p [ A.style [ ( "margin", "3px" ) ] ] [ Html.text "Semipartial Correlation b/w Node and Selected Predictor" ]
                 , Html.p [ A.style [ ( "margin", "3px" ) ] ] [ Html.text "1.0" ]
                 ]
     in
