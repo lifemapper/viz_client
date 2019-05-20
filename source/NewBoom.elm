@@ -365,6 +365,11 @@ treeUploadText =
             ++ "this tree will be used to perform a Metacommunity Phylogenetics Analysis (MCPA) indicating "
             ++ "which clades are correlated more with environment and which are correlated more with "
             ++ "biogeography based on the generated models. Your tree file can be Newick, Nexus, or NeXML format."
+            ++ " "
+            ++ " "
+            ++ "If, on the Species Data tab, you choose `Data from iDigBio and Open Tree`, you may "
+            ++ "use Open Tree phylogenetic data (if your chosen species show data available from Open Tree)"
+            ++ "for multispecies computations."
     ]
 
 
