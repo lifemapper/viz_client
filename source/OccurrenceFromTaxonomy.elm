@@ -312,7 +312,10 @@ update msg model =
 updateFilters : Dict String String -> Model -> ( Model, Cmd Msg )
 updateFilters filters model =
     ( { model | filters = filters, loading = True, selectedSpecies = [] }
-    , Maybe.map (getFacets model.flags filters) model.rank ? Cmd.none
+    , if model.rank == Just TaxonSpecies then
+        Cmd.none
+      else
+        Maybe.map (getFacets model.flags filters) model.rank ? Cmd.none
     )
 
 
