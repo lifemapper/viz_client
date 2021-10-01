@@ -221,7 +221,7 @@ view index model =
 
 exampleAlgorithm : D.Algorithm
 exampleAlgorithm =
-    case List.head (List.drop 4 D.algorithms) of
+    case List.head D.algorithms of
         Nothing ->
             Debug.crash "No example algorithm def"
 
