@@ -104,7 +104,7 @@
             ]
           },
           {
-            "name": "envLayerTypeId",
+            "name": "env_layer_type_id",
             "in": "query",
             "description": "The type code id for this layer",
             "required": false,
@@ -118,35 +118,35 @@
             "type": "string"
           },
           {
-            "name": "envLayerType",
+            "name": "env_layer_type",
             "in": "query",
             "description": "The type code for this layer",
             "required": true,
             "type": "string"
           },
           {
-            "name": "valUnits",
+            "name": "val_units",
             "in": "query",
             "description": "The units for the values in each cell (such as degreesCelsius)",
             "required": false,
             "type": "string"
           },
           {
-            "name": "gcmCode",
+            "name": "gcm_code",
             "in": "query",
             "description": "GCM",
             "required": false,
             "type": "string"
           },
           {
-            "name": "alternatePredictionCode",
+            "name": "alternate_prediction_code",
             "in": "query",
             "description": "Alternate prediction code",
             "required": false,
             "type": "string"
           },
           {
-            "name": "dateCode",
+            "name": "date_code",
             "in": "query",
             "description": "Date code",
             "required": false,
