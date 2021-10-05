@@ -81,10 +81,10 @@ view index title model =
             else
                 Options.span [ Options.css "width" "40px" ] []
 
-        menuItem layer layerName =
+        menuItem layer layer_name =
             Menu.item [ Menu.onSelect (SetLayer layer) ]
                 [ checkmark (layer == model.mapLayer)
-                , Html.text layerName
+                , Html.text layer_name
                 ]
 
         leafletDiv =

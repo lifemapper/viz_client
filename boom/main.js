@@ -98,8 +98,8 @@ function configureMap(element) {
     mapLayers[element._leaflet_id] = wmsInfos.map(function(wmsInfo) {
         bb && map.fitBounds(bb);
 
-        return L.tileLayer.wms(wmsInfo.endPoint, {
-            mapName: wmsInfo.mapName,
+        return L.tileLayer.wms(wmsInfo.endpoint, {
+            map_name: wmsInfo.map_name,
             format: 'image/png',
             version: '1.1.0',
             transparent: true,

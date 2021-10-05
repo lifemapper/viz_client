@@ -169,14 +169,14 @@ update msg model =
             Nop ->
                 ( model, Cmd.none )
 
-            GotProjectionAtoms occurrenceSetId atoms ->
+            GotProjectionAtoms occurrence_set_id atoms ->
                 case model.state of
                     LoadingProjections loadingInfo ->
                         let
                             loadingInfo_ =
                                 { loadingInfo
                                     | toLoad = loadingInfo.toLoad ++ atoms
-                                    , occSetsToLoad = loadingInfo.occSetsToLoad |> List.filter ((/=) occurrenceSetId)
+                                    , occSetsToLoad = loadingInfo.occSetsToLoad |> List.filter ((/=) occurrence_set_id)
                                 }
                         in
                             if loadingInfo_.occSetsToLoad == [] && loadingInfo_.toLoad == [] then
@@ -308,9 +308,9 @@ makeOccurrenceMap : ProjectionInfo -> List MapCard.NamedMap
 makeOccurrenceMap { occurrenceRecord } =
     occurrenceRecord.map
         |> Maybe.map
-            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+            (\(Decoder.SingleLayerMap { endpoint, map_name, layer_name }) ->
                 { name = "Occurrences"
-                , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                , wmsInfo = { endpoint = endpoint, map_name = map_name, layers = [ layer_name ] }
                 }
             )
         |> Maybe.toList
@@ -320,30 +320,30 @@ makeBackgroundMap : ProjectionInfo -> List MapCard.NamedMap
 makeBackgroundMap { occurrenceRecord } =
     occurrenceRecord.map
         |> Maybe.map
-            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+            (\(Decoder.SingleLayerMap { endpoint, map_name, layer_name }) ->
                 { name = "Blue Marble (Next Generation)"
-                , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ "bmng" ] }
+                , wmsInfo = { endpoint = endpoint, map_name = map_name, layers = [ "bmng" ] }
                 }
             )
         |> Maybe.toList
 
 
 projectionTitle : Decoder.ProjectionRecord -> String
-projectionTitle { speciesName, algorithm, modelScenario, projectionScenario } =
-    (speciesName |> Maybe.withDefault "")
+projectionTitle { species_name, algorithm, model_scenario, projection_scenario } =
+    (species_name |> Maybe.withDefault "")
         ++ " "
         ++ (algorithm |> Maybe.map (\(Decoder.Algorithm { code }) -> code) |> Maybe.withDefault "")
         ++ " "
         -- take out model scenario
-        -- ++ (modelScenario |> Maybe.map (\(Decoder.ScenarioRef { code }) -> code) |> Maybe.join |> Maybe.withDefault "")
+        -- ++ (model_scenario |> Maybe.map (\(Decoder.ScenarioRef { code }) -> code) |> Maybe.join |> Maybe.withDefault "")
         -- ++ " to "
         ++
-            (projectionScenario |> Maybe.map (\(Decoder.ScenarioRef { code }) -> code) |> Maybe.join |> Maybe.withDefault "")
+            (projection_scenario |> Maybe.map (\(Decoder.ScenarioRef { code }) -> code) |> Maybe.join |> Maybe.withDefault "")
 
 
 boundingBoxForProjection : ProjectionInfo -> Maybe BoundingBox
 boundingBoxForProjection { record } =
-    record.spatialRaster
+    record.spatial_raster
         |> Maybe.map (\(Decoder.SpatialRaster { bbox }) -> bbox)
         |> Maybe.join
         |> Maybe.map
@@ -362,16 +362,16 @@ makeProjectionMap : ProjectionInfo -> Maybe MapCard.NamedMap
 makeProjectionMap { record } =
     record.map
         |> Maybe.map
-            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+            (\(Decoder.SingleLayerMap { endpoint, map_name, layer_name }) ->
                 { name = projectionTitle record
-                , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                , wmsInfo = { endpoint = endpoint, map_name = map_name, layers = [ layer_name ] }
                 }
             )
 
 
 loadOccurrenceSet : Decoder.ProjectionRecord -> Cmd Msg
 loadOccurrenceSet record =
-    case record.occurrenceSet |> Maybe.andThen (\(Decoder.ObjectRef o) -> o.metadataUrl) of
+    case record.occurrence_set |> Maybe.andThen (\(Decoder.ObjectRef o) -> o.metadata_url) of
         Just url ->
             Http.request
                 { method = "GET"
@@ -451,9 +451,9 @@ loadProjections model =
     let
         query occurrenceSet =
             Q.empty
-                |> Q.add "occurrenceSetId" (occurrenceSet.id |> toString)
-                |> (model.modelScenarioFilter |> Maybe.map (Q.add "modelScenarioCode") |> Maybe.withDefault identity)
-                |> (model.projScenarioFilter |> Maybe.map (Q.add "projectionScenarioCode") |> Maybe.withDefault identity)
+                |> Q.add "occurrence_set_id" (occurrenceSet.id |> toString)
+                |> (model.modelScenarioFilter |> Maybe.map (Q.add "model_scenario_code") |> Maybe.withDefault identity)
+                |> (model.projScenarioFilter |> Maybe.map (Q.add "projection_scenario_code") |> Maybe.withDefault identity)
                 |> if OccurrenceSetChooser.isPublicData model.occurrenceSetChooser then
                     Q.add "user" "public"
                    else
@@ -486,10 +486,10 @@ loadProjections model =
 
 
 gotProjectionAtoms : Int -> Result Http.Error Decoder.AtomList -> Msg
-gotProjectionAtoms occurrenceSetId result =
+gotProjectionAtoms occurrence_set_id result =
     case result of
         Ok (Decoder.AtomList atoms) ->
-            atoms |> List.map (\(Decoder.AtomObject o) -> o) |> (GotProjectionAtoms occurrenceSetId)
+            atoms |> List.map (\(Decoder.AtomObject o) -> o) |> (GotProjectionAtoms occurrence_set_id)
 
         Err err ->
             Debug.log "Error fetching projections" (toString err) |> always Nop
@@ -616,7 +616,7 @@ viewGrouped i ( projections, mapCard ) =
 
         { record } :: _ ->
             Grid.cell [ Grid.size Grid.All cardSize ]
-                [ MapCard.view [ i ] (record.speciesName |> Maybe.withDefault (toString record.id)) mapCard
+                [ MapCard.view [ i ] (record.species_name |> Maybe.withDefault (toString record.id)) mapCard
                     |> Html.map (MapCardMsg i)
                 ]
 

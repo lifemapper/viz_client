@@ -41,32 +41,32 @@ port bboxSelected : (List Float -> msg) -> Sub msg
 
 type alias Facets =
     { algorithms : Set String
-    , displayNames : Set ( String, String )
-    , modelScenarios : Set String
-    , projectionScenarios : Set String
-    , taxonClass : Set String
-    , taxonFamily : Set String
-    , taxonGenus : Set String
-    , taxonKingdom : Set String
-    , taxonOrder : Set String
-    , taxonPhylum : Set String
-    , taxonSpecies : Set String
+    , display_names : Set ( String, String )
+    , model_scenarios : Set String
+    , projection_scenarios : Set String
+    , taxon_class : Set String
+    , taxon_family : Set String
+    , taxon_genus : Set String
+    , taxon_kingdom : Set String
+    , taxon_order : Set String
+    , taxon_phylum : Set String
+    , taxon_species : Set String
     }
 
 
 initFacets : Facets
 initFacets =
     { algorithms = Set.empty
-    , displayNames = Set.empty
-    , modelScenarios = Set.empty
-    , projectionScenarios = Set.empty
-    , taxonClass = Set.empty
-    , taxonFamily = Set.empty
-    , taxonGenus = Set.empty
-    , taxonOrder = Set.empty
-    , taxonPhylum = Set.empty
-    , taxonSpecies = Set.empty
-    , taxonKingdom =
+    , display_names = Set.empty
+    , model_scenarios = Set.empty
+    , projection_scenarios = Set.empty
+    , taxon_class = Set.empty
+    , taxon_family = Set.empty
+    , taxon_genus = Set.empty
+    , taxon_order = Set.empty
+    , taxon_phylum = Set.empty
+    , taxon_species = Set.empty
+    , taxon_kingdom =
         Set.fromList
             [ "Animalia"
             , "Chromista"
@@ -82,12 +82,12 @@ type alias Model =
     , filters : Dict String String
     , selectedSpecies : Maybe (List String)
     , pavs : List SolrPAV
-    , shapeGrid : Maybe String
+    , shapegrid : Maybe String
     , loadingPavs : Bool
-    , archiveName : String
+    , archive_name : String
     , postStatus : PostStatus
     , flags : Flags
-    , gridSetId : Int
+    , gridset_id : Int
     }
 
 
@@ -190,50 +190,50 @@ speciesSelected =
 
 
 viewNotPosted : Model -> Html Msg
-viewNotPosted { facets, filters, selectedSpecies, pavs, shapeGrid, loadingPavs, archiveName } =
+viewNotPosted { facets, filters, selectedSpecies, pavs, shapegrid, loadingPavs, archive_name } =
     Html.div [ Html.Attributes.style [ ( "font-family", "sans-serif" ), ( "display", "flex" ), ( "justify-content", "space-around" ) ] ]
         [ Html.div []
             [ Html.h3 [] [ header loadingPavs ]
             , Html.table [ Html.Attributes.style [ ( "width", "800px" ) ] ]
                 [ Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Kingdom: " ]
-                    , Html.td [] [ selector loadingPavs filters "taxonKingdom" facets.taxonKingdom ]
+                    , Html.td [] [ selector loadingPavs filters "taxon_kingdom" facets.taxon_kingdom ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Phylum: " ]
-                    , Html.td [] [ selector loadingPavs filters "taxonPhylum" facets.taxonPhylum ]
+                    , Html.td [] [ selector loadingPavs filters "taxon_phylum" facets.taxon_phylum ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Class: " ]
-                    , Html.td [] [ selector loadingPavs filters "taxonClass" facets.taxonClass ]
+                    , Html.td [] [ selector loadingPavs filters "taxon_class" facets.taxon_class ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Order: " ]
-                    , Html.td [] [ selector loadingPavs filters "taxonOrder" facets.taxonOrder ]
+                    , Html.td [] [ selector loadingPavs filters "taxon_order" facets.taxon_order ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Family: " ]
-                    , Html.td [] [ selector loadingPavs filters "taxonFamily" facets.taxonFamily ]
+                    , Html.td [] [ selector loadingPavs filters "taxon_family" facets.taxon_family ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Genus: " ]
-                    , Html.td [] [ selector loadingPavs filters "taxonGenus" facets.taxonGenus ]
+                    , Html.td [] [ selector loadingPavs filters "taxon_genus" facets.taxon_genus ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Species: " ]
-                    , Html.td [] [ selector loadingPavs filters "taxonSpecies" facets.taxonSpecies ]
+                    , Html.td [] [ selector loadingPavs filters "taxon_species" facets.taxon_species ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ), ( "width", "20px" ) ] ] [ Html.text "Algorithm: " ]
-                    , Html.td [] [ selector loadingPavs filters "algorithmCode" facets.algorithms ]
+                    , Html.td [] [ selector loadingPavs filters "algorithm_code" facets.algorithms ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Model: " ]
-                    , Html.td [] [ selector loadingPavs filters "modelScenarioCode" facets.modelScenarios ]
+                    , Html.td [] [ selector loadingPavs filters "model_scenario_code" facets.model_scenarios ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "Projection: " ]
-                    , Html.td [] [ selector loadingPavs filters "sdmProjScenarioCode" facets.projectionScenarios ]
+                    , Html.td [] [ selector loadingPavs filters "sdm_proj_scenario_code" facets.projection_scenarios ]
                     ]
                 , Html.tr []
                     [ Html.td [ Html.Attributes.style [ ( "text-align", "right" ) ] ] [ Html.text "B-Box: " ]
@@ -254,18 +254,18 @@ viewNotPosted { facets, filters, selectedSpecies, pavs, shapeGrid, loadingPavs, 
                 , Html.Attributes.multiple True
                 , Events.on "change" speciesSelected
                 ]
-                (List.map (displayName selectedSpecies) <| Set.toList facets.displayNames)
+                (List.map (display_name selectedSpecies) <| Set.toList facets.display_names)
             , Html.div []
                 [ Html.input
                     [ Html.Attributes.placeholder "Archive name"
                     , Html.Attributes.style [ ( "margin-right", "5px" ) ]
                     , Events.onInput SetArchiveName
-                    , Html.Attributes.value archiveName
+                    , Html.Attributes.value archive_name
                     ]
                     []
                 , Html.button
                     [ Events.onClick RunMCPA
-                    , Html.Attributes.disabled (loadingPavs || (archiveName == ""))
+                    , Html.Attributes.disabled (loadingPavs || (archive_name == ""))
                     ]
                     [ Html.text "Subset PAM" ]
                 ]
@@ -275,7 +275,7 @@ viewNotPosted { facets, filters, selectedSpecies, pavs, shapeGrid, loadingPavs, 
             , Html.div
                 [ Html.Attributes.class "leaflet-map"
                 , Html.Attributes.attribute "data-map-pavs" <| filterAndJoinPavs selectedSpecies pavs
-                , Html.Attributes.attribute "data-map-shape-grid" <| Maybe.withDefault "" <| shapeGrid
+                , Html.Attributes.attribute "data-map-shape-grid" <| Maybe.withDefault "" <| shapegrid
                 , Html.Attributes.style [ ( "width", "800px" ), ( "height", "800px" ) ]
                 ]
                 []
@@ -296,12 +296,12 @@ filterAndJoinPavs selectedSpecies pavs =
     in
         pavs
             |> filterBySpecies
-            |> List.map (\(SolrPAV { compressedPAV }) -> compressedPAV)
+            |> List.map (\(SolrPAV { compressed_pav }) -> compressed_pav)
             |> String.join "\n"
 
 
-displayName : Maybe (List String) -> ( String, String ) -> Html Msg
-displayName selectedSpecies ( name, squid ) =
+display_name : Maybe (List String) -> ( String, String ) -> Html Msg
+display_name selectedSpecies ( name, squid ) =
     let
         selected =
             Maybe.map (List.member squid) selectedSpecies |> Maybe.withDefault False
@@ -312,9 +312,9 @@ displayName selectedSpecies ( name, squid ) =
 
 updateFilters : Dict String String -> Model -> ( Model, Cmd Msg )
 updateFilters filters model =
-    -- if Dict.member "taxonKingdom" filters then
+    -- if Dict.member "taxon_kingdom" filters then
     ( { model | filters = filters, loadingPavs = True, selectedSpecies = Nothing }
-    , getSolrList model.flags model.gridSetId filters
+    , getSolrList model.flags model.gridset_id filters
     )
 
 
@@ -333,7 +333,7 @@ update msg model =
             ( model, getPamGridSet model.flags id )
 
         GotPamGridSet { id, shapegridId } ->
-            { model | gridSetId = id } ! [ getShapeGrid model.flags shapegridId, getSolrList model.flags id Dict.empty ]
+            { model | gridset_id = id } ! [ getShapeGrid model.flags shapegridId, getSolrList model.flags id Dict.empty ]
 
         GotSolrList (SolrList pavs) ->
             let
@@ -343,7 +343,7 @@ update msg model =
                 ( { model | facets = facets, pavs = pavs, loadingPavs = False }, Cmd.none )
 
         GotShapeGrid shp ->
-            ( { model | shapeGrid = Just shp }, Cmd.none )
+            ( { model | shapegrid = Just shp }, Cmd.none )
 
         SetFilter key value ->
             updateFilters (Dict.insert key value model.filters) model
@@ -355,7 +355,7 @@ update msg model =
             ( { model | selectedSpecies = Just squids }, Cmd.none )
 
         SetArchiveName name ->
-            ( { model | archiveName = String.trim name }, Cmd.none )
+            ( { model | archive_name = String.trim name }, Cmd.none )
 
         BBoxSelected bbox ->
             updateFilters (Dict.insert "bbox" (bbox |> List.map toString |> String.join ",") model.filters) model
@@ -363,8 +363,8 @@ update msg model =
         RunMCPA ->
             ( { model | postStatus = Posted }
             , runMCPA model.flags
-                model.gridSetId
-                model.archiveName
+                model.gridset_id
+                model.archive_name
                 model.filters
                 (model.selectedSpecies |> Maybe.withDefault [])
             )
@@ -407,17 +407,17 @@ addAttrs (SolrPAV pav) facets =
         maybeInsert attr facet =
             attr |> Maybe.map (\a -> Set.insert a facet) |> Maybe.withDefault facet
     in
-        { algorithms = maybeInsert pav.algorithmCode facets.algorithms
-        , displayNames = Set.insert ( pav.displayName, pav.squid ) facets.displayNames
-        , modelScenarios = maybeInsert pav.modelScenarioCode facets.modelScenarios
-        , projectionScenarios = maybeInsert pav.sdmProjScenarioCode facets.projectionScenarios
-        , taxonKingdom = maybeInsert pav.taxonKingdom facets.taxonKingdom
-        , taxonPhylum = maybeInsert pav.taxonPhylum facets.taxonPhylum
-        , taxonClass = maybeInsert pav.taxonClass facets.taxonClass
-        , taxonOrder = maybeInsert pav.taxonOrder facets.taxonOrder
-        , taxonFamily = maybeInsert pav.taxonFamily facets.taxonFamily
-        , taxonGenus = maybeInsert pav.taxonGenus facets.taxonGenus
-        , taxonSpecies = maybeInsert pav.taxonSpecies facets.taxonSpecies
+        { algorithms = maybeInsert pav.algorithm_code facets.algorithms
+        , display_names = Set.insert ( pav.display_name, pav.squid ) facets.display_names
+        , model_scenarios = maybeInsert pav.model_scenario_code facets.model_scenarios
+        , projection_scenarios = maybeInsert pav.sdm_proj_scenario_code facets.projection_scenarios
+        , taxon_kingdom = maybeInsert pav.taxon_kingdom facets.taxon_kingdom
+        , taxon_phylum = maybeInsert pav.taxon_phylum facets.taxon_phylum
+        , taxon_class = maybeInsert pav.taxon_class facets.taxon_class
+        , taxon_order = maybeInsert pav.taxon_order facets.taxon_order
+        , taxon_family = maybeInsert pav.taxon_family facets.taxon_family
+        , taxon_genus = maybeInsert pav.taxon_genus facets.taxon_genus
+        , taxon_species = maybeInsert pav.taxon_species facets.taxon_species
         }
 
 
@@ -456,10 +456,10 @@ getPamGridSets flags =
         , body = Http.emptyBody
         , expect =
             Http.expectJson
-                (Json.field "gridSetId" <|
+                (Json.field "gridset_id" <|
                     Json.list <|
                         Json.map2 (,)
-                            (Json.field "gridSetId" Json.string)
+                            (Json.field "gridset_id" Json.string)
                             (Json.field "count" Json.int)
                 )
         , timeout = Nothing
@@ -534,20 +534,20 @@ getShapeGrid flags shapegridId =
 gotShapeGrid : Result Http.Error String -> Msg
 gotShapeGrid result =
     case result of
-        Ok shapeGrid ->
-            GotShapeGrid shapeGrid
+        Ok shapegrid ->
+            GotShapeGrid shapegrid
 
         Err err ->
             Debug.crash (toString err)
 
 
 runMCPA : Flags -> Int -> String -> Dict String String -> List String -> Cmd Msg
-runMCPA flags gridsetId archiveName filters selectedSpecies =
+runMCPA flags gridsetId archive_name filters selectedSpecies =
     let
         queryWithFilters =
             filters
-                |> Dict.insert "archiveName" archiveName
-                |> Dict.insert "gridSetId" (toString gridsetId)
+                |> Dict.insert "archive_name" archive_name
+                |> Dict.insert "gridset_id" (toString gridsetId)
                 |> Dict.insert "user" "public"
                 |> Dict.foldr Q.add Q.empty
 
@@ -568,11 +568,11 @@ runMCPA flags gridsetId archiveName filters selectedSpecies =
 
 
 getSolrList : Flags -> Int -> Dict String String -> Cmd Msg
-getSolrList flags gridSetId filters =
+getSolrList flags gridset_id filters =
     let
         query =
             filters
-                |> Dict.insert "gridsetid" (toString gridSetId)
+                |> Dict.insert "gridsetid" (toString gridset_id)
                 |> Dict.insert "user" "public"
                 |> Dict.foldr Q.add Q.empty
                 |> Q.render
@@ -605,12 +605,12 @@ init flags =
     , filters = Dict.empty
     , selectedSpecies = Nothing
     , pavs = []
-    , shapeGrid = Nothing
+    , shapegrid = Nothing
     , loadingPavs = True
-    , archiveName = ""
+    , archive_name = ""
     , postStatus = NotPosted
     , flags = flags
-    , gridSetId =
+    , gridset_id =
         0
         -- yuck
     }

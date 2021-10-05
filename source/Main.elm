@@ -339,7 +339,7 @@ gotGridSets msg result =
         Ok (AtomList atoms) ->
             atoms
                 |> List.map (\(AtomObject o) -> o)
-                |> List.sortBy .modificationTime
+                |> List.sortBy .modification_time
                 |> List.reverse
                 |> msg
 

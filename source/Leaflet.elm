@@ -31,9 +31,9 @@ import Json.Encode exposing (..)
 
 
 type alias WMSInfo =
-    { mapName : String
+    { map_name : String
     , layers : List String
-    , endPoint : String
+    , endpoint : String
     }
 
 
@@ -50,8 +50,8 @@ serialize =
     List.map
         (\info ->
             object
-                [ ( "mapName", string info.mapName )
-                , ( "endPoint", string info.endPoint )
+                [ ( "map_name", string info.map_name )
+                , ( "endpoint", string info.endpoint )
                 , ( "layers", info.layers |> List.map string |> list )
                 ]
         )
