@@ -52,20 +52,20 @@ import Decoder
         ( OccurrenceMetadata(..)
         , OccurrenceMetadataField(..)
         , OccurrenceMetadataFieldItem(..)
-        , OccurrenceMetadataFieldItemFieldType(..)
+        , OccurrenceMetadataFieldItemField_type(..)
         , OccurrenceMetadataRole(..)
         )
 
 
 type alias Metadata =
-    { fields : List { shortName : String, fieldType : String }
+    { fields : List { short_name : String, field_type : String }
     , roles :
-        { groupBy : Maybe Int
+        { group_by : Maybe Int
         , geopoint : Maybe Int
         , latitude : Maybe Int
         , longitude : Maybe Int
-        , taxaName : Maybe Int
-        , uniqueId : Maybe Int
+        , taxa_name : Maybe Int
+        , unique_id : Maybe Int
         }
     , preview : List (List String)
     , delimiter : String
@@ -81,9 +81,9 @@ toJson metadata =
                     (\i field ->
                         OccurrenceMetadataFieldItem
                             { key = Just (i |> toString)
-                            , shortName = Just field.shortName
-                            , fieldType =
-                                case field.fieldType of
+                            , short_name = Just field.short_name
+                            , field_type =
+                                case field.field_type of
                                     "string" ->
                                         Just String
 
@@ -100,11 +100,11 @@ toJson metadata =
 
         roles =
             OccurrenceMetadataRole
-                { uniqueId = metadata.roles.uniqueId |> Maybe.map toString
-                , taxaName = metadata.roles.taxaName |> Maybe.map toString |> Maybe.withDefault ""
+                { unique_id = metadata.roles.unique_id |> Maybe.map toString
+                , taxa_name = metadata.roles.taxa_name |> Maybe.map toString |> Maybe.withDefault ""
                 , longitude = metadata.roles.longitude |> Maybe.map toString |> Maybe.withDefault ""
                 , latitude = metadata.roles.latitude |> Maybe.map toString |> Maybe.withDefault ""
-                , groupBy = metadata.roles.groupBy |> Maybe.map toString
+                , group_by = metadata.roles.group_by |> Maybe.map toString
                 }
     in
         OccurrenceMetadata { role = Just roles, field = Just <| OccurrenceMetadataField fields, delimiter = Just metadata.delimiter }
@@ -119,14 +119,14 @@ initMetadata delimiter preview =
             |> List.getAt 0
             |> Maybe.withDefault []
             |> truncAndDeDup
-            |> List.map (\colName -> { shortName = colName, fieldType = "string" })
+            |> List.map (\col_name -> { short_name = col_name, field_type = "string" })
     , roles =
-        { groupBy = Nothing
+        { group_by = Nothing
         , geopoint = Nothing
         , latitude = Nothing
         , longitude = Nothing
-        , taxaName = Nothing
-        , uniqueId = Nothing
+        , taxa_name = Nothing
+        , unique_id = Nothing
         }
     , preview = preview
     , delimiter = delimiter
@@ -176,11 +176,11 @@ validateMetadata { roles, fields } =
         Just MissingGeo
       else
         Nothing
-    , if roles.taxaName == Nothing then
+    , if roles.taxa_name == Nothing then
         Just MissingTaxon
       else
         Nothing
-    , case fields |> List.map .shortName |> List.sort |> List.group |> List.filter (\vs -> List.length vs > 1) of
+    , case fields |> List.map .short_name |> List.sort |> List.group |> List.filter (\vs -> List.length vs > 1) of
         [] ->
             Nothing
 
@@ -211,21 +211,21 @@ updateMetadata msg metadata =
                         |> List.indexedMap
                             (\j field ->
                                 if j == i then
-                                    { field | shortName = name }
+                                    { field | short_name = name }
                                 else
                                     field
                             )
             in
                 { metadata | fields = fields }
 
-        UpdateFieldType i fieldType ->
+        UpdateFieldType i field_type ->
             let
                 fields =
                     metadata.fields
                         |> List.indexedMap
                             (\j field ->
                                 if j == i then
-                                    { field | fieldType = fieldType }
+                                    { field | field_type = field_type }
                                 else
                                     field
                             )
@@ -238,10 +238,10 @@ updateMetadata msg metadata =
                     metadata.roles
 
                 roles_ =
-                    if roles.groupBy == Just i then
-                        { roles | groupBy = Nothing }
+                    if roles.group_by == Just i then
+                        { roles | group_by = Nothing }
                     else
-                        { roles | groupBy = Just i }
+                        { roles | group_by = Just i }
             in
                 { metadata | roles = roles_ }
 
@@ -256,7 +256,7 @@ updateMetadata msg metadata =
                     else
                         { roles
                             | geopoint = Just i
-                            , taxaName = (roles.taxaName == Just i) ? Nothing <| roles.taxaName
+                            , taxa_name = (roles.taxa_name == Just i) ? Nothing <| roles.taxa_name
                             , latitude = Nothing
                             , longitude = Nothing
                         }
@@ -266,7 +266,7 @@ updateMetadata msg metadata =
                         |> List.indexedMap
                             (\j field ->
                                 if j == i then
-                                    { field | fieldType = "string" }
+                                    { field | field_type = "string" }
                                 else
                                     field
                             )
@@ -286,7 +286,7 @@ updateMetadata msg metadata =
                             | latitude = Just i
                             , geopoint = Nothing
                             , longitude = (roles.longitude == Just i) ? Nothing <| roles.longitude
-                            , taxaName = (roles.taxaName == Just i) ? Nothing <| roles.taxaName
+                            , taxa_name = (roles.taxa_name == Just i) ? Nothing <| roles.taxa_name
                         }
 
                 fields =
@@ -294,7 +294,7 @@ updateMetadata msg metadata =
                         |> List.indexedMap
                             (\j field ->
                                 if j == i then
-                                    { field | fieldType = "real" }
+                                    { field | field_type = "real" }
                                 else
                                     field
                             )
@@ -314,7 +314,7 @@ updateMetadata msg metadata =
                             | longitude = Just i
                             , geopoint = Nothing
                             , latitude = (roles.latitude == Just i) ? Nothing <| roles.latitude
-                            , taxaName = (roles.taxaName == Just i) ? Nothing <| roles.taxaName
+                            , taxa_name = (roles.taxa_name == Just i) ? Nothing <| roles.taxa_name
                         }
 
                 fields =
@@ -322,7 +322,7 @@ updateMetadata msg metadata =
                         |> List.indexedMap
                             (\j field ->
                                 if j == i then
-                                    { field | fieldType = "real" }
+                                    { field | field_type = "real" }
                                 else
                                     field
                             )
@@ -335,11 +335,11 @@ updateMetadata msg metadata =
                     metadata.roles
 
                 roles_ =
-                    if roles.taxaName == Just i then
-                        { roles | taxaName = Nothing }
+                    if roles.taxa_name == Just i then
+                        { roles | taxa_name = Nothing }
                     else
                         { roles
-                            | taxaName = Just i
+                            | taxa_name = Just i
                             , geopoint = (roles.geopoint == Just i) ? Nothing <| roles.geopoint
                             , latitude = (roles.latitude == Just i) ? Nothing <| roles.latitude
                             , longitude = (roles.longitude == Just i) ? Nothing <| roles.longitude
@@ -350,7 +350,7 @@ updateMetadata msg metadata =
                         |> List.indexedMap
                             (\j field ->
                                 if j == i then
-                                    { field | fieldType = "string" }
+                                    { field | field_type = "string" }
                                 else
                                     field
                             )
@@ -362,13 +362,13 @@ updateMetadata msg metadata =
                 roles =
                     metadata.roles
 
-                uniqueId =
-                    if roles.uniqueId == Just i then
+                unique_id =
+                    if roles.unique_id == Just i then
                         Nothing
                     else
                         Just i
             in
-                { metadata | roles = { roles | uniqueId = uniqueId } }
+                { metadata | roles = { roles | unique_id = unique_id } }
 
 
 metadataTable : (Material.Msg msg -> msg) -> (MetadataMsg -> msg) -> Index -> Material.Model -> Metadata -> Html msg
@@ -382,7 +382,7 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                     [ Textfield.floatingLabel
                     , Textfield.label "Column Name"
                     , Textfield.maxlength 10
-                    , Textfield.value (metadata.fields |> List.getAt i |> Maybe.map .shortName |> Maybe.withDefault "")
+                    , Textfield.value (metadata.fields |> List.getAt i |> Maybe.map .short_name |> Maybe.withDefault "")
                     , Options.onInput (UpdateFieldName i >> mapMsg)
                     ]
                     []
@@ -412,21 +412,21 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                     (4 :: 1 :: i :: index)
                     mdl
                     [ Options.onToggle (ToggleTaxaName i |> mapMsg)
-                    , Toggles.value (metadata.roles.taxaName == Just i)
+                    , Toggles.value (metadata.roles.taxa_name == Just i)
                     ]
                     [ Html.text "Taxon" ]
                 , Toggles.checkbox mapMdlMsg
                     (5 :: 1 :: i :: index)
                     mdl
                     [ Options.onToggle (ToggleUniqueId i |> mapMsg)
-                    , Toggles.value (metadata.roles.uniqueId == Just i)
+                    , Toggles.value (metadata.roles.unique_id == Just i)
                     ]
                     [ Html.text "Unique ID" ]
                 , Toggles.checkbox mapMdlMsg
                     (0 :: 1 :: i :: index)
                     mdl
                     [ Options.onToggle (ToggleGroupBy i |> mapMsg)
-                    , Toggles.value (metadata.roles.groupBy == Just i)
+                    , Toggles.value (metadata.roles.group_by == Just i)
                     ]
                     [ Html.text "Group By" ]
                 , Html.select [ Html.Events.onInput (UpdateFieldType i >> mapMsg) ] <|
@@ -436,7 +436,7 @@ metadataTable mapMdlMsg mapMsg index mdl metadata =
                                 [ Html.Attributes.selected
                                     (metadata.fields
                                         |> List.getAt i
-                                        |> Maybe.map .fieldType
+                                        |> Maybe.map .field_type
                                         |> Maybe.withDefault ""
                                         |> (==) v
                                     )

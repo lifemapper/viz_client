@@ -270,7 +270,7 @@ updateMap model =
     let
         bb =
             model.mappedSet
-                |> Maybe.andThen .spatialVector
+                |> Maybe.andThen .spatial_vector
                 |> Maybe.andThen (\(SpatialVector { bbox }) -> bbox)
                 |> Maybe.andThen
                     (\(SpatialVectorBbox bbox) ->
@@ -286,8 +286,8 @@ updateMap model =
             model.mappedSet
                 |> Maybe.andThen .map
                 |> Maybe.map
-                    (\(SingleLayerMap { endpoint, mapName, layerName }) ->
-                        { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                    (\(SingleLayerMap { endpoint, map_name, layer_name }) ->
+                        { endpoint = endpoint, map_name = map_name, layers = [ layer_name ] }
                     )
     in
         setMap bb mapInfo model
@@ -439,7 +439,7 @@ view : Index -> Model -> Html Msg
 view index model =
     let
         mapCardTitle =
-            model.mappedSet |> Maybe.andThen .speciesName |> Maybe.withDefault "Map"
+            model.mappedSet |> Maybe.andThen .species_name |> Maybe.withDefault "Map"
     in
         case model.source of
             Choose ->

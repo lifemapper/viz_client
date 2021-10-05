@@ -55,12 +55,12 @@ encodeOccurrenceMetadata (OccurrenceMetadata { role, field, delimiter }) =
 
 
 encodeOccurrenceMetadataRole : OccurrenceMetadataRole -> Value
-encodeOccurrenceMetadataRole (OccurrenceMetadataRole { uniqueId, taxaName, longitude, latitude, groupBy }) =
-    [ uniqueId |> Maybe.map (string >> (,) "uniqueId")
-    , taxaName |> (string >> (,) "taxaName") |> Just
+encodeOccurrenceMetadataRole (OccurrenceMetadataRole { unique_id, taxa_name, longitude, latitude, group_by }) =
+    [ unique_id |> Maybe.map (string >> (,) "unique_id")
+    , taxa_name |> (string >> (,) "taxa_name") |> Just
     , longitude |> (string >> (,) "longitude") |> Just
     , latitude |> (string >> (,) "latitude") |> Just
-    , groupBy |> Maybe.map (string >> (,) "groupBy")
+    , group_by |> Maybe.map (string >> (,) "group_by")
     ]
         |> List.concatMap Maybe.toList
         |> object
@@ -72,18 +72,18 @@ encodeOccurrenceMetadataField (OccurrenceMetadataField fields) =
 
 
 encodeOccurrenceMetadataFieldItem : OccurrenceMetadataFieldItem -> Value
-encodeOccurrenceMetadataFieldItem (OccurrenceMetadataFieldItem { key, shortName, fieldType }) =
+encodeOccurrenceMetadataFieldItem (OccurrenceMetadataFieldItem { key, short_name, field_type }) =
     [ key |> Maybe.map (string >> (,) "key")
-    , shortName |> Maybe.map (string >> (,) "shortName")
-    , fieldType |> Maybe.map (encodeOccurrenceMetadataFieldItemFieldType >> (,) "fieldType")
+    , short_name |> Maybe.map (string >> (,) "short_name")
+    , field_type |> Maybe.map (encodeOccurrenceMetadataFieldItemFieldType >> (,) "field_type")
     ]
         |> List.concatMap Maybe.toList
         |> object
 
 
-encodeOccurrenceMetadataFieldItemFieldType : OccurrenceMetadataFieldItemFieldType -> Value
-encodeOccurrenceMetadataFieldItemFieldType fieldType =
-    case fieldType of
+encodeOccurrenceMetadataFieldItemFieldType : OccurrenceMetadataFieldItemField_type -> Value
+encodeOccurrenceMetadataFieldItemFieldType field_type =
+    case field_type of
         String ->
             string "string"
 

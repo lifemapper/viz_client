@@ -255,9 +255,9 @@ makeOccurrenceMap : ProjectionInfo -> List MapCard.NamedMap
 makeOccurrenceMap { occurrenceRecord } =
     occurrenceRecord.map
         |> Maybe.map
-            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+            (\(Decoder.SingleLayerMap { endpoint, map_name, layer_name }) ->
                 { name = "Occurrences"
-                , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                , wmsInfo = { endpoint = endpoint, map_name = map_name, layers = [ layer_name ] }
                 }
             )
         |> Maybe.toList
@@ -267,9 +267,9 @@ makeBackgroundMap : ProjectionInfo -> List MapCard.NamedMap
 makeBackgroundMap { occurrenceRecord } =
     occurrenceRecord.map
         |> Maybe.map
-            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+            (\(Decoder.SingleLayerMap { endpoint, map_name, layer_name }) ->
                 { name = "Blue Marble Next Generation (NASA)"
-                , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ "bmng" ] }
+                , wmsInfo = { endpoint = endpoint, map_name = map_name, layers = [ "bmng" ] }
                 }
             )
         |> Maybe.toList
@@ -284,7 +284,7 @@ projectionTitle record =
 
 boundingBoxForProjection : ProjectionInfo -> Maybe BoundingBox
 boundingBoxForProjection { record } =
-    record.spatialRaster
+    record.spatial_raster
         |> Maybe.map (\(Decoder.SpatialRaster { bbox }) -> bbox)
         |> Maybe.join
         |> Maybe.map
@@ -303,16 +303,16 @@ makeProjectionMap : ProjectionInfo -> Maybe MapCard.NamedMap
 makeProjectionMap { record } =
     record.map
         |> Maybe.map
-            (\(Decoder.SingleLayerMap { endpoint, mapName, layerName }) ->
+            (\(Decoder.SingleLayerMap { endpoint, map_name, layer_name }) ->
                 { name = projectionTitle record
-                , wmsInfo = { endPoint = endpoint, mapName = mapName, layers = [ layerName ] }
+                , wmsInfo = { endpoint = endpoint, map_name = map_name, layers = [ layer_name ] }
                 }
             )
 
 
 loadOccurrenceSet : Decoder.ProjectionRecord -> Cmd Msg
 loadOccurrenceSet record =
-    case record.occurrenceSet |> Maybe.andThen (\(Decoder.ObjectRef o) -> o.metadataUrl) of
+    case record.occurrence_set |> Maybe.andThen (\(Decoder.ObjectRef o) -> o.metadata_url) of
         Just url ->
             Http.request
                 { method = "GET"
@@ -531,14 +531,14 @@ view { state, packageStatus, mdl, programFlags } =
                         if speciesFilter == "all" then
                             display
                         else
-                            display |> List.filter (Tuple.first >> .record >> .speciesName >> ((==) (Just speciesFilter)))
+                            display |> List.filter (Tuple.first >> .record >> .species_name >> ((==) (Just speciesFilter)))
 
                     projCount =
                         List.length filtered
 
                     species =
                         display
-                            |> List.filterMap (Tuple.first >> .record >> .speciesName)
+                            |> List.filterMap (Tuple.first >> .record >> .species_name)
                             |> Set.fromList
                 in
                     Options.div []

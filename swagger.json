@@ -76,7 +76,7 @@
         ],
         "parameters": [
           {
-            "name": "epsgCode",
+            "name": "epsgcode",
             "in": "query",
             "description": "The EPSG code for the layer",
             "required": true,
@@ -90,7 +90,7 @@
             "type": "string"
           },
           {
-            "name": "isCategorical",
+            "name": "is_categorical",
             "in": "query",
             "description": "An indicator if this layer is categorical or not (1=yes, 0=no)",
             "required": false,
@@ -225,7 +225,7 @@
         }
       }
     },
-    "/envlayer/{layerId}": {
+    "/envlayer/{layer_id}": {
       "get": {
         "summary": "Get an environmental layer",
         "parameters": [
@@ -497,12 +497,12 @@
             "schema": {
               "type": "object",
               "properties": {
-                "gridSetId": {
+                "gridset_id": {
                   "type": "array",
                   "items": {
                     "type": "object",
                     "properties": {
-                      "gridSetId": {
+                      "gridset_id": {
                         "type": "string"
                       },
                       "count": {
@@ -597,7 +597,7 @@
         }
       }
     },
-    "/gridset/{gridsetId}/": {
+    "/gridset/{gridset_id}/": {
       "get": {
         "summary": "Lifemapper grid set service",
         "description": "The grid set service endpoint returns a specific grid set\n",
@@ -619,7 +619,7 @@
         }
       }
     },
-    "/gridset/{gridsetId}/matrix": {
+    "/gridset/{gridset_id}/matrix": {
       "get": {
         "summary": "Lifemapper gridset matrix listing service",
         "description": "The matrix endpoint for a grid set provides a servic for querying \nLifemapper matrices that match a set of query parameters\n",
@@ -678,7 +678,7 @@
         }
       }
     },
-    "/gridset/{gridsetId}/matrix/count": {
+    "/gridset/{gridset_id}/matrix/count": {
       "get": {
         "summary": "Lifemapper gridset matrix count service",
         "description": "The matrix endpoint for a grid set provides a service for querying \nLifemapper matrices that match a set of query parameters\n",
@@ -731,7 +731,7 @@
         }
       }
     },
-    "/gridset/{gridsetId}/matrix/{matrixId}": {
+    "/gridset/{gridset_id}/matrix/{matrix_id}": {
       "get": {
         "summary": "Lifemapper gridset matrix service",
         "description": "The matrix endpoint for a grid set provides a service for retrieving a  \nLifemapper matrix\n",
@@ -763,7 +763,7 @@
         }
       }
     },
-    "/gridset/{gridsetId}/matrix/{matrixId}/column": {
+    "/gridset/{gridset_id}/matrix/{matrix_id}/column": {
       "get": {
         "summary": "Lifemapper gridset matrix column service",
         "description": "The matrix endpoint for a grid set provides a service for listing \nmatrix columns\n",
@@ -796,7 +796,7 @@
         }
       }
     },
-    "/gridset/{gridsetId}/analysis": {
+    "/gridset/{gridset_id}/analysis": {
       "post": {
         "summary": "Perform analyses on the gridset",
         "parameters": [
@@ -839,7 +839,7 @@
         }
       }
     },
-    "/gridset/{gridsetId}/biogeo": {
+    "/gridset/{gridset_id}/biogeo": {
       "get": {
         "summary": "Get a list of biogeographic hypothesis matrices for this gridset",
         "parameters": [
@@ -905,7 +905,7 @@
         }
       }
     },
-    "/gridset/{gridsetId}/biogeo/{biogeoId}": {
+    "/gridset/{gridset_id}/biogeo/{biogeo_id}": {
       "get": {
         "summary": "Gets the specified biogeographic hypothesis matrix",
         "parameters": [
@@ -935,7 +935,7 @@
         }
       }
     },
-    "/gridset/{gridsetId}/progress": {
+    "/gridset/{gridset_id}/progress": {
       "get": {
         "summary": "Lifemapper gridset progress service",
         "parameters": [
@@ -957,7 +957,7 @@
         }
       }
     },
-    "/gridset/{gridsetId}/tree": {
+    "/gridset/{gridset_id}/tree": {
       "get": {
         "summary": "Get the tree associated with this gridset",
         "parameters": [
@@ -1040,7 +1040,7 @@
         }
       }
     },
-    "/gridset/{gridsetId}/tree/{treeId}": {
+    "/gridset/{gridset_id}/tree/{tree_id}": {
       "post": {
         "summary": "Adds the specified phylogenetic tree to the gridset",
         "parameters": [
@@ -1253,7 +1253,7 @@
         }
       }
     },
-    "/layer/{layerId}": {
+    "/layer/{layer_id}": {
       "get": {
         "summary": "Get a layer",
         "parameters": [
@@ -1501,7 +1501,7 @@
         }
       }
     },
-    "/occurrence/{occurrenceSetId}": {
+    "/occurrence/{occurrence_set_id}": {
       "get": {
         "summary": "Get an occurrence set in the specified format",
         "parameters": [
@@ -1587,7 +1587,7 @@
         }
       }
     },
-    "/sdmProject": {
+    "/sdmproject": {
       "get": {
         "summary": "Get a list of projections that match your criteria",
         "parameters": [
@@ -1681,7 +1681,7 @@
         }
       }
     },
-    "/sdmProject/count": {
+    "/sdmproject/count": {
       "get": {
         "summary": "Get a count of projections that match your criteria",
         "parameters": [
@@ -1741,7 +1741,7 @@
         }
       }
     },
-    "/sdmProject/{projectionId}": {
+    "/sdmproject/{projection_id}": {
       "get": {
         "summary": "Get a projection",
         "parameters": [
@@ -1908,7 +1908,7 @@
         }
       }
     },
-    "/scenario/{scenarioId}": {
+    "/scenario/{scenario_id}": {
       "get": {
         "summary": "Get a scenario",
         "parameters": [
@@ -2023,7 +2023,7 @@
         }
       }
     },
-    "/scenpackage/{scenarioPackageId}": {
+    "/scenpackage/{scenario_package_id}": {
       "get": {
         "summary": "Get a scenario package",
         "parameters": [
@@ -2128,7 +2128,7 @@
         }
       }
     },
-    "/shapegrid/{shapegridId}": {
+    "/shapegrid/{shapegrid_id}": {
       "get": {
         "summary": "Get a shapegrid",
         "parameters": [
@@ -2346,7 +2346,7 @@
         }
       }
     },
-    "/tree/{treeId}": {
+    "/tree/{tree_id}": {
       "get": {
         "summary": "Get a tree",
         "parameters": [
@@ -2481,7 +2481,7 @@
       "required": [
         "epsg",
         "id",
-        "modificationTime",
+        "modification_time",
         "name",
         "url"
       ],
@@ -2494,7 +2494,7 @@
           "type": "integer",
           "description": "The id of the object"
         },
-        "modificationTime": {
+        "modification_time": {
           "type": "string",
           "description": "The date / time this object was last modified"
         },
@@ -2815,7 +2815,7 @@
     "EnvLayer": {
       "type": "object",
       "properties": {
-        "objectType": {
+        "object_type": {
           "type": "string"
         },
         "id": {
@@ -2830,7 +2830,7 @@
         "status": {
           "type": "integer"
         },
-        "statusModTime": {
+        "status_mod_time": {
           "type": "string",
           "description": "The date / time this object was last modified"
         },
@@ -2843,19 +2843,19 @@
         "map": {
           "$ref": "#/definitions/Map"
         },
-        "spatialRaster": {
+        "spatial_raster": {
           "$ref": "#/definitions/SpatialRaster"
         },
-        "envCode": {
+        "env_code": {
           "type": "string"
         },
-        "gcmCode": {
+        "gcm_code": {
           "type": "string"
         },
-        "altPredCode": {
+        "alt_pred_code": {
           "type": "string"
         },
-        "dateCode": {
+        "date_code": {
           "type": "string"
         }
       }
@@ -2892,7 +2892,7 @@
         "matrices"
       ],
       "properties": {
-        "objectType": {
+        "object_type": {
           "type": "string"
         },
         "id": {
@@ -3006,7 +3006,7 @@
     "Layer": {
       "type": "object",
       "properties": {
-        "objectType": {
+        "object_type": {
           "type": "string"
         },
         "id": {
@@ -3021,7 +3021,7 @@
         "status": {
           "type": "integer"
         },
-        "statusModTime": {
+        "status_mod_time": {
           "type": "string",
           "description": "The date / time this object was last modified"
         },
@@ -3031,7 +3031,7 @@
         "metadata": {
           "type": "object"
         },
-        "spatialRaster": {
+        "spatial_raster": {
           "$ref": "#/definitions/SpatialRaster"
         }
       }
@@ -3040,28 +3040,28 @@
       "type": "object",
       "required": [
         "endpoint",
-        "mapName",
+        "map_name",
         "layers"
       ],
       "properties": {
         "endpoint": {
           "type": "string"
         },
-        "mapName": {
+        "map_name": {
           "type": "string"
         },
         "layers": {
           "type": "array",
           "items": {
             "required": [
-              "layerName",
-              "metadataUrl"
+              "layer_name",
+              "metadata_url"
             ],
             "properties": {
-              "metadataUrl": {
+              "metadata_url": {
                 "type": "string"
               },
-              "layerName": {
+              "layer_name": {
                 "type": "string"
               }
             }
@@ -3100,7 +3100,7 @@
         "id": {
           "type": "integer"
         },
-        "metadataUrl": {
+        "metadata_url": {
           "type": "string"
         }
       }
@@ -3117,11 +3117,11 @@
                 "type": "string",
                 "description": "Original field name in CSV or column index (zero-based)"
               },
-              "shortName": {
+              "short_name": {
                 "type": "string",
                 "description": "A short name for this field (10 characters or less)"
               },
-              "fieldType": {
+              "field_type": {
                 "type": "string",
                 "description": "The content of this filed",
                 "enum": [
@@ -3138,10 +3138,10 @@
           "required": [
             "latitude",
             "longitude",
-            "taxaName"
+            "taxa_name"
           ],
           "properties": {
-            "groupBy": {
+            "group_by": {
               "description": "If this is provided, use this field to group occurrence data.  \nIf it is not provided, taxaName will be used.  \n",
               "type": "string"
             },
@@ -3153,11 +3153,11 @@
               "description": "The field key for the field with longitude information.  Required\nif geopoint is not provided\n",
               "type": "string"
             },
-            "taxaName": {
+            "taxa_name": {
               "description": "The field key for the field containing taxon names. If there are\nmultiple values that should be grouped together, provide\n\"groupBy\" as well to group those values.\n",
               "type": "string"
             },
-            "uniqueId": {
+            "unique_id": {
               "description": "The field key for the field containing a unique identifier for \nthe records.\n",
               "type": "string"
             }
@@ -3174,7 +3174,7 @@
         "id"
       ],
       "properties": {
-        "objectType": {
+        "object_type": {
           "type": "string"
         },
         "id": {
@@ -3189,7 +3189,7 @@
         "status": {
           "type": "integer"
         },
-        "statusModTime": {
+        "status_mod_time": {
           "type": "string",
           "description": "The date / time this object was last modified"
         },
@@ -3202,10 +3202,10 @@
         "map": {
           "$ref": "#/definitions/SingleLayerMap"
         },
-        "spatialVector": {
+        "spatial_vector": {
           "$ref": "#/definitions/SpatialVector"
         },
-        "speciesName": {
+        "species_name": {
           "type": "string"
         },
         "squid": {
@@ -3294,7 +3294,7 @@
         "id"
       ],
       "properties": {
-        "objectType": {
+        "object_type": {
           "type": "string"
         },
         "id": {
@@ -3309,7 +3309,7 @@
         "status": {
           "type": "integer"
         },
-        "statusModTime": {
+        "status_mod_time": {
           "type": "string",
           "description": "The date / time this object was last modified"
         },
@@ -3322,25 +3322,25 @@
         "map": {
           "$ref": "#/definitions/SingleLayerMap"
         },
-        "spatialRaster": {
+        "spatial_raster": {
           "$ref": "#/definitions/SpatialRaster"
         },
         "algorithm": {
           "$ref": "#/definitions/Algorithm"
         },
-        "modelScenario": {
+        "model_scenario": {
           "$ref": "#/definitions/ScenarioRef"
         },
-        "projectionScenario": {
+        "projection_scenario": {
           "$ref": "#/definitions/ScenarioRef"
         },
-        "speciesName": {
+        "species_name": {
           "type": "string"
         },
         "squid": {
           "type": "string"
         },
-        "occurrenceSet": {
+        "occurrence_set": {
           "$ref": "#/definitions/ObjectRef"
         }
       }
@@ -3354,7 +3354,7 @@
         "title": {
           "type": "string"
         },
-        "isDiscrete": {
+        "is_discrete": {
           "type": "boolean"
         },
         "keywords": {
@@ -3371,7 +3371,7 @@
         "id"
       ],
       "properties": {
-        "objectType": {
+        "object_type": {
           "type": "string"
         },
         "id": {
@@ -3386,7 +3386,7 @@
         "code": {
           "type": "string"
         },
-        "userId": {
+        "user_id": {
           "type": "string"
         },
         "metadata": {
@@ -3398,19 +3398,19 @@
         "spatial": {
           "$ref": "#/definitions/Spatial"
         },
-        "environmentalCode": {
+        "environmental_code": {
           "type": "string"
         },
-        "gcmCode": {
+        "gcm_code": {
           "type": "string"
         },
-        "alternatePrediction": {
+        "alternate_prediction": {
           "type": "string"
         },
-        "dateCode": {
+        "date_code": {
           "type": "string"
         },
-        "envTypeId": {
+        "env_type_id": {
           "type": "string"
         }
       }
@@ -3442,7 +3442,7 @@
         "scenarios"
       ],
       "properties": {
-        "objectType": {
+        "object_type": {
           "type": "string"
         },
         "id": {
@@ -3457,7 +3457,7 @@
         "etag": {
           "type": "string"
         },
-        "userId": {
+        "user_id": {
           "type": "string"
         },
         "metadata": {
@@ -3510,7 +3510,7 @@
         "id": {
           "type": "integer"
         },
-        "metadataUrl": {
+        "metadata_url": {
           "type": "string"
         }
       }
@@ -3588,17 +3588,17 @@
       "type": "object",
       "required": [
         "endpoint",
-        "mapName",
-        "layerName"
+        "map_name",
+        "layer_name"
       ],
       "properties": {
         "endpoint": {
           "type": "string"
         },
-        "mapName": {
+        "map_name": {
           "type": "string"
         },
-        "layerName": {
+        "layer_name": {
           "type": "string"
         }
       }
@@ -3612,130 +3612,130 @@
     "SolrPAV": {
       "type": "object",
       "required": [
-        "compressedPAV",
-        "displayName",
-        "epsgCode",
-        "gridSetId",
-        "gridSetMetaUrl",
+        "compressed_pav",
+        "display_name",
+        "epsg_code",
+        "gridset_id",
+        "gridset_meta_url",
         "id",
-        "pavMetaUrl",
-        "shapegridDataUrl",
-        "shapegridId",
-        "shapegridMetaUrl",
+        "pav_meta_url",
+        "shapegrid_data_url",
+        "shapegrid_id",
+        "shapegrid_meta_url",
         "squid",
-        "userId"
+        "user_id"
       ],
       "properties": {
-        "algorithmCode": {
+        "algorithm_code": {
           "type": "string"
         },
-        "algorithmParameters": {
+        "algorithm_parameters": {
           "type": "string"
         },
-        "compressedPAV": {
+        "compressed_pav": {
           "type": "string",
           "description": "Run-length encoded version of the PAV"
         },
-        "displayName": {
+        "display_name": {
           "type": "string"
         },
-        "epsgCode": {
+        "epsg_code": {
           "type": "integer"
         },
-        "gridSetId": {
+        "gridset_id": {
           "type": "integer"
         },
-        "gridSetMetaUrl": {
+        "gridset_meta_url": {
           "type": "string"
         },
         "id": {
           "type": "string"
         },
-        "modelScenarioCode": {
+        "model_scenario_code": {
           "type": "string"
         },
-        "modelScenarioId": {
+        "model_scenario_id": {
           "type": "integer"
         },
-        "modelScenarioUrl": {
+        "model_scenario_url": {
           "type": "string"
         },
-        "occurrenceDataUrl": {
+        "occurrence_data_url": {
           "type": "string"
         },
-        "occurrenceId": {
+        "occurrence_id": {
           "type": "integer"
         },
-        "occurrenceMetaUrl": {
+        "occurrence_meta_url": {
           "type": "string"
         },
-        "pointCount": {
+        "point_count": {
           "type": "integer"
         },
-        "pavMetaUrl": {
+        "pav_meta_url": {
           "type": "string"
         },
-        "sdmProjDataUrl": {
+        "sdm_proj_data_url": {
           "type": "string"
         },
-        "sdmProjId": {
+        "sdm_proj_id": {
           "type": "integer"
         },
-        "sdmProjMetaUrl": {
+        "sdm_proj_meta_url": {
           "type": "string"
         },
-        "sdmProjScenarioAltPredCode": {
+        "sdm_proj_scenario_alt_pred_code": {
           "type": "string"
         },
-        "sdmProjScenarioCode": {
+        "sdm_proj_scenario_code": {
           "type": "string"
         },
-        "sdmProjScenarioDateCode": {
+        "sdm_proj_scenario_date_code": {
           "type": "string"
         },
-        "sdmProjScenarioGCM": {
+        "sdm_proj_scenario_gcm": {
           "type": "string"
         },
-        "sdmProjScenarioId": {
+        "sdm_proj_scenario_id": {
           "type": "integer"
         },
-        "sdmProjScenarioUrl": {
+        "sdm_proj_scenario_url": {
           "type": "string"
         },
-        "shapegridDataUrl": {
+        "shapegrid_data_url": {
           "type": "string"
         },
-        "shapegridId": {
+        "shapegrid_id": {
           "type": "integer"
         },
-        "shapegridMetaUrl": {
+        "shapegrid_meta_url": {
           "type": "string"
         },
-        "taxonClass": {
+        "taxon_class": {
           "type": "string"
         },
-        "taxonFamily": {
+        "taxon_family": {
           "type": "string"
         },
-        "taxonGenus": {
+        "taxon_genus": {
           "type": "string"
         },
-        "taxonKingdom": {
+        "taxon_kingdom": {
           "type": "string"
         },
-        "taxonOrder": {
+        "taxon_order": {
           "type": "string"
         },
-        "taxonPhylum": {
+        "taxon_phylum": {
           "type": "string"
         },
-        "taxonSpecies": {
+        "taxon_species": {
           "type": "string"
         },
         "squid": {
           "type": "string"
         },
-        "userId": {
+        "user_id": {
           "type": "string"
         }
       }
@@ -3752,7 +3752,7 @@
             "type": "number"
           }
         },
-        "mapUnits": {
+        "map_units": {
           "type": "string"
         },
         "resolution": {
@@ -3772,34 +3772,34 @@
             "type": "number"
           }
         },
-        "mapUnits": {
+        "map_units": {
           "type": "string"
         },
         "resolution": {
           "type": "number"
         },
-        "dataUrl": {
+        "data_url": {
           "type": "string"
         },
         "sha256": {
           "type": "string"
         },
-        "gdalType": {
+        "gdal_type": {
           "type": "integer"
         },
-        "dataFormat": {
+        "data_format": {
           "type": "string"
         },
-        "minVal": {
+        "min_val": {
           "type": "number"
         },
-        "maxVal": {
+        "max_val": {
           "type": "number"
         },
-        "valueUnits": {
+        "value_units": {
           "type": "string"
         },
-        "dataType": {
+        "data_type": {
           "type": "integer"
         }
       }
@@ -3816,25 +3816,25 @@
             "type": "number"
           }
         },
-        "mapUnits": {
+        "map_units": {
           "type": "string"
         },
         "resolution": {
           "type": "number"
         },
-        "dataUrl": {
+        "data_url": {
           "type": "string"
         },
         "sha256": {
           "type": "string"
         },
-        "ogrType": {
+        "ogr_type": {
           "type": "integer"
         },
-        "dataFormat": {
+        "data_format": {
           "type": "string"
         },
-        "numFeatures": {
+        "num_features": {
           "type": "integer"
         }
       }
@@ -3903,112 +3903,112 @@
   },
   "parameters": {
     "PathBioGeoId": {
-      "name": "biogeoId",
+      "name": "biogeo_id",
       "in": "path",
       "description": "The id of the biogeographic matrix to use",
       "required": true,
       "type": "integer"
     },
     "PathGridsetId": {
-      "name": "gridsetId",
+      "name": "gridset_id",
       "in": "path",
       "description": "The id of the grid set to use",
       "required": true,
       "type": "integer"
     },
     "PathLayerId": {
-      "name": "layerId",
+      "name": "layer_id",
       "in": "path",
       "description": "The id of the layer to use",
       "required": true,
       "type": "integer"
     },
     "PathMatrixId": {
-      "name": "matrixId",
+      "name": "matrix_id",
       "in": "path",
       "description": "The id of the matrix to use",
       "required": true,
       "type": "integer"
     },
     "PathMatrixColumnId": {
-      "name": "matrixColumnId",
+      "name": "matrix_column_id",
       "in": "path",
       "description": "The id of the matrix column to use",
       "required": true,
       "type": "integer"
     },
     "PathOccurrenceSetId": {
-      "name": "occurrenceSetId",
+      "name": "occurrence_set_id",
       "in": "path",
       "description": "The id of the occurrence set to use",
       "required": true,
       "type": "integer"
     },
     "PathProjectionId": {
-      "name": "projectionId",
+      "name": "projection_id",
       "in": "path",
       "description": "The id of the projection",
       "required": true,
       "type": "integer"
     },
     "PathScenarioId": {
-      "name": "scenarioId",
+      "name": "scenario_id",
       "in": "path",
       "description": "The id of the scenario",
       "required": true,
       "type": "integer"
     },
     "PathScenarioPackageId": {
-      "name": "scenarioPackageId",
+      "name": "scenario_package_id",
       "in": "path",
       "description": "The id of the scenario package",
       "required": true,
       "type": "integer"
     },
     "PathShapegridId": {
-      "name": "shapegridId",
+      "name": "shapegrid_id",
       "in": "path",
       "description": "The id of a shapegrid",
       "required": true,
       "type": "integer"
     },
     "PathTreeId": {
-      "name": "treeId",
+      "name": "tree_id",
       "in": "path",
       "description": "The id of the tree",
       "required": true,
       "type": "integer"
     },
     "AfterStatus": {
-      "name": "afterStatus",
+      "name": "after_status",
       "in": "query",
       "description": "Return items with a status greater than this value",
       "required": false,
       "type": "integer"
     },
     "AfterTime": {
-      "name": "afterTime",
+      "name": "after_time",
       "in": "query",
       "description": "Return experiments modified after this time",
       "required": false,
       "type": "string"
     },
     "AlgorithmCode": {
-      "name": "algorithmCode",
+      "name": "algorithm_code",
       "in": "query",
       "description": "Return experiments that were built using this algorithm",
       "required": false,
       "type": "string"
     },
     "AltPredCode": {
-      "name": "altPredCode",
+      "name": "alt_pred_code",
       "in": "query",
       "description": "Alternate prediction code",
       "required": false,
       "type": "string"
     },
     "ArchiveNameReq": {
-      "name": "archiveName",
+      "name": "archive_name",
       "in": "query",
       "description": "The name for the new archive grid set created",
       "required": true,
@@ -4022,27 +4022,27 @@
       "type": "string"
     },
     "BeforeStatus": {
-      "name": "beforeStatus",
+      "name": "before_status",
       "in": "query",
       "description": "Return items with a status less than this value",
       "required": false,
       "type": "integer"
     },
     "BeforeTime": {
-      "name": "beforeTime",
+      "name": "before_time",
       "in": "query",
       "description": "Return experiments modified before this time",
       "required": false,
       "type": "string"
     },
     "CanonicalName": {
-      "name": "canonicalName",
+      "name": "canonical_name",
       "in": "query",
       "description": "Limit search results to those with this canonical name",
       "type": "string"
     },
     "CellSides": {
-      "name": "cellSides",
+      "name": "cell_sides",
       "in": "query",
       "description": "Count or list shapegrids that have this many sides per cell (4 - square, 6 - hexagon)",
       "required": false,
@@ -4053,28 +4053,28 @@
       ]
     },
     "CellSize": {
-      "name": "cellSize",
+      "name": "cell_size",
       "in": "query",
       "description": "Count or list shapegrids that have cells of this size (in units of shapegrid)",
       "required": false,
       "type": "number"
     },
     "DateCode": {
-      "name": "dateCode",
+      "name": "date_code",
       "in": "query",
       "description": "Date code",
       "required": false,
       "type": "string"
     },
     "DisplayName": {
-      "name": "displayName",
+      "name": "display_name",
       "in": "query",
       "description": "Return experiments that have occurrence sets with a display name like this",
       "required": false,
       "type": "string"
     },
     "DoCalculate": {
-      "name": "doCalc",
+      "name": "do_calc",
       "in": "query",
       "description": "If set to 1, calculate PAM-based statistics",
       "required": false,
@@ -4086,7 +4086,7 @@
       ]
     },
     "DoMCPA": {
-      "name": "doMcpa",
+      "name": "do_mcpa",
       "in": "query",
       "description": "If set to 1, calculate MCPA",
       "required": false,
@@ -4098,14 +4098,14 @@
       ]
     },
     "EnvCode": {
-      "name": "envCode",
+      "name": "env_code",
       "in": "query",
       "description": "Return items with this env code",
       "required": false,
       "type": "string"
     },
     "EPSG": {
-      "name": "epsgCode",
+      "name": "epsg_code",
       "in": "query",
       "description": "Return experiments built using this EPSG code",
       "required": false,
@@ -4121,21 +4121,21 @@
       "format": "string"
     },
     "GridsetId": {
-      "name": "gridSetId",
+      "name": "gridset_id",
       "in": "query",
       "description": "Only return items in this grid set",
       "required": false,
       "type": "string"
     },
     "GridsetIdReq": {
-      "name": "gridSetId",
+      "name": "gridset_id",
       "in": "query",
       "description": "Subset items from this grid set",
       "required": true,
       "type": "string"
     },
     "HasBranchLengths": {
-      "name": "hasBranchLengths",
+      "name": "has_branch_lengths",
       "in": "query",
       "description": "If this is 1, count or list trees with branch lengths",
       "required": false,
@@ -4149,7 +4149,7 @@
       ]
     },
     "IsBinary": {
-      "name": "isBinary",
+      "name": "is_binary",
       "in": "query",
       "description": "If this is 1, count or list binary trees",
       "required": false,
@@ -4163,7 +4163,7 @@
       ]
     },
     "IsUltrametric": {
-      "name": "isUltrametric",
+      "name": "is_ultrametric",
       "in": "query",
       "description": "If this is 1, count or list ultrametric trees",
       "required": false,
@@ -4194,7 +4194,7 @@
       "maximum": 1000
     },
     "MatrixType": {
-      "name": "matrixType",
+      "name": "matrix_type",
       "in": "query",
       "description": "Integer code of the matrix type to list or count.  \nPAM - 1, GRIM - 2, BIOGEO - 3, Rolling PAM - 10,  Padded PAM - 101, \nMCPA Output - 201\n",
       "required": false,
@@ -4219,21 +4219,21 @@
       "type": "string"
     },
     "MetaString": {
-      "name": "metaString",
+      "name": "meta_string",
       "in": "query",
       "description": "If provided, list or count trees with this meta string",
       "required": false,
       "type": "string"
     },
     "ModelScenarioCode": {
-      "name": "modelScenarioCode",
+      "name": "model_scenario_code",
       "in": "query",
       "description": "Only return items built with this modeling scenario",
       "required": false,
       "type": "string"
     },
     "MinimumNumberOfPoints": {
-      "name": "minimumNumberOfPoints",
+      "name": "minimum_number_of_points",
       "in": "query",
       "description": "Only return occurrence sets with at least this number of points",
       "required": false,
@@ -4241,7 +4241,7 @@
       "minimum": 0
     },
     "NumberOfPermutations": {
-      "name": "numPermutations",
+      "name": "num_permutations",
       "in": "query",
       "description": "Perform this many permutation tests when running MCPA",
       "required": false,
@@ -4251,7 +4251,7 @@
       "maximum": 10000
     },
     "OccurrenceSetId": {
-      "name": "occurrenceSetId",
+      "name": "occurrence_set_id",
       "in": "query",
       "description": "Return experiments built using this occurrence set",
       "required": false,
@@ -4268,35 +4268,35 @@
       "minimum": 0
     },
     "PointMax": {
-      "name": "pointMax",
+      "name": "point_max",
       "in": "query",
       "description": "Only return PAVs build from occurrence sets with less than or this many points",
       "required": false,
       "type": "integer"
     },
     "PointMin": {
-      "name": "pointMin",
+      "name": "point_min",
       "in": "query",
       "description": "Only return PAVs build from occurrence sets with at least this many points",
       "required": false,
       "type": "integer"
     },
     "ProjectScenarioCode": {
-      "name": "projectionScenarioCode",
+      "name": "projection_scenario_code",
       "in": "query",
       "description": "Only return items built with this SDM projection scenario",
       "required": false,
       "type": "string"
     },
     "ScenarioCode": {
-      "name": "scenarioCode",
+      "name": "scenario_code",
       "in": "query",
       "description": "Return objects thatare in or used this scenario",
       "required": false,
       "type": "string"
     },
     "ScenarioId": {
-      "name": "scenarioId",
+      "name": "scenario_id",
       "in": "query",
       "description": "Return objects thatare in or used this scenario",
       "required": false,
@@ -4304,13 +4304,13 @@
       "minimum": 0
     },
     "ScientificName": {
-      "name": "scientificName",
+      "name": "scientific_name",
       "in": "query",
       "description": "Limit search results to those with this scientific name",
       "type": "string"
     },
     "ShapegridId": {
-      "name": "shapegridId",
+      "name": "shapegrid_id",
       "in": "query",
       "description": "The id of a shapegrid to use for query",
       "required": false,
@@ -4332,63 +4332,63 @@
       "format": "integer"
     },
     "TaxonClass": {
-      "name": "taxonClass",
+      "name": "taxon_class",
       "in": "query",
       "description": "Limit the Global PAM results to only those in this class",
       "required": false,
       "type": "string"
     },
     "TaxonFamily": {
-      "name": "taxonFamily",
+      "name": "taxon_family",
       "in": "query",
       "description": "Limit the search results to only those in this family",
       "required": false,
       "type": "string"
     },
     "TaxonGenus": {
-      "name": "taxonGenus",
+      "name": "taxon_genus",
       "in": "query",
       "description": "Limit the search results to only those in this genus",
       "required": false,
       "type": "string"
     },
     "TaxonKey": {
-      "name": "taxonKey",
+      "name": "taxon_key",
       "in": "query",
       "description": "Limit the search results to only those with this taxon key",
       "required": false,
       "type": "string"
     },
     "TaxonKingdom": {
-      "name": "taxonKingdom",
+      "name": "taxon_kingdom",
       "in": "query",
       "description": "Limit the search results to only those in this kingdom",
       "required": false,
       "type": "string"
     },
     "TaxonOrder": {
-      "name": "taxonOrder",
+      "name": "taxon_order",
       "in": "query",
       "description": "Limit the search results to only those in this order",
       "required": false,
       "type": "string"
     },
     "TaxonPhylum": {
-      "name": "taxonPhylum",
+      "name": "taxon_phylum",
       "in": "query",
       "description": "Limit the search results to only those in this phylum",
       "required": false,
       "type": "string"
     },
     "TaxonSpecies": {
-      "name": "taxonSpecies",
+      "name": "taxon_species",
       "in": "query",
       "description": "Limit the search results to only those with this species name \n(without genus)\n",
       "required": false,
       "type": "string"
     },
     "TreeName": {
-      "name": "treeName",
+      "name": "tree_name",
       "in": "query",
       "description": "If provided, return or count trees with this name",
       "required": false,
