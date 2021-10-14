@@ -330,7 +330,7 @@ requestTree flags matches =
         , url = flags.apiRoot ++ "opentree"
         , body =
             matches
-                |> List.filterMap .taxonId
+                |> List.filterMap .acceptedName
                 |> Decoder.OpenTreePOST
                 |> Encoder.encodeOpenTreePOST
                 |> Http.jsonBody
