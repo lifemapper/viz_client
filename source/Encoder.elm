@@ -40,8 +40,8 @@ encodeBiotaphyPointsPost (BiotaphyPointsPost taxonIds) =
 
 
 encodeOpenTreePOST : OpenTreePOST -> Value
-encodeOpenTreePOST (OpenTreePOST taxonIds) =
-    taxonIds |> List.map int |> list
+encodeOpenTreePOST (OpenTreePOST taxonNames) =
+    taxonNames |> List.map string |> list
 
 
 encodeOccurrenceMetadata : OccurrenceMetadata -> Value

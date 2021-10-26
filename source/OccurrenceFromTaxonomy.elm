@@ -461,7 +461,7 @@ requestTree flags matches =
         , url = flags.apiRoot ++ "opentree"
         , body =
             matches
-                |> List.filterMap (\(TaxonomyListItem { taxon_key }) -> String.toInt taxon_key |> Result.toMaybe)
+                |> List.map (\(TaxonomyListItem { scientific_name }) -> scientific_name)
                 |> Decoder.OpenTreePOST
                 |> Encoder.encodeOpenTreePOST
                 |> Http.jsonBody

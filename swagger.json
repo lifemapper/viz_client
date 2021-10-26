@@ -7,7 +7,6 @@
   },
   "host": "svc.lifemapper.org",
   "schemes": [
-    "http",
     "https"
   ],
   "basePath": "/api/v2",
@@ -1567,7 +1566,7 @@
           {
             "name": "body",
             "in": "body",
-            "description": "A list of GBIF Taxon IDs to get a tree for",
+            "description": "A list of GBIF taxon names to get a tree for",
             "required": true,
             "schema": {
               "$ref": "#/definitions/OpenTreePOST"
@@ -3254,7 +3253,7 @@
     "OpenTreePOST": {
       "type": "array",
       "items": {
-        "type": "integer"
+        "type": "string"
       }
     },
     "OpenTreePOSTresponse": {
